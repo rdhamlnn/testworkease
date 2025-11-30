@@ -1,0 +1,608 @@
+/* === NAVBAR === */
+.navbar-bg,
+.main-navbar {
+    background-color: #1b3c88 !important; /* biru tua */
+}
+
+/* === SIDEBAR === */
+.main-sidebar {
+    background-color: #ffffff !important; /* putih */
+}
+
+.sidebar-menu li a {
+    color: #333 !important;
+}
+
+.sidebar-menu li.active > a {
+    background-color: #eaeaea !important;
+    color: #000 !important;
+}
+
+/* === CARD COLORS === */
+.bg-primary {
+    background-color: #87e7ff !important; /* biru */
+}
+
+.bg-danger {
+    background-color: #e74c3c !important; /* merah */
+}
+
+.bg-warning {
+    background-color: #f1c40f !important; /* kuning */
+}
+
+.bg-success {
+    background-color: #27ae60 !important; /* hijau */
+}
+
+/* === DROPDOWN SPACING === */
+.dropdown-menu .dropdown-item {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    line-height: 1.2;
+}
+
+.main-sidebar .sidebar-menu .dropdown-menu li > a {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 18px 8px 48px !important;
+    border-left: 3px solid transparent;
+    white-space: nowrap !important;
+    color: #6c757d;
+    transition: all 0.2s ease;
+}
+
+.main-sidebar .sidebar-menu .dropdown-menu li > a i {
+    position: absolute;
+    left: 20px;
+    width: 18px;
+    text-align: center;
+    font-size: 14px;
+    color: #6c757d;
+    flex-shrink: 0;
+}
+
+.main-sidebar .sidebar-menu .dropdown-menu li.active > a {
+    background-color: #f8f9fa !important;
+    color: #1B3C88 !important;
+    font-weight: 600;
+    border-left-color: #1B3C88;
+}
+
+.main-sidebar .sidebar-menu .dropdown-menu li.active > a i {
+    color: #1B3C88 !important;
+}
+
+.sidebar-mini .main-sidebar .sidebar-menu .dropdown-menu li > a {
+    padding: 8px 16px 8px 40px !important;
+}
+
+.sidebar-mini .main-sidebar .sidebar-menu .dropdown-menu li > a i {
+    left: 12px;
+}
+
+.sidebar-mini .main-sidebar .sidebar-menu li.dropdown .dropdown-menu {
+    position: absolute;
+    left: 65px;
+    top: 0;
+    min-width: 220px;
+    padding: 10px 0;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+    z-index: 1000;
+}
+
+.sidebar-mini .main-sidebar .sidebar-menu li.dropdown:hover > .dropdown-menu,
+.sidebar-mini .main-sidebar .sidebar-menu li.dropdown.active > .dropdown-menu {
+    display: block;
+}
+
+.sidebar-mini .main-sidebar .sidebar-menu .dropdown-menu li > a {
+    padding: 8px 16px 8px 44px !important;
+    font-size: 13px;
+}
+
+.sidebar-mini .main-sidebar .sidebar-menu .dropdown-menu li > a i {
+    left: 18px;
+    font-size: 13px;
+}
+
+/* === CARD CLEAN LOOK === */
+.card {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-radius: 8px;
+}
+
+/* === FONT === */
+body {
+    font-family: 'Poppins', sans-serif;
+}
+
+/* === GLOBAL AKSI DETAIL (seragam seperti Kadiv Mekanik) === */
+.action-buttons{ display:flex; gap:5px; }
+
+.btn-icon{
+    width:30px; height:30px; padding:0;
+    display:flex; align-items:center; justify-content:center; vertical-align:middle;
+}
+
+.btn-icon img{
+    width:14px;
+    filter:brightness(0) invert(1);
+}
+
+/* Warna tombol konsisten */
+.btn-info{
+    background-color:#17a2b8 !important; border-color:#17a2b8 !important; color:#fff !important;
+}
+.btn-info:hover{
+    background-color:#138496 !important; border-color:#138496 !important;
+}
+
+/* Khusus tombol ikon edit */
+.btn-warning.btn-icon{
+    background-color:#ffc107 !important; border-color:#ffc107 !important; color:#212529 !important;
+}
+.btn-warning.btn-icon:hover{
+    background-color:#e0a800 !important; border-color:#e0a800 !important; color:#212529 !important;
+}
+
+/* Tombol hapus */
+.btn-danger.btn-icon{
+    background-color:#dc3545 !important; border-color:#dc3545 !important; color:#fff !important;
+}
+.btn-danger.btn-icon:hover{
+    background-color:#c82333 !important; border-color:#c82333 !important; color:#fff !important;
+}
+
+/* === GLOBAL MODAL HEADER THEME === */
+.modal-header {
+    background-color: #1B3C88 !important;
+    color: #fff !important;
+    padding: 1rem 1.25rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    border-bottom: none !important;
+}
+
+.modal-header .modal-title {
+    margin: 0 !important;
+    font-weight: 600 !important;
+    font-size: 1.1rem !important;
+    flex: 1 !important;
+    padding-right: 1rem !important;
+}
+
+/* === GLOBAL MODAL CLOSE BUTTON - STANDARDIZED === */
+.modal-header .close {
+    color: #fff !important;
+    opacity: 1 !important;
+    font-size: 1.5rem;
+    font-weight: 300;
+    line-height: 1;
+    padding: 0;
+    margin: 0 0 0 auto !important;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    background-color: rgba(0, 0, 0, 0.15);
+    border: none;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    order: 2;
+}
+
+.modal-header .close:hover {
+    opacity: 1 !important;
+    background-color: rgba(0, 0, 0, 0.25);
+    transform: rotate(90deg);
+}
+
+.modal-header .close:active {
+    transform: rotate(90deg) scale(0.95);
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+.modal-header .close:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.modal-header .close span {
+    font-size: 1.8rem;
+    line-height: 1;
+    font-weight: 300;
+    display: inline-block;
+}
+
+.modal-header .close i {
+    font-size: 1.2rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* === GLOBAL BUTTON STANDARDIZATION === */
+/* Primary Button - Brand Color */
+.btn-primary {
+    background-color: #1B3C88 !important;
+    border-color: #1B3C88 !important;
+    color: #fff !important;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    background-color: #16316F !important;
+    border-color: #16316F !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(27, 60, 136, 0.3);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* Secondary Button */
+.btn-secondary {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    color: #fff !important;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268 !important;
+    border-color: #545b62 !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
+}
+
+.btn-secondary:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* Info Button */
+.btn-info {
+    background-color: #17a2b8 !important;
+    border-color: #17a2b8 !important;
+    color: #fff !important;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-info:hover {
+    background-color: #138496 !important;
+    border-color: #117a8b !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(23, 162, 184, 0.3);
+}
+
+.btn-info:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* Warning Button - untuk tombol biasa */
+.btn-warning {
+    background-color: #ffc107 !important;
+    border-color: #ffc107 !important;
+    color: #212529 !important;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800 !important;
+    border-color: #d39e00 !important;
+    color: #212529 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+}
+
+.btn-warning:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* Danger Button */
+.btn-danger {
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+    color: #fff !important;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-danger:hover {
+    background-color: #c82333 !important;
+    border-color: #bd2130 !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+}
+
+.btn-danger:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* Success Button */
+.btn-success {
+    background-color: #28a745 !important;
+    border-color: #28a745 !important;
+    color: #fff !important;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-success:hover {
+    background-color: #218838 !important;
+    border-color: #1e7e34 !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+}
+
+.btn-success:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* Button Icon - untuk tombol dengan ikon */
+.btn-icon {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    border-radius: 6px;
+}
+
+.btn-icon img {
+    width: 14px;
+    height: 14px;
+    filter: brightness(0) invert(1);
+}
+
+/* Warning Button Icon - khusus untuk edit */
+.btn-warning.btn-icon {
+    background-color: #ffc107 !important;
+    border-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.btn-warning.btn-icon:hover {
+    background-color: #e0a800 !important;
+    border-color: #d39e00 !important;
+    color: #212529 !important;
+}
+
+/* Danger Button Icon - khusus untuk delete */
+.btn-danger.btn-icon {
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+    color: #fff !important;
+}
+
+.btn-danger.btn-icon:hover {
+    background-color: #c82333 !important;
+    border-color: #bd2130 !important;
+    color: #fff !important;
+}
+
+/* Button Sizes */
+.btn-sm {
+    padding: 4px 12px;
+    font-size: 0.875rem;
+    border-radius: 4px;
+}
+
+.btn-lg {
+    padding: 12px 24px;
+    font-size: 1.125rem;
+    border-radius: 8px;
+}
+
+/* Outline Buttons */
+.btn-outline-primary {
+    color: #1B3C88 !important;
+    border-color: #1B3C88 !important;
+    background-color: transparent !important;
+}
+
+.btn-outline-primary:hover {
+    background-color: #1B3C88 !important;
+    border-color: #1B3C88 !important;
+    color: #fff !important;
+}
+
+.btn-outline-secondary {
+    color: #6c757d !important;
+    border-color: #6c757d !important;
+    background-color: transparent !important;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    color: #fff !important;
+}
+
+/* Action Buttons Container */
+.action-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+/* Legacy Support - untuk kompatibilitas */
+.btn-tambah-work-order {
+    background-color: #1B3C88 !important;
+    border-color: #1B3C88 !important;
+    color: #fff !important;
+}
+
+.btn-tambah-work-order:hover {
+    background-color: #16316F !important;
+    border-color: #16316F !important;
+    color: #fff !important;
+}
+
+/* === DELETE CONFIRM MODAL - SIMPLE & ELEGANT === */
+#deleteConfirmModal .modal-dialog {
+    max-width: 420px;
+}
+
+#deleteConfirmModal .modal-content {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+}
+
+#deleteConfirmModal .modal-header {
+    background-color: #1B3C88;
+    color: #fff;
+    padding: 20px 25px;
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+}
+
+#deleteConfirmModal .modal-header .modal-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+}
+
+#deleteConfirmModal .modal-header .modal-title i {
+    font-size: 1.3rem;
+}
+
+#deleteConfirmModal .modal-header .close {
+    color: #fff;
+    opacity: 1;
+    font-size: 1.4rem;
+    transition: opacity 0.2s ease;
+}
+
+#deleteConfirmModal .modal-header .close:hover {
+    opacity: 0.8;
+}
+
+#deleteConfirmModal .modal-body {
+    padding: 35px 25px;
+    text-align: center;
+}
+
+#deleteConfirmModal .modal-body i.fa-trash-alt {
+    margin-bottom: 20px;
+    opacity: 0.9;
+}
+
+#deleteConfirmModal .modal-body h5 {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 12px;
+    font-size: 1.15rem;
+}
+
+#deleteConfirmModal .modal-body p {
+    font-size: 0.9rem;
+    color: #6c757d;
+    line-height: 1.5;
+}
+
+#deleteConfirmModal .modal-footer {
+    padding: 18px 25px;
+    border-top: 1px solid #e9ecef;
+    background-color: #f8f9fa;
+    border-radius: 0 0 10px 10px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+#deleteConfirmModal .modal-footer .btn {
+    padding: 8px 20px;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+#deleteConfirmModal .modal-footer .btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+#deleteConfirmModal .modal-footer .btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+#deleteConfirmModal .modal-footer .btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+#deleteConfirmModal .modal-footer .btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+#deleteConfirmModal .modal-footer .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    #deleteConfirmModal .modal-dialog {
+        margin: 15px;
+        max-width: calc(100% - 30px);
+    }
+    
+    #deleteConfirmModal .modal-body {
+        padding: 30px 20px;
+    }
+    
+    #deleteConfirmModal .modal-body i.fa-trash-alt {
+        font-size: 2.5rem !important;
+    }
+    
+    #deleteConfirmModal .modal-footer {
+        flex-direction: column;
+    }
+    
+    #deleteConfirmModal .modal-footer .btn {
+        width: 100%;
+    }
+}

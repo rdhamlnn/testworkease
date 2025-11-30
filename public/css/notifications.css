@@ -1,0 +1,432 @@
+/* Enhanced Notification System Styles */
+.notification-alert {
+    border: none;
+    border-radius: 12px;
+    padding: 16px 20px;
+    font-family: "Inter", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-left: 4px solid;
+    animation: slideInRight 0.5s ease-out;
+}
+
+.notification-alert.alert-success {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border-left-color: #28a745;
+    color: #155724;
+}
+
+.notification-alert.alert-danger {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    border-left-color: #dc3545;
+    color: #721c24;
+}
+
+.notification-alert.alert-warning {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border-left-color: #ffc107;
+    color: #856404;
+}
+
+.notification-alert.alert-info {
+    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+    border-left-color: #17a2b8;
+    color: #0c5460;
+}
+
+/* Notification Content Layout */
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+
+.notification-icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2em;
+}
+
+.notification-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-text strong {
+    display: block;
+    margin-bottom: 2px;
+}
+
+.notification-text div {
+    font-size: 0.9em;
+    opacity: 0.9;
+}
+
+/* Notification Close Button */
+.notification-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    font-weight: bold;
+    opacity: 0.7;S
+    transition: all 0.3s ease;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.notification-close:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.1);
+    transform: scale(1.1);
+}
+
+.notification-close:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Global Modal Close Button Styling */
+.modal-header .close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    font-weight: bold;
+    opacity: 0.8;
+    transition: all 0.3s ease;
+    color: #000;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    line-height: 1;
+}
+
+.modal-header .close:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.1);
+    transform: scale(1.1);
+}
+
+.modal-header .close:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header .close span {
+    font-size: inherit;
+    line-height: 1;
+}
+
+/* Form Close Button Styling */
+.btn-close,
+.close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    font-weight: bold;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    line-height: 1;
+}
+
+.btn-close:hover,
+.close:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.1);
+    transform: scale(1.1);
+}
+
+.btn-close:focus,
+.close:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Special styling for logout notification */
+.notification-alert.logout-notification {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    border-left-color: #dc3545;
+    color: #721c24;
+}
+
+.notification-alert.logout-notification .notification-icon i {
+    color: #dc3545;
+}
+
+/* Special styling for login notification */
+.notification-alert.login-notification {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border-left-color: #28a745;
+    color: #155724;
+}
+
+.notification-alert.login-notification .notification-icon i {
+    color: #28a745;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.notification-alert.fade-out {
+    animation: slideOutRight 0.3s ease-in forwards;
+}
+
+/* Page Transition Overlay Enhancements */
+#page-transition-overlay {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(248, 250, 255, 0.95) 100%
+    );
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+#transition-logo {
+    position: relative;
+}
+
+#transition-logo::before {
+    content: "";
+    position: absolute;
+    top: -20px;
+    left: -20px;
+    right: -20px;
+    bottom: -20px;
+    background: radial-gradient(
+        circle,
+        rgba(27, 60, 136, 0.1) 0%,
+        transparent 70%
+    );
+    border-radius: 50%;
+    animation: ripple 2s infinite;
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0.8);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.2);
+        opacity: 0;
+    }
+}
+
+#transition-text {
+    position: relative;
+    z-index: 2;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .notification-alert {
+        right: 10px;
+        left: 10px;
+        min-width: auto;
+        max-width: none;
+    }
+
+    #transition-logo img {
+        max-width: 150px;
+    }
+
+    #transition-text {
+        font-size: 16px;
+    }
+}
+
+/* Pagination Styling - Konsisten dengan tema biru header */
+.pagination .page-item .page-link {
+    color: #1b3c88 !important;
+    border-radius: 3px;
+    margin: 0 3px;
+    border-color: transparent;
+    background-color: #f8faff;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #1b3c88 !important;
+    border-color: #1b3c88 !important;
+    color: #fff !important;
+}
+
+.pagination .page-item.disabled .page-link {
+    border-color: transparent;
+    background-color: #f8faff;
+    color: #1b3c88 !important;
+    opacity: 0.6;
+}
+
+.pagination .page-item .page-link:hover {
+    background-color: #1b3c88 !important;
+    color: #fff !important;
+    border-color: transparent;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(27, 60, 136, 0.3);
+}
+
+.pagination .page-item .page-link:focus {
+    box-shadow: 0 0 0 0.2rem rgba(27, 60, 136, 0.25);
+    outline: none;
+}
+
+/* DataTables Pagination Styling */
+div.dataTables_wrapper
+    div.dataTables_paginate
+    ul.pagination
+    .page-item
+    .page-link {
+    color: #1b3c88 !important;
+    border-radius: 3px;
+    margin: 0 3px;
+    border-color: transparent;
+    background-color: #f8faff;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+div.dataTables_wrapper
+    div.dataTables_paginate
+    ul.pagination
+    .page-item.active
+    .page-link {
+    background-color: #1b3c88 !important;
+    border-color: #1b3c88 !important;
+    color: #fff !important;
+}
+
+div.dataTables_wrapper
+    div.dataTables_paginate
+    ul.pagination
+    .page-item.disabled
+    .page-link {
+    border-color: transparent;
+    background-color: #f8faff;
+    color: #1b3c88 !important;
+    opacity: 0.6;
+}
+
+div.dataTables_wrapper
+    div.dataTables_paginate
+    ul.pagination
+    .page-item
+    .page-link:hover {
+    background-color: #1b3c88 !important;
+    color: #fff !important;
+    border-color: transparent;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(27, 60, 136, 0.3);
+}
+
+div.dataTables_wrapper
+    div.dataTables_paginate
+    ul.pagination
+    .page-item
+    .page-link:focus {
+    box-shadow: 0 0 0 0.2rem rgba(27, 60, 136, 0.25);
+    outline: none;
+}
+
+/* Bootstrap Pagination Override */
+.page-link {
+    color: #1b3c88 !important;
+    background-color: #f8faff !important;
+    border-color: transparent !important;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.page-link:hover {
+    color: #fff !important;
+    background-color: #1b3c88 !important;
+    border-color: transparent !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(27, 60, 136, 0.3);
+}
+
+.page-item.active .page-link {
+    background-color: #1b3c88 !important;
+    border-color: #1b3c88 !important;
+    color: #fff !important;
+}
+
+.page-item.disabled .page-link {
+    color: #1b3c88 !important;
+    background-color: #f8faff !important;
+    opacity: 0.6;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .notification-alert.alert-success {
+        background: linear-gradient(135deg, #1e4620 0%, #2d5a2e 100%);
+        color: #d4edda;
+    }
+
+    .notification-alert.alert-danger {
+        background: linear-gradient(135deg, #4a1a1c 0%, #5d2a2c 100%);
+        color: #f8d7da;
+    }
+
+    .notification-alert.alert-warning {
+        background: linear-gradient(135deg, #4a3c00 0%, #5d4a00 100%);
+        color: #fff3cd;
+    }
+
+    .notification-alert.alert-info {
+        background: linear-gradient(135deg, #0c5460 0%, #1a6b73 100%);
+        color: #d1ecf1;
+    }
+}
