@@ -705,9 +705,20 @@
             $(selector).off('select2:select').on('select2:select', function() {
                 const value = $(this).val();
                 if (value) {
+                    // Force update tampilan
+                    $(this).trigger('change');
+                    // Pastikan rendered element terlihat
                     setTimeout(function() {
-                        $(selector).trigger('change');
-                    }, 10);
+                        const $rendered = $(selector).next('.select2-container').find('.select2-selection__rendered');
+                        if ($rendered.length) {
+                            $rendered.css({
+                                'visibility': 'visible',
+                                'opacity': '1',
+                                'display': 'block',
+                                'color': '#495057'
+                            });
+                        }
+                    }, 50);
                 }
             });
             
@@ -715,9 +726,20 @@
             $(selector).off('select2:close').on('select2:close', function() {
                 const value = $(this).val();
                 if (value) {
+                    // Force update tampilan
+                    $(this).trigger('change');
+                    // Pastikan rendered element terlihat
                     setTimeout(function() {
-                        $(selector).trigger('change');
-                    }, 10);
+                        const $rendered = $(selector).next('.select2-container').find('.select2-selection__rendered');
+                        if ($rendered.length) {
+                            $rendered.css({
+                                'visibility': 'visible',
+                                'opacity': '1',
+                                'display': 'block',
+                                'color': '#495057'
+                            });
+                        }
+                    }, 50);
                 }
             });
             
@@ -725,9 +747,20 @@
             $(selector).off('blur').on('blur', function() {
                 const value = $(this).val();
                 if (value && $(this).hasClass('select2-hidden-accessible')) {
+                    // Force update tampilan
+                    $(this).trigger('change.select2');
+                    // Pastikan rendered element terlihat
                     setTimeout(function() {
-                        $(selector).trigger('change.select2');
-                    }, 10);
+                        const $rendered = $(selector).next('.select2-container').find('.select2-selection__rendered');
+                        if ($rendered.length) {
+                            $rendered.css({
+                                'visibility': 'visible',
+                                'opacity': '1',
+                                'display': 'block',
+                                'color': '#495057'
+                            });
+                        }
+                    }, 50);
                 }
             });
         }

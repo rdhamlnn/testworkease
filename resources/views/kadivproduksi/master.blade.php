@@ -41,18 +41,24 @@
             border-radius: 0.25rem;
             min-height: 38px;
             box-sizing: border-box;
+            position: relative;
+            overflow: visible !important;
         }
         .select2-container--bootstrap4 .select2-selection--single {
             height: 38px;
             box-sizing: border-box;
             position: relative;
-            overflow: hidden;
+            overflow: visible !important;
+            display: flex !important;
+            align-items: center !important;
         }
         .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
-            line-height: 36px;
+            line-height: 38px !important;
+            height: 38px !important;
             padding-left: 12px;
             padding-right: 40px;
-            display: block !important;
+            display: flex !important;
+            align-items: center !important;
             color: #495057 !important;
             visibility: visible !important;
             opacity: 1 !important;
@@ -60,11 +66,22 @@
             text-overflow: ellipsis !important;
             white-space: nowrap !important;
             box-sizing: border-box;
+            position: relative;
+            z-index: 10 !important;
+            width: 100%;
+            max-width: calc(100% - 40px);
+            vertical-align: middle !important;
         }
         .select2-container--bootstrap4 .select2-selection--single .select2-selection__arrow {
-            height: 36px;
+            height: 38px;
             right: 8px;
             width: 20px;
+            position: absolute;
+            top: 0;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         /* Pastikan Select2 container tidak melebihi parent */
@@ -82,30 +99,40 @@
             color: #495057 !important;
             visibility: visible !important;
             opacity: 1 !important;
-            display: block !important;
+            display: flex !important;
+            align-items: center !important;
+            height: 38px !important;
+            line-height: 38px !important;
         }
         
-        /* Pastikan semua elemen di dalam rendered terlihat */
+        /* Pastikan semua elemen di dalam rendered terlihat dan terpusat */
         .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered *,
         .select2-selection__rendered * {
             color: #495057 !important;
             visibility: visible !important;
             opacity: 1 !important;
+            vertical-align: middle !important;
+            line-height: 38px !important;
         }
         
         /* Pastikan selection container memiliki width yang benar */
         .select2-container--bootstrap4 .select2-selection--single {
             width: 100%;
+            overflow: visible !important;
+            display: flex !important;
+            align-items: center !important;
         }
-        
-        /* Pastikan rendered container tidak melebihi parent dan teks tetap terlihat */
         .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
-            width: auto;
-            max-width: 100%;
+            width: 100%;
+            max-width: calc(100% - 40px);
             min-width: 0;
+            position: relative;
+            z-index: 10 !important;
+            display: flex !important;
+            align-items: center !important;
+            height: 38px !important;
+            line-height: 38px !important;
         }
-        
-        /* Pastikan teks tetap terlihat saat focus dan blur */
         .select2-container--bootstrap4.select2-container--focus .select2-selection--single .select2-selection__rendered,
         .select2-container--bootstrap4.select2-container--default .select2-selection--single .select2-selection__rendered,
         .select2-container--bootstrap4:not(.select2-container--focus) .select2-selection--single .select2-selection__rendered {
@@ -114,10 +141,28 @@
             opacity: 1 !important;
         }
         
-        /* Pastikan tidak ada display none yang menyembunyikan teks */
         .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
-            display: block !important;
+            display: flex !important;
+            align-items: center !important;
             visibility: visible !important;
+            position: relative !important;
+            z-index: 10 !important;
+            height: 38px !important;
+            line-height: 38px !important;
+        }
+        
+        /* Pastikan teks di dalam rendered selalu terlihat dan tidak tertimpa */
+        .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered span,
+        .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered .select2-selection__choice {
+            color: #495057 !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            display: inline-block !important;
+            position: relative !important;
+            z-index: 11 !important;
+            line-height: 38px !important;
+            vertical-align: middle !important;
+            align-self: center !important;
         }
 
         .select2-container--open {
@@ -151,8 +196,6 @@
         .modal-content {
             overflow: visible !important;
         }
-
-        /* Scrollbar untuk Select2 dropdown */
         .select2-results {
             max-height: 200px !important;
             overflow-y: auto !important;
