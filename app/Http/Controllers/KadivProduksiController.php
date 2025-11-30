@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\SuratPengajuan;
 use App\Models\Divisi;
 use App\Models\Unit;
+use App\Models\DaftarBarang;
 use Carbon\Carbon;
 
 class KadivProduksiController extends Controller
@@ -103,10 +104,11 @@ class KadivProduksiController extends Controller
         $karyawan = DB::table('karyawan')->get();
         $unitOptions = Unit::all();
         $jenisWorkOrder = \App\Models\JenisWorkOrder::all();
+        $daftarBarang = DaftarBarang::all();
         
         $nextWorkOrderNumber = $this->generateWorkOrderNumber();
         
-        return view('kadivproduksi.work_order', compact('workOrders', 'divisi', 'unit', 'nextWorkOrderNumber', 'karyawan', 'unitOptions', 'jenisWorkOrder'));
+        return view('kadivproduksi.work_order', compact('workOrders', 'divisi', 'unit', 'nextWorkOrderNumber', 'karyawan', 'unitOptions', 'jenisWorkOrder', 'daftarBarang'));
     }
     
     /**

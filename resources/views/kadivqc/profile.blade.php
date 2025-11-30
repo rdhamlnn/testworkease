@@ -66,6 +66,37 @@
         transform: none !important;
     }
 
+    /* Hide browser's native password reveal button */
+    input[type="password"]::-webkit-credentials-auto-fill-button,
+    input[type="password"]::-webkit-strong-password-auto-fill-button,
+    input[type="password"]::-webkit-inner-spin-button,
+    input[type="password"]::-webkit-outer-spin-button {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        position: absolute !important;
+        right: -9999px !important;
+    }
+
+    /* Hide password reveal button for Chrome/Edge */
+    input[type="password"]::-ms-reveal,
+    input[type="password"]::-ms-clear {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+
+    /* For Firefox */
+    input[type="password"] {
+        -moz-appearance: textfield;
+    }
+
+    /* Ensure input-group button is properly positioned */
+    .input-group .btn-outline-secondary {
+        z-index: 10 !important;
+    }
+
     .profile-card {
         height: 100%;
         display: flex;
