@@ -129,6 +129,43 @@
             color: #0067bd;
         }
 
+        /* Hide browser's native password reveal button - More aggressive approach */
+        input[type="password"]::-webkit-credentials-auto-fill-button,
+        input[type="password"]::-webkit-strong-password-auto-fill-button,
+        input[type="password"]::-webkit-inner-spin-button,
+        input[type="password"]::-webkit-outer-spin-button {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            position: absolute !important;
+            right: -9999px !important;
+        }
+
+        /* Hide password reveal button for Chrome/Edge */
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+
+        /* For Firefox */
+        input[type="password"] {
+            -moz-appearance: textfield;
+        }
+
+        /* Ensure input has enough padding for only our custom button */
+        #password.form-control {
+            padding-right: 45px !important;
+        }
+
+        /* Ensure our custom button is always on top and properly positioned */
+        .password-toggle {
+            z-index: 10;
+            right: 12px !important;
+        }
+
         .login-btn {
             background-color: #0067bd;
             color: #fff;
