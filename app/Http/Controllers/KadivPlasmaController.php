@@ -103,10 +103,11 @@ class KadivPlasmaController extends Controller
         $karyawan = DB::table('karyawan')->get();
         $unitOptions = Unit::all();
         $jenisWorkOrder = \App\Models\JenisWorkOrder::all();
+        $daftarBarang = \App\Models\DaftarBarang::all();
         
         $nextWorkOrderNumber = $this->generateWorkOrderNumber();
         
-        return view('kadivplasma.work_order', compact('workOrders', 'divisi', 'unit', 'nextWorkOrderNumber', 'karyawan', 'unitOptions', 'jenisWorkOrder'));
+        return view('kadivplasma.work_order', compact('workOrders', 'divisi', 'unit', 'nextWorkOrderNumber', 'karyawan', 'unitOptions', 'jenisWorkOrder', 'daftarBarang'));
     }
     
     /**
