@@ -29,8 +29,185 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ asset('assets/css/custom.css') }}">
 
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <!-- Select2 Bootstrap 4 Theme CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-4-theme@1.0.0/dist/select2-bootstrap4.min.css" rel="stylesheet" />
+
     <!-- Tambahan Warna Sidebar Aktif -->
     <style>
+        /* Custom styling untuk Select2 */
+        .select2-container--bootstrap4 .select2-selection {
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            min-height: 38px;
+            box-sizing: border-box;
+            position: relative;
+            overflow: visible !important;
+        }
+        .select2-container--bootstrap4 .select2-selection--single {
+            height: 38px;
+            box-sizing: border-box;
+            position: relative;
+            overflow: visible !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+        .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
+            line-height: 38px !important;
+            height: 38px !important;
+            padding-left: 12px;
+            padding-right: 40px;
+            display: flex !important;
+            align-items: center !important;
+            color: #495057 !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+            box-sizing: border-box;
+            position: relative;
+            z-index: 10 !important;
+            width: 100%;
+            max-width: calc(100% - 40px);
+            vertical-align: middle !important;
+        }
+        .select2-container--bootstrap4 .select2-selection--single .select2-selection__arrow {
+            height: 38px;
+            right: 8px;
+            width: 20px;
+            position: absolute;
+            top: 0;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Pastikan Select2 container tidak melebihi parent */
+        .select2-container {
+            width: 100% !important;
+        }
+
+        .select2-container--bootstrap4 {
+            width: 100% !important;
+        }
+        
+        /* Fix untuk teks yang hilang - pastikan teks selalu terlihat */
+        .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered,
+        .select2-selection__rendered {
+            color: #495057 !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            display: flex !important;
+            align-items: center !important;
+            height: 38px !important;
+            line-height: 38px !important;
+        }
+        
+        /* Pastikan semua elemen di dalam rendered terlihat */
+        .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered *,
+        .select2-selection__rendered * {
+            color: #495057 !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            align-self: center !important;
+        }
+        
+        /* Pastikan selection container memiliki width yang benar */
+        .select2-container--bootstrap4 .select2-selection--single {
+            width: 100%;
+            overflow: visible !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+        .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
+            width: 100%;
+            max-width: calc(100% - 40px);
+            min-width: 0;
+            position: relative;
+            z-index: 10 !important;
+            display: flex !important;
+            align-items: center !important;
+            height: 38px !important;
+            line-height: 38px !important;
+        }
+
+        /* Fix z-index untuk Select2 di dalam modal - harus lebih tinggi dari modal backdrop */
+        .select2-container--open {
+            z-index: 10050 !important; /* Modal backdrop biasanya 1040, modal 1050 */
+        }
+
+        .select2-dropdown {
+            z-index: 10050 !important;
+        }
+
+        .modal .select2-container {
+            z-index: 10050 !important;
+        }
+        
+        .modal .select2-dropdown {
+            z-index: 10050 !important;
+        }
+
+        .select2-search--dropdown {
+            z-index: 10050 !important;
+        }
+
+        /* Pastikan Select2 dropdown tidak terpotong oleh modal */
+        .modal {
+            overflow: visible !important;
+        }
+
+        .modal-body {
+            overflow: visible !important;
+        }
+
+        .modal-content {
+            overflow: visible !important;
+        }
+
+        /* Scrollbar untuk Select2 dropdown */
+        .select2-results {
+            max-height: 200px !important;
+            overflow-y: auto !important;
+        }
+
+        .select2-dropdown {
+            max-height: 250px !important;
+        }
+
+        .select2-results__options {
+            max-height: 200px !important;
+            overflow-y: auto !important;
+        }
+
+        /* Styling scrollbar untuk browser modern */
+        .select2-results__options::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .select2-results__options::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .select2-results__options::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        .select2-results__options::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Styling scrollbar untuk Firefox */
+        .select2-results__options {
+            scrollbar-width: thin;
+            scrollbar-color: #888 #f1f1f1;
+        }
+
         /* Warna latar sidebar keseluruhan */
         .main-sidebar {
             background-color: #f8faff !important;
@@ -339,6 +516,9 @@
     <script src="{{ asset('assets/modules/nicescroll/jquery.nicescroll.min.js') }}"></script>
     <script src="{{ asset('assets/modules/moment.min.js') }}"></script>
     <script src="{{ asset('assets/js/stisla.js') }}"></script>
+
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <!-- JS Libraries -->
     <script src="{{ asset('assets/modules/chart.min.js') }}"></script>
