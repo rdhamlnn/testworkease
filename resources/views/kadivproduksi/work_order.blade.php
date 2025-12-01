@@ -401,10 +401,8 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="unit">Nama Unit / Code <span class="text-danger">*</span></label>
-                                <!-- Input text untuk jenis work order selain Pembelian -->
+                                <label for="unit" id="label_unit">Nama Unit / Code <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="unit" name="unit" required placeholder="Masukkan unit">
-                                <!-- Select2 untuk jenis work order Pembelian -->
                                 <select class="form-control select2-unit" id="unit_pembelian" style="display: none;">
                                     <option value="">-- Pilih Barang --</option>
                                     @foreach($daftarBarang as $barang)
@@ -416,7 +414,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="dokumentasi">Dokumentasi</label>
-                                <input type="file" class="form-control" id="dokumentasi" name="dokumentasi" accept=".pdf,.jpg,.jpeg,.png">
+                                <input type="file" class="form-control" id="dokumentasi" name="dokumentasi" accept=".jpg,.jpeg,.png">
                                 <small class="form-text text-muted">Format: JPG, PNG. Maksimal 2MB.</small>
                             </div>
                         </div>
@@ -495,7 +493,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="edit_unit">Nama Unit / Code <span class="text-danger">*</span></label>
+                                <label for="edit_unit" id="label_edit_unit">Nama Unit / Code <span class="text-danger">*</span></label>
                                 <!-- Input text untuk jenis work order selain Pembelian -->
                                 <input type="text" class="form-control" id="edit_unit" name="unit" required>
                                 <!-- Select2 untuk jenis work order Pembelian -->
@@ -577,7 +575,7 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label><strong>Unit:</strong></label>
+                            <label id="view_label_unit"><strong>Unit:</strong></label>
                             <p id="view_unit" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
@@ -842,17 +840,22 @@
             const selectedJenisWo = jenisWoSelect.find('option:selected').data('nama-jenis');
             const unitInput = $('#unit');
             const unitSelect = $('#unit_pembelian');
+            const unitLabel = $('#label_unit');
             
             // Jika jenis work order adalah "Pembelian", tampilkan Select2 dan sembunyikan input
             if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
                 unitInput.hide().removeAttr('required').removeAttr('name');
                 unitSelect.show().attr('required', 'required').attr('name', 'unit');
+                // Ubah label menjadi "Daftar Barang"
+                unitLabel.html('Daftar Barang <span class="text-danger">*</span>');
                 // Inisialisasi Select2 saat ditampilkan
                 initSelect2Unit('#unit_pembelian');
             } else {
                 // Jika bukan "Pembelian", tampilkan input dan sembunyikan Select2
                 unitInput.show().attr('required', 'required').attr('name', 'unit');
                 unitSelect.hide().removeAttr('required').removeAttr('name').val('');
+                // Kembalikan label ke "Nama Unit / Code"
+                unitLabel.html('Nama Unit / Code <span class="text-danger">*</span>');
                 // Destroy Select2 saat disembunyikan
                 destroySelect2Unit('#unit_pembelian');
             }
@@ -864,17 +867,22 @@
             const selectedJenisWo = jenisWoSelect.find('option:selected').data('nama-jenis');
             const unitInput = $('#edit_unit');
             const unitSelect = $('#edit_unit_pembelian');
+            const unitLabel = $('#label_edit_unit');
             
             // Jika jenis work order adalah "Pembelian", tampilkan Select2 dan sembunyikan input
             if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
                 unitInput.hide().removeAttr('required').removeAttr('name');
                 unitSelect.show().attr('required', 'required').attr('name', 'unit');
+                // Ubah label menjadi "Daftar Barang"
+                unitLabel.html('Daftar Barang <span class="text-danger">*</span>');
                 // Inisialisasi Select2 saat ditampilkan
                 initSelect2Unit('#edit_unit_pembelian');
             } else {
                 // Jika bukan "Pembelian", tampilkan input dan sembunyikan Select2
                 unitInput.show().attr('required', 'required').attr('name', 'unit');
                 unitSelect.hide().removeAttr('required').removeAttr('name').val('');
+                // Kembalikan label ke "Nama Unit / Code"
+                unitLabel.html('Nama Unit / Code <span class="text-danger">*</span>');
                 // Destroy Select2 saat disembunyikan
                 destroySelect2Unit('#edit_unit_pembelian');
             }
@@ -900,6 +908,8 @@
             $('#id_jenis_wo').val('');
             $('#unit').val('').show().attr('required', 'required').attr('name', 'unit');
             $('#unit_pembelian').val('').hide().removeAttr('required').removeAttr('name');
+            // Kembalikan label ke default
+            $('#label_unit').html('Nama Unit / Code <span class="text-danger">*</span>');
             // Destroy Select2 jika sudah di-initialize
             destroySelect2Unit('#unit_pembelian');
             filterDivisiDitujukan();
@@ -911,6 +921,8 @@
             $('#edit_id_jenis_wo').val('');
             $('#edit_unit').val('').show().attr('required', 'required').attr('name', 'unit');
             $('#edit_unit_pembelian').val('').hide().removeAttr('required').removeAttr('name');
+            // Kembalikan label ke default
+            $('#label_edit_unit').html('Nama Unit / Code <span class="text-danger">*</span>');
             // Destroy Select2 jika sudah di-initialize
             destroySelect2Unit('#edit_unit_pembelian');
             toggleUnitFieldEdit();
@@ -1030,6 +1042,15 @@
                 $('#view_tanggal').text(new Date(data.tanggal).toLocaleDateString('id-ID'));
                 $('#view_divisi_pengaju').text(data.divisi_pengaju);
                 $('#view_ditujukan').text(data.ditujukan);
+                
+                // Ubah label berdasarkan jenis work order
+                const jenisWo = data.jenis_wo || '';
+                if (jenisWo.toLowerCase() === 'pembelian') {
+                    $('#view_label_unit').html('<strong>Barang:</strong>');
+                } else {
+                    $('#view_label_unit').html('<strong>Unit:</strong>');
+                }
+                
                 // Fix unit display - show unit name if available, otherwise show unit string
                 let unitDisplay = '-';
                 if (data.unit && typeof data.unit === 'string') {
@@ -1056,13 +1077,15 @@
                 $('#view_status').html('<span class="badge ' + badgeClass + '">' + statusText + '</span>');
                 
                 $('#view_uraian').text(data.uraian);
-                if (data.dokumentasi && data.dokumentasi !== '-') {
+                
+                // Handle dokumentasi
+                if (data.dokumentasi && data.dokumentasi !== '-' && data.dokumentasi.trim() !== '') {
+                    // Gunakan dokumentasi_url jika ada, jika tidak gunakan path manual sebagai fallback
+                    const dokumentasiUrl = data.dokumentasi_url || ('/storage/' + data.dokumentasi);
+                    
                     // Cek apakah file adalah gambar
                     const fileExt = data.dokumentasi.split('.').pop().toLowerCase();
                     const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(fileExt);
-                    
-                    // Gunakan dokumentasi_url jika ada, jika tidak gunakan path manual sebagai fallback
-                    const dokumentasiUrl = data.dokumentasi_url || '/storage/' + data.dokumentasi;
                     
                     if (isImage) {
                         // Tampilkan button lihat foto
@@ -1074,7 +1097,7 @@
                             '</button>'
                         );
                     } else {
-                        // Untuk file non-gambar, tampilkan button download
+                        // Untuk file non-gambar (PDF, dll), tampilkan button download
                         $('#view_dokumentasi').html(
                             '<a href="' + dokumentasiUrl + '" target="_blank" class="btn btn-sm btn-outline-primary">' +
                             '<i class="fas fa-file"></i> Lihat Dokumentasi' +

@@ -404,7 +404,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="unit">Nama Unit / Code <span class="text-danger">*</span></label>
+                                <label for="unit" id="label_unit">Nama Unit / Code <span class="text-danger">*</span></label>
                                 <!-- Input text untuk jenis work order selain Pembelian -->
                                 <input type="text" class="form-control" id="unit" name="unit" required placeholder="Masukkan unit">
                                 <!-- Select2 untuk jenis work order Pembelian -->
@@ -505,10 +505,8 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="edit_unit">Nama Unit / Code <span class="text-danger">*</span></label>
-                                <!-- Input text untuk jenis work order selain Pembelian -->
+                                <label for="edit_unit" id="edit_label_unit">Nama Unit / Code <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="edit_unit" name="unit" required>
-                                <!-- Select2 untuk jenis work order Pembelian -->
                                 <select class="form-control select2-unit" id="edit_unit_pembelian" style="display: none;">
                                     <option value="">-- Pilih Barang --</option>
                                     @foreach($daftarBarang as $barang)
@@ -587,7 +585,7 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label><strong>Unit:</strong></label>
+                            <label id="view_label_unit"><strong>Unit:</strong></label>
                             <p id="view_unit" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
@@ -788,17 +786,22 @@
             const selectedJenisWo = jenisWoSelect.find('option:selected').data('nama-jenis');
             const unitInput = $('#unit');
             const unitSelect = $('#unit_pembelian');
+            const unitLabel = $('#label_unit');
             
             // Jika jenis work order adalah "Pembelian", tampilkan Select2 dan sembunyikan input
             if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
                 unitInput.hide().removeAttr('required').removeAttr('name');
                 unitSelect.show().attr('required', 'required').attr('name', 'unit');
+                // Ubah label menjadi "Daftar barang"
+                unitLabel.html('Daftar barang <span class="text-danger">*</span>');
                 // Inisialisasi Select2 saat ditampilkan
                 initSelect2Unit('#unit_pembelian');
             } else {
                 // Jika bukan "Pembelian", tampilkan input dan sembunyikan Select2
                 unitInput.show().attr('required', 'required').attr('name', 'unit');
                 unitSelect.hide().removeAttr('required').removeAttr('name').val('');
+                // Ubah label kembali menjadi "Nama Unit / Code"
+                unitLabel.html('Nama Unit / Code <span class="text-danger">*</span>');
                 // Destroy Select2 saat disembunyikan
                 destroySelect2Unit('#unit_pembelian');
             }
@@ -810,17 +813,22 @@
             const selectedJenisWo = jenisWoSelect.find('option:selected').data('nama-jenis');
             const unitInput = $('#edit_unit');
             const unitSelect = $('#edit_unit_pembelian');
+            const unitLabel = $('#edit_label_unit');
             
             // Jika jenis work order adalah "Pembelian", tampilkan Select2 dan sembunyikan input
             if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
                 unitInput.hide().removeAttr('required').removeAttr('name');
                 unitSelect.show().attr('required', 'required').attr('name', 'unit');
+                // Ubah label menjadi "Daftar barang"
+                unitLabel.html('Daftar barang <span class="text-danger">*</span>');
                 // Inisialisasi Select2 saat ditampilkan
                 initSelect2Unit('#edit_unit_pembelian');
             } else {
                 // Jika bukan "Pembelian", tampilkan input dan sembunyikan Select2
                 unitInput.show().attr('required', 'required').attr('name', 'unit');
                 unitSelect.hide().removeAttr('required').removeAttr('name').val('');
+                // Ubah label kembali menjadi "Nama Unit / Code"
+                unitLabel.html('Nama Unit / Code <span class="text-danger">*</span>');
                 // Destroy Select2 saat disembunyikan
                 destroySelect2Unit('#edit_unit_pembelian');
             }
@@ -976,6 +984,8 @@
             $('#ditujukan').val('');
             $('#unit').val('').show().attr('required', 'required').attr('name', 'unit');
             $('#unit_pembelian').val('').hide().removeAttr('required').removeAttr('name');
+            // Reset label ke default
+            $('#label_unit').html('Nama Unit / Code <span class="text-danger">*</span>');
             // Destroy Select2 jika sudah di-initialize
             destroySelect2Unit('#unit_pembelian');
             filterDivisiDitujukan();
@@ -987,6 +997,8 @@
             $('#edit_id_jenis_wo').val('');
             $('#edit_unit').val('').show().attr('required', 'required').attr('name', 'unit');
             $('#edit_unit_pembelian').val('').hide().removeAttr('required').removeAttr('name');
+            // Reset label ke default
+            $('#edit_label_unit').html('Nama Unit / Code <span class="text-danger">*</span>');
             // Destroy Select2 jika sudah di-initialize
             destroySelect2Unit('#edit_unit_pembelian');
             filterDivisiDitujukanEdit();
@@ -1116,6 +1128,14 @@
                     unitDisplay = data.unit_code;
                 }
                 $('#view_unit').text(unitDisplay);
+                
+                // Ubah label unit berdasarkan jenis work order
+                const jenisWo = data.jenis_wo ? data.jenis_wo.toLowerCase() : '';
+                if (jenisWo === 'pembelian') {
+                    $('#view_label_unit').html('<strong>Barang:</strong>');
+                } else {
+                    $('#view_label_unit').html('<strong>Unit:</strong>');
+                }
                 
                 // Set status dengan badge berwarna sesuai status
                 var statusText = data.status || 'Menunggu';

@@ -103,10 +103,11 @@ class KadivQcController extends Controller
         $karyawan = DB::table('karyawan')->get();
         $unitOptions = Unit::all();
         $jenisWorkOrder = \App\Models\JenisWorkOrder::all();
+        $daftarBarang = \App\Models\DaftarBarang::all();
         
         $nextWorkOrderNumber = $this->generateWorkOrderNumber();
         
-        return view('kadivqc.work_order', compact('workOrders', 'divisi', 'unit', 'nextWorkOrderNumber', 'karyawan', 'unitOptions', 'jenisWorkOrder'));
+        return view('kadivqc.work_order', compact('workOrders', 'divisi', 'unit', 'nextWorkOrderNumber', 'karyawan', 'unitOptions', 'jenisWorkOrder', 'daftarBarang'));
     }
     
     /**
@@ -247,6 +248,13 @@ class KadivQcController extends Controller
     {
         $workOrder = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])->findOrFail($id);
         
+        // Generate URL untuk dokumentasi jika ada
+        $dokumentasiUrl = null;
+        if ($workOrder->dokumentasi && $workOrder->dokumentasi !== '-' && !empty(trim($workOrder->dokumentasi))) {
+            // Gunakan asset() helper untuk generate URL relatif yang kompatibel dengan Laragon
+            $dokumentasiUrl = asset('storage/' . $workOrder->dokumentasi);
+        }
+        
         $data = [
             'id_surat_pengajuan' => $workOrder->id_surat_pengajuan,
             'no_surat_pengajuan' => $workOrder->no_surat_pengajuan,
@@ -260,6 +268,7 @@ class KadivQcController extends Controller
             'id_unit' => $workOrder->id_unit,
             'uraian' => $workOrder->uraian,
             'dokumentasi' => $workOrder->dokumentasi,
+            'dokumentasi_url' => $dokumentasiUrl, // URL lengkap untuk akses file
             'status' => $workOrder->verifikator ? $workOrder->verifikator->nama_status : ($workOrder->status ?? 'Menunggu'),
             'id_verifikator' => $workOrder->id_verifikator,
         ];

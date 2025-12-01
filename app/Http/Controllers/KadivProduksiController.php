@@ -251,7 +251,7 @@ class KadivProduksiController extends Controller
         
         // Generate URL untuk dokumentasi jika ada
         $dokumentasiUrl = null;
-        if ($workOrder->dokumentasi) {
+        if ($workOrder->dokumentasi && $workOrder->dokumentasi !== '-' && !empty(trim($workOrder->dokumentasi))) {
             // Gunakan asset() helper untuk generate URL relatif yang kompatibel dengan Laragon
             $dokumentasiUrl = asset('storage/' . $workOrder->dokumentasi);
         }
