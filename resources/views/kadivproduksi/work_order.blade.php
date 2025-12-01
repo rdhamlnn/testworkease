@@ -405,7 +405,7 @@
                                 <!-- Input text untuk jenis work order selain Pembelian -->
                                 <input type="text" class="form-control" id="unit" name="unit" required placeholder="Masukkan unit">
                                 <!-- Select2 untuk jenis work order Pembelian -->
-                                <select class="form-control select2-unit" id="unit_pembelian" name="unit" style="display: none;">
+                                <select class="form-control select2-unit" id="unit_pembelian" style="display: none;">
                                     <option value="">-- Pilih Barang --</option>
                                     @foreach($daftarBarang as $barang)
                                         <option value="{{ $barang->nama_barang }}">{{ $barang->nama_barang }}</option>
@@ -417,7 +417,7 @@
                             <div class="form-group">
                                 <label for="dokumentasi">Dokumentasi</label>
                                 <input type="file" class="form-control" id="dokumentasi" name="dokumentasi" accept=".pdf,.jpg,.jpeg,.png">
-                                <small class="form-text text-muted">Format: JPG, PNG, PDF. Maksimal 2MB.</small>
+                                <small class="form-text text-muted">Format: JPG, PNG. Maksimal 2MB.</small>
                             </div>
                         </div>
                     </div>
@@ -499,7 +499,7 @@
                                 <!-- Input text untuk jenis work order selain Pembelian -->
                                 <input type="text" class="form-control" id="edit_unit" name="unit" required>
                                 <!-- Select2 untuk jenis work order Pembelian -->
-                                <select class="form-control select2-unit" id="edit_unit_pembelian" name="unit" style="display: none;">
+                                <select class="form-control select2-unit" id="edit_unit_pembelian" style="display: none;">
                                     <option value="">-- Pilih Barang --</option>
                                     @foreach($daftarBarang as $barang)
                                         <option value="{{ $barang->nama_barang }}">{{ $barang->nama_barang }}</option>
@@ -845,14 +845,14 @@
             
             // Jika jenis work order adalah "Pembelian", tampilkan Select2 dan sembunyikan input
             if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
-                unitInput.hide().removeAttr('required');
-                unitSelect.show().attr('required', 'required');
+                unitInput.hide().removeAttr('required').removeAttr('name');
+                unitSelect.show().attr('required', 'required').attr('name', 'unit');
                 // Inisialisasi Select2 saat ditampilkan
                 initSelect2Unit('#unit_pembelian');
             } else {
                 // Jika bukan "Pembelian", tampilkan input dan sembunyikan Select2
-                unitInput.show().attr('required', 'required');
-                unitSelect.hide().removeAttr('required').val('');
+                unitInput.show().attr('required', 'required').attr('name', 'unit');
+                unitSelect.hide().removeAttr('required').removeAttr('name').val('');
                 // Destroy Select2 saat disembunyikan
                 destroySelect2Unit('#unit_pembelian');
             }
@@ -867,14 +867,14 @@
             
             // Jika jenis work order adalah "Pembelian", tampilkan Select2 dan sembunyikan input
             if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
-                unitInput.hide().removeAttr('required');
-                unitSelect.show().attr('required', 'required');
+                unitInput.hide().removeAttr('required').removeAttr('name');
+                unitSelect.show().attr('required', 'required').attr('name', 'unit');
                 // Inisialisasi Select2 saat ditampilkan
                 initSelect2Unit('#edit_unit_pembelian');
             } else {
                 // Jika bukan "Pembelian", tampilkan input dan sembunyikan Select2
-                unitInput.show().attr('required', 'required');
-                unitSelect.hide().removeAttr('required').val('');
+                unitInput.show().attr('required', 'required').attr('name', 'unit');
+                unitSelect.hide().removeAttr('required').removeAttr('name').val('');
                 // Destroy Select2 saat disembunyikan
                 destroySelect2Unit('#edit_unit_pembelian');
             }
@@ -898,8 +898,8 @@
         // Reset field unit saat modal create dibuka
         $('#tambahWorkOrderModal').on('show.bs.modal', function() {
             $('#id_jenis_wo').val('');
-            $('#unit').val('').show().attr('required', 'required');
-            $('#unit_pembelian').val('').hide().removeAttr('required');
+            $('#unit').val('').show().attr('required', 'required').attr('name', 'unit');
+            $('#unit_pembelian').val('').hide().removeAttr('required').removeAttr('name');
             // Destroy Select2 jika sudah di-initialize
             destroySelect2Unit('#unit_pembelian');
             filterDivisiDitujukan();
@@ -909,8 +909,8 @@
         // Reset field unit saat modal edit dibuka
         $('#editWorkOrderModal').on('show.bs.modal', function() {
             $('#edit_id_jenis_wo').val('');
-            $('#edit_unit').val('').show().attr('required', 'required');
-            $('#edit_unit_pembelian').val('').hide().removeAttr('required');
+            $('#edit_unit').val('').show().attr('required', 'required').attr('name', 'unit');
+            $('#edit_unit_pembelian').val('').hide().removeAttr('required').removeAttr('name');
             // Destroy Select2 jika sudah di-initialize
             destroySelect2Unit('#edit_unit_pembelian');
             toggleUnitFieldEdit();
@@ -963,14 +963,59 @@
         });
     });
 
-    // Form tambah work order - biarkan submit normal ke server
-    $('#tambahWorkOrderForm').on('submit', function() {
-        // Form akan submit ke server secara normal
-        // Server akan handle validasi dan redirect
+    $('#tambahWorkOrderForm').on('submit', function(e) {
+        // Pastikan hanya field yang terlihat yang memiliki name="unit"
+        const unitInput = $('#unit');
+        const unitSelect = $('#unit_pembelian');
+        
+        if (unitSelect.is(':visible') && unitSelect.hasClass('select2-hidden-accessible')) {
+            // Pastikan Select2 memiliki name attribute
+            if (!unitSelect.attr('name')) {
+                unitSelect.attr('name', 'unit');
+            }
+            // Pastikan input text tidak memiliki name attribute
+            if (unitInput.attr('name')) {
+                unitInput.removeAttr('name');
+            }
+        } else if (unitInput.is(':visible')) {
+            // Jika input text terlihat, pastikan nilainya dikirim
+            if (!unitInput.attr('name')) {
+                unitInput.attr('name', 'unit');
+            }
+            // Pastikan Select2 tidak memiliki name attribute
+            if (unitSelect.attr('name')) {
+                unitSelect.removeAttr('name');
+            }
+        }
     });
 
-    // Form edit work order - biarkan submit normal ke server
-    $('#editWorkOrderForm').on('submit', function() {
+    // Form edit work order - pastikan nilai unit dikirim dengan benar
+    $('#editWorkOrderForm').on('submit', function(e) {
+        // Pastikan hanya field yang terlihat yang memiliki name="unit"
+        const unitInput = $('#edit_unit');
+        const unitSelect = $('#edit_unit_pembelian');
+        
+        // Jika Select2 terlihat, pastikan nilainya dikirim
+        if (unitSelect.is(':visible') && unitSelect.hasClass('select2-hidden-accessible')) {
+            // Pastikan Select2 memiliki name attribute
+            if (!unitSelect.attr('name')) {
+                unitSelect.attr('name', 'unit');
+            }
+            // Pastikan input text tidak memiliki name attribute
+            if (unitInput.attr('name')) {
+                unitInput.removeAttr('name');
+            }
+        } else if (unitInput.is(':visible')) {
+            // Jika input text terlihat, pastikan nilainya dikirim
+            if (!unitInput.attr('name')) {
+                unitInput.attr('name', 'unit');
+            }
+            // Pastikan Select2 tidak memiliki name attribute
+            if (unitSelect.attr('name')) {
+                unitSelect.removeAttr('name');
+            }
+        }
+        
         // Form akan submit ke server secara normal
         // Server akan handle validasi dan redirect
     });
@@ -1016,11 +1061,14 @@
                     const fileExt = data.dokumentasi.split('.').pop().toLowerCase();
                     const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(fileExt);
                     
+                    // Gunakan dokumentasi_url jika ada, jika tidak gunakan path manual sebagai fallback
+                    const dokumentasiUrl = data.dokumentasi_url || '/storage/' + data.dokumentasi;
+                    
                     if (isImage) {
                         // Tampilkan button lihat foto
                         $('#view_dokumentasi').html(
                             '<button type="button" class="btn btn-sm btn-outline-primary btn-view-dokumentasi-modal" ' +
-                            'data-foto="/storage/' + data.dokumentasi + '" ' +
+                            'data-foto="' + dokumentasiUrl + '" ' +
                             'data-nama="' + (data.no_work_order || data.no_surat_pengajuan) + '">' +
                             '<i class="fas fa-image"></i> Lihat Foto' +
                             '</button>'
@@ -1028,7 +1076,7 @@
                     } else {
                         // Untuk file non-gambar, tampilkan button download
                         $('#view_dokumentasi').html(
-                            '<a href="/storage/' + data.dokumentasi + '" target="_blank" class="btn btn-sm btn-outline-primary">' +
+                            '<a href="' + dokumentasiUrl + '" target="_blank" class="btn btn-sm btn-outline-primary">' +
                             '<i class="fas fa-file"></i> Lihat Dokumentasi' +
                             '</a>'
                         );
