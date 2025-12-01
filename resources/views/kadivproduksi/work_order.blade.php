@@ -271,10 +271,17 @@
     }
     
     .nav-tabs-scrollable .nav-link.active {
-        color: #fff;
+        color: #fff !important;
         background-color: #1B3C88;
         border-color: #1B3C88 #1B3C88 transparent;
         font-weight: 600;
+    }
+    
+    .nav-tabs-scrollable .nav-link.active,
+    .nav-tabs-scrollable .nav-link.active i,
+    .nav-tabs-scrollable .nav-link.active .fas,
+    .nav-tabs-scrollable .nav-link.active .fa {
+        color: #fff !important;
     }
     
     .tab-content-scrollable {
@@ -300,6 +307,56 @@
     
     .tab-content-scrollable::-webkit-scrollbar-thumb:hover {
         background: #0f2a5a;
+    }
+    
+    /* Qty Input Styles */
+    .qty-control-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-left: 10px;
+    }
+    
+    .qty-control-wrapper .btn-qty {
+        width: 35px;
+        height: 35px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #ced4da;
+        background-color: #fff;
+        color: #495057;
+        font-weight: bold;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+    
+    .qty-control-wrapper .btn-qty:hover {
+        background-color: #e9ecef;
+        border-color: #adb5bd;
+    }
+    
+    .qty-control-wrapper .btn-qty:active {
+        background-color: #dee2e6;
+    }
+    
+    .qty-control-wrapper .qty-display {
+        width: 50px;
+        height: 35px;
+        text-align: center;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #fff;
+        font-weight: 600;
+        font-size: 14px;
+    }
+    
+    .input-group .select2-container {
+        flex: 1;
     }
 </style>
 @endsection
@@ -488,7 +545,6 @@
                                                 @endif
                                             @endforeach
                                         </select>
-                                        <small class="form-text text-muted">Pilih Jenis Work Order terlebih dahulu untuk mengaktifkan field ini</small>
                                     </div>
                                 </div>
                             </div>
@@ -599,7 +655,6 @@
                             <div class="form-group">
                                 <label for="edit_ditujukan">Ditujukan <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="edit_ditujukan" name="ditujukan" required disabled>
-                                <small class="form-text text-muted">Pilih Jenis Work Order terlebih dahulu untuk mengaktifkan field ini</small>
                             </div>
                         </div>
                     </div>
@@ -901,13 +956,28 @@
             const $template = $('#template_barang_options');
             const optionsHtml = $template.html();
             
+            const qtyBtnClass = isEdit ? 'btn-qty-minus-edit' : 'btn-qty-minus';
+            const qtyPlusBtnClass = isEdit ? 'btn-qty-plus-edit' : 'btn-qty-plus';
+            const qtyInputClass = isEdit ? 'qty-input-edit' : 'qty-input';
+            
             return `
                 <div class="unit-select-wrapper mb-2" data-index="${index}">
-                    <div class="input-group">
-                        <select class="form-control select2-unit-dynamic" name="unit[]" data-index="${index}">
+                    <div class="input-group" style="display: flex; align-items: center;">
+                        <select class="form-control select2-unit-dynamic" name="unit[]" data-index="${index}" style="flex: 1;">
                             <option value="">-- Pilih Barang --</option>
                             ${optionsHtml}
                         </select>
+                        <div class="qty-control-wrapper" style="display: none;">
+                            <button type="button" class="btn-qty ${qtyBtnClass}" data-index="${index}" title="Kurangi Qty">
+                                <span style="font-size: 18px;">−</span>
+                            </button>
+                            <div class="qty-display">
+                                <span class="${qtyInputClass}" data-index="${index}">1</span>
+                            </div>
+                            <button type="button" class="btn-qty ${qtyPlusBtnClass}" data-index="${index}" title="Tambah Qty">
+                                <span style="font-size: 18px;">+</span>
+                            </button>
+                        </div>
                         <div class="input-group-append">
                             <button type="button" class="btn btn-success btn-sm ${btnClass}" title="Tambah Barang" style="display: none;">
                                 <i class="fas fa-plus"></i> Tambah
@@ -952,12 +1022,22 @@
                 }
             });
             
-            // Event handler: ketika user memilih barang, update visibility button
+            // Event handler: ketika user memilih barang, update visibility button dan tampilkan qty control
             $(selector).off('change.select2-dynamic').on('change.select2-dynamic', function() {
                 // Update visibility button hapus setelah perubahan
                 const $wrapper = $(this).closest('.unit-select-wrapper');
                 const isEdit = $wrapper.closest('#edit_unit_pembelian_container').length > 0;
                 updateHapusButtonVisibility(isEdit);
+                
+                // Tampilkan/sembunyikan qty control berdasarkan apakah barang dipilih
+                const $qtyControl = $wrapper.find('.qty-control-wrapper');
+                if ($(this).val() && $(this).val() !== '') {
+                    $qtyControl.show();
+                } else {
+                    $qtyControl.hide();
+                    // Reset qty ke 1
+                    $wrapper.find('.qty-input, .qty-input-edit').text('1');
+                }
             });
             
             // Set nilai kembali setelah initialize
@@ -1250,6 +1330,46 @@
             removeUnitSelect($wrapper, true);
         });
         
+        // Event handler untuk button kurang qty (form create)
+        $(document).on('click', '.btn-qty-minus', function() {
+            const index = $(this).data('index');
+            const $qtyDisplay = $(`.qty-input[data-index="${index}"]`);
+            let currentQty = parseInt($qtyDisplay.text()) || 1;
+            if (currentQty > 1) {
+                currentQty--;
+                $qtyDisplay.text(currentQty);
+            }
+        });
+        
+        // Event handler untuk button tambah qty (form create)
+        $(document).on('click', '.btn-qty-plus', function() {
+            const index = $(this).data('index');
+            const $qtyDisplay = $(`.qty-input[data-index="${index}"]`);
+            let currentQty = parseInt($qtyDisplay.text()) || 1;
+            currentQty++;
+            $qtyDisplay.text(currentQty);
+        });
+        
+        // Event handler untuk button kurang qty (form edit)
+        $(document).on('click', '.btn-qty-minus-edit', function() {
+            const index = $(this).data('index');
+            const $qtyDisplay = $(`.qty-input-edit[data-index="${index}"]`);
+            let currentQty = parseInt($qtyDisplay.text()) || 1;
+            if (currentQty > 1) {
+                currentQty--;
+                $qtyDisplay.text(currentQty);
+            }
+        });
+        
+        // Event handler untuk button tambah qty (form edit)
+        $(document).on('click', '.btn-qty-plus-edit', function() {
+            const index = $(this).data('index');
+            const $qtyDisplay = $(`.qty-input-edit[data-index="${index}"]`);
+            let currentQty = parseInt($qtyDisplay.text()) || 1;
+            currentQty++;
+            $qtyDisplay.text(currentQty);
+        });
+        
         // Reset field unit saat modal create dibuka
         $('#tambahWorkOrderModal').on('show.bs.modal', function() {
             $('#id_jenis_wo').val('');
@@ -1440,12 +1560,15 @@
         
         // Handle unit field
         if (unitContainer.length && unitContainer.find('.select2-unit-dynamic').length > 0) {
-            // Jika container dinamis ada dan memiliki select2, kumpulkan semua nilai
+            // Jika container dinamis ada dan memiliki select2, kumpulkan semua nilai dengan qty
             const unitValues = [];
             unitContainer.find('.select2-unit-dynamic').each(function() {
                 const value = $(this).val();
                 if (value) {
-                    unitValues.push(value);
+                    const index = $(this).data('index');
+                    const qty = parseInt($(`.qty-input[data-index="${index}"]`).text()) || 1;
+                    // Format: "Barang (qty: 5)"
+                    unitValues.push(`${value} (qty: ${qty})`);
                 }
             });
             
@@ -1490,12 +1613,15 @@
         $('#hidden_edit_unit_field').remove();
         
         if (unitContainer.is(':visible')) {
-            // Jika container dinamis terlihat, kumpulkan semua nilai dari select2
+            // Jika container dinamis terlihat, kumpulkan semua nilai dari select2 dengan qty
             const unitValues = [];
             unitContainer.find('.select2-unit-dynamic').each(function() {
                 const value = $(this).val();
                 if (value) {
-                    unitValues.push(value);
+                    const index = $(this).data('index');
+                    const qty = parseInt($(`.qty-input-edit[data-index="${index}"]`).text()) || 1;
+                    // Format: "Barang (qty: 5)"
+                    unitValues.push(`${value} (qty: ${qty})`);
                 }
             });
             
@@ -1645,12 +1771,43 @@
                 if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
                     // Handle multiple values - jika data.unit adalah array atau string yang dipisah koma
                     let unitValues = [];
+                    let unitQtys = [];
+                    
                     if (Array.isArray(data.unit)) {
                         unitValues = data.unit.filter(u => u);
-                    } else if (typeof data.unit === 'string' && data.unit.includes(',')) {
-                        unitValues = data.unit.split(',').map(v => v.trim()).filter(v => v);
+                        unitQtys = unitValues.map(() => 1); // Default qty 1
+                    } else if (typeof data.unit === 'string') {
+                        // Parse format: "Barang1 (qty: 5), Barang2 (qty: 3)" atau "Barang1, Barang2"
+                        if (data.unit.includes(',')) {
+                            const parts = data.unit.split(',').map(v => v.trim());
+                            parts.forEach(part => {
+                                const qtyMatch = part.match(/\(qty:\s*(\d+)\)/);
+                                if (qtyMatch) {
+                                    const qty = parseInt(qtyMatch[1]);
+                                    const barangName = part.replace(/\s*\(qty:\s*\d+\)/, '').trim();
+                                    unitValues.push(barangName);
+                                    unitQtys.push(qty);
+                                } else {
+                                    unitValues.push(part);
+                                    unitQtys.push(1);
+                                }
+                            });
+                        } else {
+                            // Single value
+                            const qtyMatch = data.unit.match(/\(qty:\s*(\d+)\)/);
+                            if (qtyMatch) {
+                                const qty = parseInt(qtyMatch[1]);
+                                const barangName = data.unit.replace(/\s*\(qty:\s*\d+\)/, '').trim();
+                                unitValues.push(barangName);
+                                unitQtys.push(qty);
+                            } else {
+                                unitValues.push(data.unit);
+                                unitQtys.push(1);
+                            }
+                        }
                     } else if (data.unit) {
                         unitValues = [data.unit];
+                        unitQtys = [1];
                     }
                     
                     // Clear container terlebih dahulu
@@ -1671,8 +1828,14 @@
                             // Set nilai dan initialize Select2
                             setTimeout(function() {
                                 const $select = container.find('.select2-unit-dynamic[data-index="' + index + '"]');
+                                const $wrapper = $select.closest('.unit-select-wrapper');
                                 initSelect2Dynamic($select);
                                 $select.val(value).trigger('change.select2-dynamic');
+                                
+                                // Set qty
+                                const qty = unitQtys[index] || 1;
+                                $wrapper.find('.qty-input-edit[data-index="' + index + '"]').text(qty);
+                                $wrapper.find('.qty-control-wrapper').show();
                                 
                                 // Tampilkan button Tambah jika ada nilai
                                 if (value) {
@@ -1698,7 +1861,9 @@
                     if (Array.isArray(data.unit)) {
                         $('#edit_unit').val(data.unit.join(', '));
                     } else {
-                        $('#edit_unit').val(data.unit);
+                        // Remove qty format jika ada
+                        const unitValue = data.unit ? data.unit.replace(/\s*\(qty:\s*\d+\)/g, '') : '';
+                        $('#edit_unit').val(unitValue);
                     }
                 }
                 
