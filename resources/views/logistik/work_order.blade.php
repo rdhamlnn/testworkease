@@ -709,9 +709,7 @@
                                     <div class="form-group">
                                         <label for="unit" id="label_unit">Nama Unit / Code <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" id="unit" name="unit" required placeholder="Masukkan unit">
-                                        <!-- Container untuk Select2 dinamis (jenis work order Pembelian) -->
                                         <div id="unit_pembelian_container" style="display: none;"></div>
-                                        <!-- Template tersembunyi untuk option barang -->
                                         <select id="template_barang_options" style="display: none;">
                                             @foreach($daftarBarang as $barang)
                                                 <option value="{{ $barang->nama_barang }}">{{ $barang->nama_barang }}</option>
@@ -800,7 +798,7 @@
                             <select class="form-control" name="id_jenis_wo" id="editJenisWoLogistik" required>
                                 <option value="">-- Pilih Jenis --</option>
                                 @foreach($jenisWorkOrder as $jenis)
-                                    <option value="{{ $jenis->id_jenis_wo }}">{{ $jenis->nama_jenis_wo }}</option>
+                                    <option value="{{ $jenis->id_jenis_wo }}" data-nama-jenis="{{ $jenis->nama_jenis_wo }}">{{ $jenis->nama_jenis_wo }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -808,8 +806,10 @@
 
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label>Nama Unit / Code <span class="text-danger">*</span></label>
+                            <label id="label_edit_unit">Nama Unit / Code <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" name="unit" id="editUnitLogistik" required placeholder="Masukkan unit">
+                            <!-- Container untuk Select2 dinamis (jenis work order Pembelian) -->
+                            <div id="edit_unit_pembelian_container" style="display: none;"></div>
                         </div>
                         <div class="form-group col-md-6">
                             <label>Dokumentasi</label>
@@ -960,6 +960,120 @@
 
         // Nonaktifkan enforceFocus Bootstrap untuk kompatibilitas dengan Select2
         $.fn.modal.Constructor.prototype.enforceFocus = function() {};
+
+        // Inisialisasi Select2 untuk combobox unit
+        function initSelect2Unit(selector) {
+            if ($(selector).hasClass('select2-hidden-accessible')) {
+                // Simpan nilai sebelum destroy
+                const currentValue = $(selector).val();
+                $(selector).select2('destroy');
+                // Set nilai kembali setelah destroy
+                if (currentValue) {
+                    $(selector).val(currentValue);
+                }
+            }
+            
+            // Tentukan parent modal berdasarkan selector
+            let dropdownParent = $(selector).closest('.modal');
+            if (dropdownParent.length === 0) {
+                dropdownParent = $(document.body);
+            }
+            
+            // Simpan nilai sebelum initialize
+            const savedValue = $(selector).val();
+            
+            $(selector).select2({
+                theme: 'bootstrap4',
+                placeholder: 'Cari dan pilih barang...',
+                allowClear: true,
+                width: '100%',
+                multiple: true,
+                dropdownParent: dropdownParent, // Render dropdown di dalam modal
+                language: {
+                    noResults: function() {
+                        return "Tidak ada hasil";
+                    },
+                    searching: function() {
+                        return "Mencari...";
+                    }
+                }
+            });
+            
+            // Set nilai kembali setelah initialize
+            if (savedValue) {
+                $(selector).val(savedValue).trigger('change');
+            }
+            
+            // Event handler untuk memastikan nilai tetap terlihat setelah select
+            $(selector).off('select2:select').on('select2:select', function() {
+                const value = $(this).val();
+                if (value) {
+                    // Force update tampilan
+                    $(this).trigger('change');
+                    // Pastikan rendered element terlihat
+                    setTimeout(function() {
+                        const $rendered = $(selector).next('.select2-container').find('.select2-selection__rendered');
+                        if ($rendered.length) {
+                            $rendered.css({
+                                'visibility': 'visible',
+                                'opacity': '1',
+                                'display': 'block',
+                                'color': '#495057'
+                            });
+                        }
+                    }, 50);
+                }
+            });
+            
+            // Event handler untuk memastikan nilai tetap terlihat setelah close
+            $(selector).off('select2:close').on('select2:close', function() {
+                const value = $(this).val();
+                if (value) {
+                    // Force update tampilan
+                    $(this).trigger('change');
+                    // Pastikan rendered element terlihat
+                    setTimeout(function() {
+                        const $rendered = $(selector).next('.select2-container').find('.select2-selection__rendered');
+                        if ($rendered.length) {
+                            $rendered.css({
+                                'visibility': 'visible',
+                                'opacity': '1',
+                                'display': 'block',
+                                'color': '#495057'
+                            });
+                        }
+                    }, 50);
+                }
+            });
+            
+            // Event handler untuk memastikan nilai tetap terlihat saat blur
+            $(selector).off('blur').on('blur', function() {
+                const value = $(this).val();
+                if (value && $(this).hasClass('select2-hidden-accessible')) {
+                    // Force update tampilan
+                    $(this).trigger('change.select2');
+                    // Pastikan rendered element terlihat
+                    setTimeout(function() {
+                        const $rendered = $(selector).next('.select2-container').find('.select2-selection__rendered');
+                        if ($rendered.length) {
+                            $rendered.css({
+                                'visibility': 'visible',
+                                'opacity': '1',
+                                'display': 'block',
+                                'color': '#495057'
+                            });
+                        }
+                    }, 50);
+                }
+            });
+        }
+
+        // Destroy Select2
+        function destroySelect2Unit(selector) {
+            if ($(selector).hasClass('select2-hidden-accessible')) {
+                $(selector).select2('destroy');
+            }
+        }
 
         // Template HTML untuk select2 dinamis
         function getUnitSelectTemplate(index, isEdit = false) {
@@ -1244,6 +1358,107 @@
             }
         }
         
+        // Toggle field unit untuk form edit
+        function toggleUnitFieldEdit() {
+            const jenisWoSelect = $('#editJenisWoLogistik');
+            const selectedJenisWo = jenisWoSelect.find('option:selected').data('nama-jenis');
+            const unitInput = $('#editUnitLogistik');
+            const unitContainer = $('#edit_unit_pembelian_container');
+            const unitLabel = $('#label_edit_unit');
+            
+            // Jika jenis work order adalah "Pembelian", tampilkan container dinamis dan sembunyikan input
+            if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
+                unitInput.hide().removeAttr('required').removeAttr('name');
+                unitContainer.show();
+                // Ubah label menjadi "Daftar barang"
+                unitLabel.html('Daftar barang <span class="text-danger">*</span>');
+                
+                // Jika container kosong, tambahkan select pertama
+                if (unitContainer.find('.unit-select-wrapper').length === 0) {
+                    unitContainer.html(getUnitSelectTemplate(0, true));
+                    const firstSelect = unitContainer.find('.select2-unit-dynamic[data-index="0"]');
+                    initSelect2Dynamic(firstSelect);
+                } else {
+                    // Re-initialize semua select yang ada
+                    unitContainer.find('.select2-unit-dynamic').each(function() {
+                        initSelect2Dynamic($(this));
+                    });
+                }
+            } else {
+                // Jika bukan "Pembelian", tampilkan input dan sembunyikan container
+                unitInput.show().attr('required', 'required').attr('name', 'unit');
+                unitContainer.hide();
+                // Clear semua select2 dinamis
+                clearUnitSelects(true);
+                // Ubah label kembali menjadi "Nama Unit / Code"
+                unitLabel.html('Nama Unit / Code <span class="text-danger">*</span>');
+            }
+        }
+        
+        // Filter divisi "Ditujukan" untuk form edit
+        function filterDivisiDitujukanEdit() {
+            const jenisWoSelect = $('#editJenisWoLogistik');
+            const ditujukanSelect = $('#editDitujukanLogistik');
+            const selectedJenisWo = jenisWoSelect.find('option:selected').data('nama-jenis');
+            
+            // Simpan semua option divisi terlebih dahulu
+            if (!ditujukanSelect.data('original-options')) {
+                ditujukanSelect.data('original-options', ditujukanSelect.html());
+            }
+            
+            // Reset ke semua option
+            ditujukanSelect.html(ditujukanSelect.data('original-options'));
+            
+            // Jika tidak ada jenis WO yang dipilih, tampilkan semua
+            if (!selectedJenisWo) {
+                return;
+            }
+            
+            // Filter berdasarkan jenis work order
+            let allowedDivisi = [];
+            
+            if (selectedJenisWo.toLowerCase() === 'pembelian') {
+                allowedDivisi = ['Purchasing'];
+            } else if (selectedJenisWo.toLowerCase() === 'perbaikan') {
+                allowedDivisi = ['Mekanik'];
+            } else if (selectedJenisWo.toLowerCase() === 'permintaan') {
+                allowedDivisi = ['Produksi', 'Plasma', 'Quality Control'];
+            }
+            
+            // Jika ada filter, sembunyikan option yang tidak sesuai
+            if (allowedDivisi.length > 0) {
+                ditujukanSelect.find('option').each(function() {
+                    const optionValue = $(this).val();
+                    const optionText = $(this).text().trim();
+                    
+                    // Selalu tampilkan option placeholder
+                    if (optionValue === '') {
+                        return;
+                    }
+                    
+                    // Cek apakah divisi ini termasuk dalam allowedDivisi
+                    const isAllowed = allowedDivisi.some(divisi => 
+                        optionText.toLowerCase() === divisi.toLowerCase() || 
+                        optionValue.toLowerCase() === divisi.toLowerCase()
+                    );
+                    
+                    if (!isAllowed) {
+                        $(this).hide();
+                    } else {
+                        $(this).show();
+                    }
+                });
+                
+                // Reset pilihan jika yang dipilih tidak sesuai filter
+                const currentValue = ditujukanSelect.val();
+                if (currentValue && !allowedDivisi.some(divisi => 
+                    currentValue.toLowerCase() === divisi.toLowerCase()
+                )) {
+                    ditujukanSelect.val('');
+                }
+            }
+        }
+        
         // Event listener untuk perubahan jenis work order
         $('#id_jenis_wo').on('change', function() {
             const selectedValue = $(this).val();
@@ -1261,6 +1476,25 @@
             
             filterDivisiDitujukan();
             toggleUnitField();
+        });
+        
+        // Event listener untuk perubahan jenis work order di form edit
+        $('#editJenisWoLogistik').on('change', function() {
+            const selectedValue = $(this).val();
+            const ditujukanSelect = $('#editDitujukanLogistik');
+            
+            // Enable field Ditujukan jika Jenis Work Order sudah dipilih
+            if (selectedValue && selectedValue !== '') {
+                ditujukanSelect.prop('disabled', false);
+                ditujukanSelect.find('option:first').text('-- Pilih Divisi --');
+            } else {
+                ditujukanSelect.prop('disabled', true);
+                ditujukanSelect.val('');
+                ditujukanSelect.find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
+            }
+            
+            filterDivisiDitujukanEdit();
+            toggleUnitFieldEdit();
         });
         
         // Jalankan filter saat halaman dimuat (jika ada nilai yang sudah dipilih)
@@ -1298,6 +1532,37 @@
             $qtyDisplay.text(currentQty);
         });
         
+        // Event handler untuk button tambah barang (form edit)
+        $(document).on('click', '.btn-tambah-barang-edit', function() {
+            addUnitSelect(true);
+        });
+        
+        // Event handler untuk button hapus barang (form edit)
+        $(document).on('click', '.btn-hapus-barang-edit', function() {
+            const $wrapper = $(this).closest('.unit-select-wrapper');
+            removeUnitSelect($wrapper, true);
+        });
+        
+        // Event handler untuk button kurang qty (form edit)
+        $(document).on('click', '.btn-qty-minus-edit', function() {
+            const index = $(this).data('index');
+            const $qtyDisplay = $(`.qty-input-edit[data-index="${index}"]`);
+            let currentQty = parseInt($qtyDisplay.text()) || 1;
+            if (currentQty > 1) {
+                currentQty--;
+                $qtyDisplay.text(currentQty);
+            }
+        });
+        
+        // Event handler untuk button tambah qty (form edit)
+        $(document).on('click', '.btn-qty-plus-edit', function() {
+            const index = $(this).data('index');
+            const $qtyDisplay = $(`.qty-input-edit[data-index="${index}"]`);
+            let currentQty = parseInt($qtyDisplay.text()) || 1;
+            currentQty++;
+            $qtyDisplay.text(currentQty);
+        });
+        
         // Reset field ditujukan dan unit saat modal create dibuka
         $('#tambahWorkOrderModal').on('show.bs.modal', function() {
             $('#id_jenis_wo').val('');
@@ -1312,10 +1577,24 @@
             toggleUnitField();
         });
 
+        // Reset field ditujukan dan unit saat modal edit dibuka
+        $('#modalEditWorkOrderLogistik').on('show.bs.modal', function() {
+            $('#editJenisWoLogistik').val('');
+            $('#editDitujukanLogistik').val('').prop('disabled', true);
+            $('#editDitujukanLogistik').find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
+            $('#editUnitLogistik').val('').show().attr('required', 'required').attr('name', 'unit');
+            $('#edit_unit_pembelian_container').hide();
+            clearUnitSelects(true);
+            // Kembalikan label ke default
+            $('#label_edit_unit').html('Nama Unit / Code <span class="text-danger">*</span>');
+            filterDivisiDitujukanEdit();
+            toggleUnitFieldEdit();
+        });
+
         // Destroy Select2 saat modal ditutup
-        $('#tambahWorkOrderModal').on('hidden.bs.modal', function() {
+        $('#tambahWorkOrderModal, #modalEditWorkOrderLogistik').on('hidden.bs.modal', function() {
             // Destroy semua Select2 dinamis
-            $('#unit_pembelian_container').find('.select2-unit-dynamic').each(function() {
+            $('#unit_pembelian_container, #edit_unit_pembelian_container').find('.select2-unit-dynamic').each(function() {
                 if ($(this).hasClass('select2-hidden-accessible')) {
                     $(this).select2('destroy');
                 }
@@ -1334,6 +1613,23 @@
             if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
                 setTimeout(function() {
                     $('#unit_pembelian_container').find('.select2-unit-dynamic').each(function() {
+                        initSelect2Dynamic($(this));
+                    });
+                }, 100);
+            }
+        });
+        
+        $('#modalEditWorkOrderLogistik').on('shown.bs.modal', function() {
+            // Focus ke field Jenis Work Order
+            setTimeout(function() {
+                $('#editJenisWoLogistik').focus();
+            }, 300);
+            
+            // Re-initialize Select2 dinamis jika jenis work order adalah Pembelian
+            const selectedJenisWo = $('#editJenisWoLogistik').find('option:selected').data('nama-jenis');
+            if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
+                setTimeout(function() {
+                    $('#edit_unit_pembelian_container').find('.select2-unit-dynamic').each(function() {
                         initSelect2Dynamic($(this));
                     });
                 }, 100);
@@ -1368,6 +1664,123 @@
         // Hapus hidden input unit yang mungkin sudah ada
         $('#hidden_unit_field').remove();
         
+        // Pastikan semua tab-pane terlihat untuk validasi (temporary)
+        const $form = $(this);
+        const $tabPanes = $form.find('.tab-pane');
+        $tabPanes.css('display', 'block');
+        
+        // Validasi manual untuk field required
+        let isValid = true;
+        const requiredFields = $form.find('[required]');
+        
+        // Enable semua field disabled sementara untuk validasi
+        const disabledFields = $form.find('[disabled]');
+        disabledFields.prop('disabled', false);
+        
+        requiredFields.each(function() {
+            const $field = $(this);
+            let fieldValue = $field.val();
+            
+            // Handle select field
+            if ($field.is('select')) {
+                if (!fieldValue || fieldValue === '') {
+                    isValid = false;
+                    $field.addClass('is-invalid');
+                    
+                    // Scroll ke field yang error
+                    const $tabPane = $field.closest('.tab-pane');
+                    if ($tabPane.length && !$tabPane.hasClass('active')) {
+                        const tabId = $tabPane.attr('id');
+                        const $tabLink = $form.find('a[href="#' + tabId + '"]');
+                        if ($tabLink.length) {
+                            $tabLink.tab('show');
+                        }
+                    }
+                } else {
+                    $field.removeClass('is-invalid');
+                }
+            } else {
+                // Handle input dan textarea
+                if (!fieldValue || (typeof fieldValue === 'string' && fieldValue.trim() === '')) {
+                    isValid = false;
+                    $field.addClass('is-invalid');
+                    
+                    // Scroll ke field yang error
+                    const $tabPane = $field.closest('.tab-pane');
+                    if ($tabPane.length && !$tabPane.hasClass('active')) {
+                        const tabId = $tabPane.attr('id');
+                        const $tabLink = $form.find('a[href="#' + tabId + '"]');
+                        if ($tabLink.length) {
+                            $tabLink.tab('show');
+                        }
+                    }
+                } else {
+                    $field.removeClass('is-invalid');
+                }
+            }
+        });
+        
+        // Jika tidak valid, kembalikan disabled state
+        if (!isValid) {
+            // Kembalikan disabled state untuk field yang sebelumnya disabled
+            disabledFields.each(function() {
+                const $field = $(this);
+                // Hanya kembalikan jika field ini memang seharusnya disabled (bukan karena validasi)
+                if ($field.attr('id') === 'ditujukan' && !$('#id_jenis_wo').val()) {
+                    $field.prop('disabled', true);
+                }
+            });
+        }
+        
+        // Validasi khusus untuk unit field (pembelian)
+        const jenisWo = $('#id_jenis_wo').find('option:selected').data('nama-jenis');
+        if (jenisWo && jenisWo.toLowerCase() === 'pembelian') {
+            const unitSelects = unitContainer.find('.select2-unit-dynamic');
+            if (unitSelects.length === 0 || unitSelects.filter(function() { return $(this).val(); }).length === 0) {
+                isValid = false;
+                unitContainer.addClass('border border-danger');
+                
+                // Scroll ke tab detail-wo
+                const $tabLink = $form.find('a[href="#detail-wo"]');
+                if ($tabLink.length) {
+                    $tabLink.tab('show');
+                }
+            } else {
+                unitContainer.removeClass('border border-danger');
+            }
+        }
+        
+        // Jika tidak valid, prevent submit
+        if (!isValid) {
+            e.preventDefault();
+            e.stopPropagation();
+            // Kembalikan display tab-pane
+            $tabPanes.not('.active').css('display', 'none');
+            $tabPanes.filter('.active').css('display', 'block');
+            
+            // Kembalikan disabled state untuk field yang sebelumnya disabled
+            disabledFields.each(function() {
+                const $field = $(this);
+                // Hanya kembalikan jika field ini memang seharusnya disabled (bukan karena validasi)
+                if ($field.attr('id') === 'ditujukan' && !$('#id_jenis_wo').val()) {
+                    $field.prop('disabled', true);
+                }
+            });
+            
+            return false;
+        }
+        
+        // Kembalikan display tab-pane ke normal
+        $tabPanes.not('.active').css('display', 'none');
+        $tabPanes.filter('.active').css('display', 'block');
+        
+        // Pastikan semua field disabled tetap enabled agar nilainya terkirim saat submit
+        // Field sudah di-enable di atas untuk validasi, pastikan tetap enabled
+        const ditujukanSelect = $('#ditujukan');
+        if (ditujukanSelect.length && ditujukanSelect.prop('disabled')) {
+            ditujukanSelect.prop('disabled', false);
+        }
+        
         // Handle unit field
         if (unitContainer.length && unitContainer.find('.select2-unit-dynamic').length > 0) {
             // Jika container dinamis ada dan memiliki select2, kumpulkan semua nilai dengan qty
@@ -1390,7 +1803,7 @@
                     id: 'hidden_unit_field',
                     name: 'unit',
                     value: unitString
-                }).appendTo($(this));
+                }).appendTo($form);
             }
             
             // Hapus name attribute dari semua select2 dinamis
@@ -1414,10 +1827,57 @@
         }
     });
 
-    // Form edit work order - biarkan submit normal ke server
-    $('#formEditWorkOrderLogistik').on('submit', function() {
-        // Form akan submit ke server secara normal
-        // Server akan handle validasi dan redirect
+    // Form edit work order - pastikan nilai unit dikirim dengan benar
+    $('#formEditWorkOrderLogistik').on('submit', function(e) {
+        const unitInput = $('#editUnitLogistik');
+        const unitContainer = $('#edit_unit_pembelian_container');
+        
+        // Hapus hidden input unit yang mungkin sudah ada
+        $('#hidden_edit_unit_field').remove();
+        
+        if (unitContainer.is(':visible')) {
+            // Jika container dinamis terlihat, kumpulkan semua nilai dari select2 dengan qty
+            const unitValues = [];
+            unitContainer.find('.select2-unit-dynamic').each(function() {
+                const value = $(this).val();
+                if (value) {
+                    const index = $(this).data('index');
+                    const qty = parseInt($(`.qty-input-edit[data-index="${index}"]`).text()) || 1;
+                    // Format: "Barang (qty: 5)"
+                    unitValues.push(`${value} (qty: ${qty})`);
+                }
+            });
+            
+            // Buat hidden input dengan name="unit" yang berisi nilai gabungan
+            if (unitValues.length > 0) {
+                const unitString = unitValues.join(', ');
+                $('<input>').attr({
+                    type: 'hidden',
+                    id: 'hidden_edit_unit_field',
+                    name: 'unit',
+                    value: unitString
+                }).appendTo($(this));
+            }
+            
+            // Hapus name attribute dari semua select2 dinamis
+            unitContainer.find('.select2-unit-dynamic').each(function() {
+                $(this).removeAttr('name');
+            });
+            
+            // Pastikan input text tidak memiliki name attribute
+            if (unitInput.attr('name')) {
+                unitInput.removeAttr('name');
+            }
+        } else if (unitInput.is(':visible')) {
+            // Jika input text terlihat, pastikan nilainya dikirim
+            if (!unitInput.attr('name')) {
+                unitInput.attr('name', 'unit');
+            }
+            // Pastikan semua select dinamis tidak memiliki name attribute
+            unitContainer.find('.select2-unit-dynamic').each(function() {
+                $(this).removeAttr('name');
+            });
+        }
     });
 
     // View work order
@@ -1581,7 +2041,121 @@
                 $('#editTanggalLogistik').val(data.tanggal);
                 $('#editDitujukanLogistik').val(data.ditujukan);
                 $('#editJenisWoLogistik').val(data.id_jenis_wo);
-                $('#editUnitLogistik').val(data.unit);
+                
+                // Enable field Ditujukan setelah Jenis Work Order dipilih
+                if (data.id_jenis_wo) {
+                    $('#editDitujukanLogistik').prop('disabled', false);
+                    $('#editDitujukanLogistik').find('option:first').text('-- Pilih Divisi --');
+                }
+                
+                // Toggle field ditujukan dan unit berdasarkan jenis work order
+                filterDivisiDitujukanEdit();
+                toggleUnitFieldEdit();
+                
+                // Set nilai ditujukan setelah filter dijalankan
+                $('#editDitujukanLogistik').val(data.ditujukan);
+                
+                // Set nilai unit ke field yang sesuai
+                const selectedJenisWo = $('#editJenisWoLogistik').find('option:selected').data('nama-jenis');
+                if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
+                    // Handle multiple values - jika data.unit adalah array atau string yang dipisah koma
+                    let unitValues = [];
+                    let unitQtys = [];
+                    
+                    if (Array.isArray(data.unit)) {
+                        unitValues = data.unit.filter(u => u);
+                        unitQtys = unitValues.map(() => 1); // Default qty 1
+                    } else if (typeof data.unit === 'string') {
+                        // Parse format: "Barang1 (qty: 5), Barang2 (qty: 3)" atau "Barang1, Barang2"
+                        if (data.unit.includes(',')) {
+                            const parts = data.unit.split(',').map(v => v.trim());
+                            parts.forEach(part => {
+                                const qtyMatch = part.match(/\(qty:\s*(\d+)\)/);
+                                if (qtyMatch) {
+                                    const qty = parseInt(qtyMatch[1]);
+                                    const barangName = part.replace(/\s*\(qty:\s*\d+\)/, '').trim();
+                                    unitValues.push(barangName);
+                                    unitQtys.push(qty);
+                                } else {
+                                    unitValues.push(part);
+                                    unitQtys.push(1);
+                                }
+                            });
+                        } else {
+                            // Single value
+                            const qtyMatch = data.unit.match(/\(qty:\s*(\d+)\)/);
+                            if (qtyMatch) {
+                                const qty = parseInt(qtyMatch[1]);
+                                const barangName = data.unit.replace(/\s*\(qty:\s*\d+\)/, '').trim();
+                                unitValues.push(barangName);
+                                unitQtys.push(qty);
+                            } else {
+                                unitValues.push(data.unit);
+                                unitQtys.push(1);
+                            }
+                        }
+                    } else if (data.unit) {
+                        unitValues = [data.unit];
+                        unitQtys = [1];
+                    }
+                    
+                    // Clear container terlebih dahulu
+                    clearUnitSelects(true);
+                    const container = $('#edit_unit_pembelian_container');
+                    
+                    // Buat select2 untuk setiap nilai
+                    if (unitValues.length > 0) {
+                        unitValues.forEach(function(value, index) {
+                            if (index === 0) {
+                                // Select pertama
+                                container.html(getUnitSelectTemplate(0, true));
+                            } else {
+                                // Select tambahan
+                                container.append(getUnitSelectTemplate(index, true));
+                            }
+                            
+                            // Set nilai dan initialize Select2
+                            setTimeout(function() {
+                                const $select = container.find('.select2-unit-dynamic[data-index="' + index + '"]');
+                                const $wrapper = $select.closest('.unit-select-wrapper');
+                                initSelect2Dynamic($select);
+                                $select.val(value).trigger('change.select2-dynamic');
+                                
+                                // Set qty
+                                const qty = unitQtys[index] || 1;
+                                $wrapper.find('.qty-input-edit[data-index="' + index + '"]').text(qty);
+                                $wrapper.find('.qty-control-wrapper').show();
+                                
+                                // Tampilkan button Tambah jika ada nilai
+                                if (value) {
+                                    $select.closest('.unit-select-wrapper').find('.btn-tambah-barang-edit').show();
+                                }
+                            }, 50 * (index + 1));
+                        });
+                        
+                        // Update visibility button hapus setelah semua select dibuat
+                        setTimeout(function() {
+                            updateHapusButtonVisibility(true);
+                        }, 100 * unitValues.length);
+                    } else {
+                        // Jika tidak ada nilai, buat select kosong
+                        container.html(getUnitSelectTemplate(0, true));
+                        setTimeout(function() {
+                            const firstSelect = container.find('.select2-unit-dynamic[data-index="0"]');
+                            initSelect2Dynamic(firstSelect);
+                        }, 100);
+                    }
+                } else {
+                    // Jika bukan pembelian, gunakan nilai pertama jika array
+                    if (Array.isArray(data.unit)) {
+                        $('#editUnitLogistik').val(data.unit.join(', '));
+                    } else {
+                        // Remove qty format jika ada
+                        const unitValue = data.unit ? data.unit.replace(/\s*\(qty:\s*\d+\)/g, '') : '';
+                        $('#editUnitLogistik').val(unitValue);
+                    }
+                }
+                
                 $('#editUraianLogistik').val(data.uraian);
                 
                 // Handle dokumentasi preview
@@ -1607,6 +2181,20 @@
                 }
                 
                 $('#modalEditWorkOrderLogistik').modal('show');
+                
+                // Re-initialize Select2 dinamis setelah modal fully shown jika jenis work order adalah Pembelian
+                $('#modalEditWorkOrderLogistik').one('shown.bs.modal', function() {
+                    const selectedJenisWo = $('#editJenisWoLogistik').find('option:selected').data('nama-jenis');
+                    if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
+                        setTimeout(function() {
+                            $('#edit_unit_pembelian_container').find('.select2-unit-dynamic').each(function() {
+                                if (!$(this).hasClass('select2-hidden-accessible')) {
+                                    initSelect2Dynamic($(this));
+                                }
+                            });
+                        }, 200);
+                    }
+                });
             })
             .catch(error => {
                 console.error('Error:', error);
