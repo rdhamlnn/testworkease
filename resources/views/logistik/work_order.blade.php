@@ -225,6 +225,273 @@
         width: 16px;
         height: 16px;
     }
+    
+    /* Scrollable Tabs Styles */
+    .nav-tabs-scrollable {
+        display: flex;
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: #1B3C88 #f1f1f1;
+        border-bottom: 2px solid #dee2e6;
+        margin-bottom: 20px;
+    }
+    
+    .nav-tabs-scrollable::-webkit-scrollbar {
+        height: 8px;
+    }
+    
+    .nav-tabs-scrollable::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    .nav-tabs-scrollable::-webkit-scrollbar-thumb {
+        background: #1B3C88;
+        border-radius: 4px;
+    }
+    
+    .nav-tabs-scrollable::-webkit-scrollbar-thumb:hover {
+        background: #0f2a5a;
+    }
+    
+    .nav-tabs-scrollable .nav-item {
+        flex-shrink: 0;
+        margin-right: 5px;
+    }
+    
+    .nav-tabs-scrollable .nav-link {
+        white-space: nowrap;
+        padding: 10px 20px;
+        border: 1px solid transparent;
+        border-top-left-radius: 0.25rem;
+        border-top-right-radius: 0.25rem;
+        color: #495057;
+        background-color: #f8f9fa;
+        transition: all 0.3s ease;
+    }
+    
+    .nav-tabs-scrollable .nav-link:hover {
+        border-color: #e9ecef #e9ecef #dee2e6;
+        background-color: #e9ecef;
+        color: #1B3C88;
+    }
+    
+    .nav-tabs-scrollable .nav-link.active {
+        color: #fff !important;
+        background-color: #1B3C88;
+        border-color: #1B3C88 #1B3C88 transparent;
+        font-weight: 600;
+    }
+    
+    .nav-tabs-scrollable .nav-link.active,
+    .nav-tabs-scrollable .nav-link.active i,
+    .nav-tabs-scrollable .nav-link.active .fas,
+    .nav-tabs-scrollable .nav-link.active .fa {
+        color: #fff !important;
+    }
+    
+    .tab-content-scrollable {
+        max-height: 450px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-right: 5px;
+    }
+    
+    .tab-content-scrollable::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .tab-content-scrollable::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    .tab-content-scrollable::-webkit-scrollbar-thumb {
+        background: #1B3C88;
+        border-radius: 4px;
+    }
+    
+    .tab-content-scrollable::-webkit-scrollbar-thumb:hover {
+        background: #0f2a5a;
+    }
+    
+    /* Qty Input Styles */
+    .qty-control-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-left: 10px;
+    }
+    
+    .qty-control-wrapper .btn-qty {
+        width: 35px;
+        height: 35px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #ced4da;
+        background-color: #fff;
+        color: #495057;
+        font-weight: bold;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+    
+    .qty-control-wrapper .btn-qty:hover {
+        background-color: #e9ecef;
+        border-color: #adb5bd;
+    }
+    
+    .qty-control-wrapper .btn-qty:active {
+        background-color: #dee2e6;
+    }
+    
+    .qty-control-wrapper .qty-display {
+        width: 50px;
+        height: 35px;
+        text-align: center;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #fff;
+        font-weight: 600;
+        font-size: 14px;
+    }
+    
+    .input-group .select2-container {
+        flex: 1;
+    }
+    
+    /* View Work Order Modal - Barang Table Styles */
+    #modalViewWorkOrderLogistik .modal-body {
+        max-height: 80vh;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        padding: 20px 30px;
+        scrollbar-width: thin;
+        scrollbar-color: #1B3C88 #f1f1f1;
+    }
+    
+    #modalViewWorkOrderLogistik .modal-body::-webkit-scrollbar {
+        width: 10px;
+        -webkit-appearance: none;
+    }
+    
+    #modalViewWorkOrderLogistik .modal-body::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 5px;
+        -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.1);
+    }
+    
+    #modalViewWorkOrderLogistik .modal-body::-webkit-scrollbar-thumb {
+        background: #1B3C88;
+        border-radius: 5px;
+        -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+    }
+    
+    #modalViewWorkOrderLogistik .modal-body::-webkit-scrollbar-thumb:hover {
+        background: #0f2a5a;
+    }
+    
+    #view_barang_container {
+        width: 100%;
+        overflow: hidden;
+    }
+    
+    #view_barang_table {
+        max-height: 400px;
+        overflow-y: auto;
+        overflow-x: auto;
+        width: 100%;
+        position: relative;
+        display: block;
+    }
+    
+    #view_barang_table table {
+        width: 100% !important;
+        margin-bottom: 0;
+        min-width: 100% !important;
+        table-layout: fixed;
+        border-collapse: collapse;
+    }
+    
+    #view_barang_table table thead {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+    }
+    
+    #view_barang_table table tbody {
+        display: block;
+        max-height: 350px;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+    
+    #view_barang_table table tbody tr {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+    }
+    
+    #view_barang_table table th,
+    #view_barang_table table td {
+        padding: 8px 12px;
+        font-size: 14px;
+        word-wrap: break-word;
+    }
+    
+    #view_barang_table table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    #view_barang_table table tbody::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    #view_barang_table table tbody::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    #view_barang_table table tbody::-webkit-scrollbar-thumb {
+        background: #1B3C88;
+        border-radius: 4px;
+    }
+    
+    #view_barang_table table tbody::-webkit-scrollbar-thumb:hover {
+        background: #0f2a5a;
+    }
+    
+    #view_barang_table::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    #view_barang_table::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    #view_barang_table::-webkit-scrollbar-thumb {
+        background: #1B3C88;
+        border-radius: 4px;
+    }
+    
+    #view_barang_table::-webkit-scrollbar-thumb:hover {
+        background: #0f2a5a;
+    }
 </style>
 @endsection
 
@@ -247,7 +514,7 @@
                     <div class="card-header">
                         <h4>Daftar Work Order</h4>
                         <div class="card-header-action">
-                            <button class="btn btn-primary" data-toggle="modal" data-target="#modalTambahWorkOrderLogistik">
+                            <button class="btn btn-primary" data-toggle="modal" data-target="#tambahWorkOrderModal">
                                 <i class="fas fa-plus"></i> Tambah Work Order
                             </button>
                         </div>
@@ -348,97 +615,133 @@
     </div>
 </section>
 
-{{-- Modal Tambah --}}
-<div class="modal fade" id="modalTambahWorkOrderLogistik" tabindex="-1" role="dialog" aria-labelledby="modalTambahWorkOrderLogistikLabel" aria-hidden="true">
+<!-- Modal Tambah Work Order -->
+<div class="modal fade" id="tambahWorkOrderModal" tabindex="-1" role="dialog" aria-labelledby="tambahWorkOrderModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalTambahWorkOrderLogistikLabel">Tambah Work Order</h5>
+                <h5 class="modal-title" id="tambahWorkOrderModalLabel">Tambah Work Order</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form id="tambahWorkOrderForm" method="POST" action="{{ route('logistik.work-order.store') }}" enctype="multipart/form-data">
+            <form id="tambahWorkOrderForm" action="{{ route('logistik.work-order.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="no_work_order">No. Work Order</label>
-                                <input type="text" class="form-control" id="no_work_order" name="no_work_order" readonly value="{{ $nextNoWO }}">
-                                <input type="hidden" name="no_surat_pengajuan" value="{{ $nextNoWO }}">
+                    <!-- Scrollable Tabs Navigation -->
+                    <ul class="nav nav-tabs nav-tabs-scrollable" id="tambahWorkOrderTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" id="info-dasar-tab" data-toggle="tab" href="#info-dasar" role="tab" aria-controls="info-dasar" aria-selected="true">
+                                <i class="fas fa-info-circle"></i> Informasi Dasar
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="detail-wo-tab" data-toggle="tab" href="#detail-wo" role="tab" aria-controls="detail-wo" aria-selected="false">
+                                <i class="fas fa-clipboard-list"></i> Detail Work Order
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="dokumentasi-tab" data-toggle="tab" href="#dokumentasi" role="tab" aria-controls="dokumentasi" aria-selected="false">
+                                <i class="fas fa-file-upload"></i> Dokumentasi
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <!-- Tab Content -->
+                    <div class="tab-content tab-content-scrollable" id="tambahWorkOrderTabContent">
+                        <!-- Tab 1: Informasi Dasar -->
+                        <div class="tab-pane fade show active" id="info-dasar" role="tabpanel" aria-labelledby="info-dasar-tab">
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="no_work_order">No. Work Order</label>
+                                        <input type="text" class="form-control" id="no_work_order" name="no_work_order" readonly value="{{ $nextNoWO ?? '01/LOG/KCE/2025' }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="tanggal">Tanggal <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control" id="tanggal" name="tanggal" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Divisi Pengaju <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" value="{{ $divisiPengaju }}" readonly>
+                                        <input type="hidden" name="divisi_pengaju" value="{{ $divisiPengaju }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="id_jenis_wo">Jenis Work Order <span class="text-danger">*</span></label>
+                                        <select class="form-control" name="id_jenis_wo" id="id_jenis_wo" required autofocus>
+                                            <option value="">-- Pilih Jenis Work Order --</option>
+                                            @foreach($jenisWorkOrder as $jenis)
+                                                <option value="{{ $jenis->id_jenis_wo }}" data-nama-jenis="{{ $jenis->nama_jenis_wo }}">{{ $jenis->nama_jenis_wo }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="tanggal">Tanggal <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control @error('tanggal') is-invalid @enderror" id="tanggal" name="tanggal" value="{{ old('tanggal', date('Y-m-d')) }}" required>
-                                @error('tanggal')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        
+                        <!-- Tab 2: Detail Work Order -->
+                        <div class="tab-pane fade" id="detail-wo" role="tabpanel" aria-labelledby="detail-wo-tab">
+                            <div class="row mt-3">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="ditujukan">Ditujukan <span class="text-danger">*</span></label>
+                                        <select class="form-control" name="ditujukan" id="ditujukan" required disabled>
+                                            <option value="">-- Pilih Jenis Work Order terlebih dahulu --</option>
+                                            @foreach($divisi as $d)
+                                                @if($d->nama_divisi !== 'Administrator' && $d->nama_divisi !== $divisiPengaju)
+                                                    <option value="{{ $d->nama_divisi }}">{{ $d->nama_divisi }}</option>
+                                                @endif
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="unit" id="label_unit">Nama Unit / Code <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="unit" name="unit" required placeholder="Masukkan unit">
+                                        <!-- Container untuk Select2 dinamis (jenis work order Pembelian) -->
+                                        <div id="unit_pembelian_container" style="display: none;"></div>
+                                        <!-- Template tersembunyi untuk option barang -->
+                                        <select id="template_barang_options" style="display: none;">
+                                            @foreach($daftarBarang as $barang)
+                                                <option value="{{ $barang->nama_barang }}">{{ $barang->nama_barang }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="uraian">Uraian <span class="text-danger">*</span></label>
+                                        <textarea class="form-control" id="uraian" name="uraian" rows="4" required placeholder="Masukkan uraian work order"></textarea>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="divisi_pengaju">Divisi Pengaju <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="divisi_pengaju" value="{{ $divisiPengaju }}" readonly>
-                                <input type="hidden" name="divisi_pengaju" value="{{ $divisiPengaju }}">
+                        
+                        <!-- Tab 3: Dokumentasi -->
+                        <div class="tab-pane fade" id="dokumentasi" role="tabpanel" aria-labelledby="dokumentasi-tab">
+                            <div class="row mt-3">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="dokumentasi">Dokumentasi</label>
+                                        <input type="file" class="form-control" id="dokumentasi" name="dokumentasi" accept=".jpg,.jpeg,.png">
+                                        <small class="form-text text-muted">Format: JPG, PNG. Maksimal 2MB.</small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="ditujukan">Ditujukan <span class="text-danger">*</span></label>
-                                <select class="form-control @error('ditujukan') is-invalid @enderror" name="ditujukan" id="ditujukan" required>
-                                    <option value="">-- Pilih Divisi --</option>
-                                    @foreach($divisiTujuan as $div)
-                                        @if($div->nama_divisi !== 'Administrator' && $div->nama_divisi !== $divisiPengaju)
-                                            <option value="{{ $div->nama_divisi }}" {{ old('ditujukan') === $div->nama_divisi ? 'selected' : '' }}>
-                                                {{ $div->nama_divisi }}
-                                            </option>
-                                        @endif
-                                    @endforeach
-                                </select>
-                                @error('ditujukan')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="id_jenis_wo">Jenis Work Order <span class="text-danger">*</span></label>
-                                <select class="form-control @error('id_jenis_wo') is-invalid @enderror" name="id_jenis_wo" id="id_jenis_wo" required>
-                                    <option value="">-- Pilih Jenis Work Order --</option>
-                                    @foreach($jenisWorkOrder as $jenis)
-                                        <option value="{{ $jenis->id_jenis_wo }}" {{ old('id_jenis_wo') == $jenis->id_jenis_wo ? 'selected' : '' }}>
-                                            {{ $jenis->nama_jenis_wo }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('id_jenis_wo')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="unit">Nama Unit / Code <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control @error('unit') is-invalid @enderror" id="unit" name="unit" required placeholder="Masukkan unit">
-                                @error('unit')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="dokumentasi">Dokumentasi</label>
-                                <input type="file" class="form-control @error('dokumentasi') is-invalid @enderror" id="dokumentasi" name="dokumentasi" accept=".pdf,.jpg,.jpeg,.png">
-                                <small class="form-text text-muted">Format: JPG, PNG, PDF. Maks. 2MB</small>
-                                @error('dokumentasi')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="uraian">Uraian <span class="text-danger">*</span></label>
-                        <textarea class="form-control @error('uraian') is-invalid @enderror" id="uraian" name="uraian" rows="3" required placeholder="Masukkan uraian work order">{{ old('uraian') }}</textarea>
-                        @error('uraian')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -577,16 +880,18 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label><strong>Unit</strong></label>
+                            <label id="view_label_unit"><strong>Unit:</strong></label>
                             <p class="form-control-plaintext border p-2 rounded" id="viewUnitLogistik"></p>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label><strong>Status</strong></label>
-                            <p class="form-control-plaintext border p-2 rounded" id="viewStatusLogistik"></p>
-                        </div>
-                    </div>
+                </div>
+                <div class="form-group" id="view_barang_container" style="display: none;">
+                    <label><strong>Barang:</strong></label>
+                    <div id="view_barang_table" class="border rounded" style="padding: 0; overflow: hidden;"></div>
+                </div>
+                <div class="form-group">
+                    <label><strong>Status:</strong></label>
+                    <p class="form-control-plaintext border p-2 rounded" id="viewStatusLogistik"></p>
                 </div>
                 <div class="form-group">
                     <label><strong>Uraian</strong></label>
@@ -653,6 +958,388 @@
         var today = new Date().toISOString().split('T')[0];
         $('#tanggal').val(today);
 
+        // Nonaktifkan enforceFocus Bootstrap untuk kompatibilitas dengan Select2
+        $.fn.modal.Constructor.prototype.enforceFocus = function() {};
+
+        // Template HTML untuk select2 dinamis
+        function getUnitSelectTemplate(index, isEdit = false) {
+            const btnClass = isEdit ? 'btn-tambah-barang-edit' : 'btn-tambah-barang';
+            const btnHapusClass = isEdit ? 'btn-hapus-barang-edit' : 'btn-hapus-barang';
+            
+            // Clone option dari template tersembunyi
+            const $template = $('#template_barang_options');
+            const optionsHtml = $template.html();
+            
+            const qtyBtnClass = isEdit ? 'btn-qty-minus-edit' : 'btn-qty-minus';
+            const qtyPlusBtnClass = isEdit ? 'btn-qty-plus-edit' : 'btn-qty-plus';
+            const qtyInputClass = isEdit ? 'qty-input-edit' : 'qty-input';
+            
+            return `
+                <div class="unit-select-wrapper mb-2" data-index="${index}">
+                    <div class="input-group" style="display: flex; align-items: center;">
+                        <select class="form-control select2-unit-dynamic" name="unit[]" data-index="${index}" style="flex: 1;">
+                            <option value="">-- Pilih Barang --</option>
+                            ${optionsHtml}
+                        </select>
+                        <div class="qty-control-wrapper" style="display: none;">
+                            <button type="button" class="btn-qty ${qtyBtnClass}" data-index="${index}" title="Kurangi Qty">
+                                <span style="font-size: 18px;">−</span>
+                            </button>
+                            <div class="qty-display">
+                                <span class="${qtyInputClass}" data-index="${index}">1</span>
+                            </div>
+                            <button type="button" class="btn-qty ${qtyPlusBtnClass}" data-index="${index}" title="Tambah Qty">
+                                <span style="font-size: 18px;">+</span>
+                            </button>
+                        </div>
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-success btn-sm ${btnClass}" title="Tambah Barang" style="display: none;">
+                                <i class="fas fa-plus"></i> Tambah
+                            </button>
+                            <button type="button" class="btn btn-danger btn-sm ${btnHapusClass}" title="Hapus" style="display: none;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Inisialisasi Select2 untuk select2 dinamis (single select)
+        function initSelect2Dynamic(selector) {
+            if ($(selector).hasClass('select2-hidden-accessible')) {
+                $(selector).select2('destroy');
+            }
+            
+            // Tentukan parent modal berdasarkan selector
+            let dropdownParent = $(selector).closest('.modal');
+            if (dropdownParent.length === 0) {
+                dropdownParent = $(document.body);
+            }
+            
+            // Simpan nilai sebelum initialize
+            const savedValue = $(selector).val();
+            
+            $(selector).select2({
+                theme: 'bootstrap4',
+                placeholder: 'Pilih Barang...',
+                allowClear: true,
+                width: '100%',
+                dropdownParent: dropdownParent,
+                language: {
+                    noResults: function() {
+                        return "Tidak ada hasil";
+                    },
+                    searching: function() {
+                        return "Mencari...";
+                    }
+                }
+            });
+            
+            // Event handler: ketika user memilih barang, update visibility button dan tampilkan qty control
+            $(selector).off('change.select2-dynamic').on('change.select2-dynamic', function() {
+                // Update visibility button hapus setelah perubahan
+                const $wrapper = $(this).closest('.unit-select-wrapper');
+                const isEdit = $wrapper.closest('#edit_unit_pembelian_container').length > 0;
+                updateHapusButtonVisibility(isEdit);
+                
+                // Tampilkan/sembunyikan qty control berdasarkan apakah barang dipilih
+                const $qtyControl = $wrapper.find('.qty-control-wrapper');
+                if ($(this).val() && $(this).val() !== '') {
+                    $qtyControl.show();
+                } else {
+                    $qtyControl.hide();
+                    // Reset qty ke 1
+                    $wrapper.find('.qty-input, .qty-input-edit').text('1');
+                }
+            });
+            
+            // Set nilai kembali setelah initialize
+            if (savedValue) {
+                $(selector).val(savedValue).trigger('change.select2-dynamic');
+            }
+        }
+        
+        // Tambah select2 baru
+        function addUnitSelect(isEdit = false) {
+            const containerId = isEdit ? 'edit_unit_pembelian_container' : 'unit_pembelian_container';
+            const container = $('#' + containerId);
+            const existingSelects = container.find('.unit-select-wrapper');
+            const newIndex = existingSelects.length;
+            
+            // Tambahkan HTML baru
+            const newHtml = getUnitSelectTemplate(newIndex, isEdit);
+            container.append(newHtml);
+            
+            // Initialize Select2 pada select baru
+            const newSelect = container.find('.unit-select-wrapper[data-index="' + newIndex + '"] select');
+            initSelect2Dynamic(newSelect);
+            
+            // Update visibility button untuk semua select
+            updateHapusButtonVisibility(isEdit);
+        }
+        
+        // Hapus select2
+        function removeUnitSelect($wrapper, isEdit = false) {
+            // Destroy Select2 sebelum hapus
+            const $select = $wrapper.find('select');
+            if ($select.hasClass('select2-hidden-accessible')) {
+                $select.select2('destroy');
+            }
+            
+            // Hapus wrapper
+            $wrapper.remove();
+            
+            // Update visibility button hapus
+            updateHapusButtonVisibility(isEdit);
+        }
+        
+        // Update visibility button hapus
+        function updateHapusButtonVisibility(isEdit = false) {
+            const containerId = isEdit ? 'edit_unit_pembelian_container' : 'unit_pembelian_container';
+            const container = $('#' + containerId);
+            const selects = container.find('.unit-select-wrapper');
+            
+            // Sembunyikan semua button Tambah terlebih dahulu
+            container.find('.btn-tambah-barang, .btn-tambah-barang-edit').hide();
+            
+            selects.each(function(index) {
+                const $wrapper = $(this);
+                const $select = $wrapper.find('select');
+                const $btnTambah = $wrapper.find('.btn-tambah-barang, .btn-tambah-barang-edit');
+                const $btnHapus = $wrapper.find('.btn-hapus-barang, .btn-hapus-barang-edit');
+                const value = $select.val();
+                const isLast = (index === selects.length - 1);
+                
+                // Tampilkan button hapus jika ada lebih dari 1 select
+                if (selects.length > 1) {
+                    $btnHapus.show();
+                } else {
+                    $btnHapus.hide();
+                }
+                
+                // Tampilkan button Tambah hanya di field terakhir
+                if (isLast) {
+                    $btnTambah.show();
+                } else {
+                    $btnTambah.hide();
+                }
+            });
+        }
+        
+        // Clear semua select2 dinamis
+        function clearUnitSelects(isEdit = false) {
+            const containerId = isEdit ? 'edit_unit_pembelian_container' : 'unit_pembelian_container';
+            const container = $('#' + containerId);
+            
+            // Destroy semua Select2
+            container.find('.select2-unit-dynamic').each(function() {
+                if ($(this).hasClass('select2-hidden-accessible')) {
+                    $(this).select2('destroy');
+                }
+            });
+            
+            // Clear container
+            container.empty();
+        }
+        
+        // Toggle field unit berdasarkan jenis work order
+        function toggleUnitField() {
+            const jenisWoSelect = $('#id_jenis_wo');
+            const selectedJenisWo = jenisWoSelect.find('option:selected').data('nama-jenis');
+            const unitInput = $('#unit');
+            const unitContainer = $('#unit_pembelian_container');
+            const unitLabel = $('#label_unit');
+            
+            // Jika jenis work order adalah "Pembelian", tampilkan container dinamis dan sembunyikan input
+            if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
+                unitInput.hide().removeAttr('required').removeAttr('name');
+                unitContainer.show();
+                // Ubah label menjadi "Daftar barang"
+                unitLabel.html('Daftar barang <span class="text-danger">*</span>');
+                
+                // Jika container kosong, tambahkan select pertama
+                if (unitContainer.find('.unit-select-wrapper').length === 0) {
+                    unitContainer.html(getUnitSelectTemplate(0, false));
+                    const firstSelect = unitContainer.find('.select2-unit-dynamic[data-index="0"]');
+                    initSelect2Dynamic(firstSelect);
+                } else {
+                    // Re-initialize semua select yang ada
+                    unitContainer.find('.select2-unit-dynamic').each(function() {
+                        initSelect2Dynamic($(this));
+                    });
+                }
+            } else {
+                // Jika bukan "Pembelian", tampilkan input dan sembunyikan container
+                unitInput.show().attr('required', 'required').attr('name', 'unit');
+                unitContainer.hide();
+                // Clear semua select2 dinamis
+                clearUnitSelects(false);
+                // Ubah label kembali menjadi "Nama Unit / Code"
+                unitLabel.html('Nama Unit / Code <span class="text-danger">*</span>');
+            }
+        }
+
+        // Filter divisi "Ditujukan" berdasarkan jenis work order
+        function filterDivisiDitujukan() {
+            const jenisWoSelect = $('#id_jenis_wo');
+            const ditujukanSelect = $('#ditujukan');
+            const selectedJenisWo = jenisWoSelect.find('option:selected').data('nama-jenis');
+            
+            // Simpan semua option divisi terlebih dahulu
+            if (!ditujukanSelect.data('original-options')) {
+                ditujukanSelect.data('original-options', ditujukanSelect.html());
+            }
+            
+            // Reset ke semua option
+            ditujukanSelect.html(ditujukanSelect.data('original-options'));
+            
+            // Jika tidak ada jenis WO yang dipilih, tampilkan semua
+            if (!selectedJenisWo) {
+                return;
+            }
+            
+            // Filter berdasarkan jenis work order
+            let allowedDivisi = [];
+            
+            if (selectedJenisWo.toLowerCase() === 'pembelian') {
+                allowedDivisi = ['Purchasing'];
+            } else if (selectedJenisWo.toLowerCase() === 'perbaikan') {
+                allowedDivisi = ['Mekanik'];
+            } else if (selectedJenisWo.toLowerCase() === 'permintaan') {
+                allowedDivisi = ['Produksi', 'Plasma', 'Quality Control'];
+            }
+            
+            // Jika ada filter, sembunyikan option yang tidak sesuai
+            if (allowedDivisi.length > 0) {
+                ditujukanSelect.find('option').each(function() {
+                    const optionValue = $(this).val();
+                    const optionText = $(this).text().trim();
+                    
+                    // Selalu tampilkan option placeholder
+                    if (optionValue === '') {
+                        return;
+                    }
+                    
+                    // Cek apakah divisi ini termasuk dalam allowedDivisi
+                    const isAllowed = allowedDivisi.some(divisi => 
+                        optionText.toLowerCase() === divisi.toLowerCase() || 
+                        optionValue.toLowerCase() === divisi.toLowerCase()
+                    );
+                    
+                    if (!isAllowed) {
+                        $(this).hide();
+                    } else {
+                        $(this).show();
+                    }
+                });
+                
+                // Reset pilihan jika yang dipilih tidak sesuai filter
+                const currentValue = ditujukanSelect.val();
+                if (currentValue && !allowedDivisi.some(divisi => 
+                    currentValue.toLowerCase() === divisi.toLowerCase()
+                )) {
+                    ditujukanSelect.val('');
+                }
+            }
+        }
+        
+        // Event listener untuk perubahan jenis work order
+        $('#id_jenis_wo').on('change', function() {
+            const selectedValue = $(this).val();
+            const ditujukanSelect = $('#ditujukan');
+            
+            // Enable field Ditujukan jika Jenis Work Order sudah dipilih
+            if (selectedValue && selectedValue !== '') {
+                ditujukanSelect.prop('disabled', false);
+                ditujukanSelect.find('option:first').text('-- Pilih Divisi --');
+            } else {
+                ditujukanSelect.prop('disabled', true);
+                ditujukanSelect.val('');
+                ditujukanSelect.find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
+            }
+            
+            filterDivisiDitujukan();
+            toggleUnitField();
+        });
+        
+        // Jalankan filter saat halaman dimuat (jika ada nilai yang sudah dipilih)
+        filterDivisiDitujukan();
+        toggleUnitField();
+        
+        // Event handler untuk button tambah barang (form create)
+        $(document).on('click', '.btn-tambah-barang', function() {
+            addUnitSelect(false);
+        });
+        
+        // Event handler untuk button hapus barang (form create)
+        $(document).on('click', '.btn-hapus-barang', function() {
+            const $wrapper = $(this).closest('.unit-select-wrapper');
+            removeUnitSelect($wrapper, false);
+        });
+        
+        // Event handler untuk button kurang qty (form create)
+        $(document).on('click', '.btn-qty-minus', function() {
+            const index = $(this).data('index');
+            const $qtyDisplay = $(`.qty-input[data-index="${index}"]`);
+            let currentQty = parseInt($qtyDisplay.text()) || 1;
+            if (currentQty > 1) {
+                currentQty--;
+                $qtyDisplay.text(currentQty);
+            }
+        });
+        
+        // Event handler untuk button tambah qty (form create)
+        $(document).on('click', '.btn-qty-plus', function() {
+            const index = $(this).data('index');
+            const $qtyDisplay = $(`.qty-input[data-index="${index}"]`);
+            let currentQty = parseInt($qtyDisplay.text()) || 1;
+            currentQty++;
+            $qtyDisplay.text(currentQty);
+        });
+        
+        // Reset field ditujukan dan unit saat modal create dibuka
+        $('#tambahWorkOrderModal').on('show.bs.modal', function() {
+            $('#id_jenis_wo').val('');
+            $('#ditujukan').val('').prop('disabled', true);
+            $('#ditujukan').find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
+            $('#unit').val('').show().attr('required', 'required').attr('name', 'unit');
+            $('#unit_pembelian_container').hide();
+            clearUnitSelects(false);
+            // Kembalikan label ke default
+            $('#label_unit').html('Nama Unit / Code <span class="text-danger">*</span>');
+            filterDivisiDitujukan();
+            toggleUnitField();
+        });
+
+        // Destroy Select2 saat modal ditutup
+        $('#tambahWorkOrderModal').on('hidden.bs.modal', function() {
+            // Destroy semua Select2 dinamis
+            $('#unit_pembelian_container').find('.select2-unit-dynamic').each(function() {
+                if ($(this).hasClass('select2-hidden-accessible')) {
+                    $(this).select2('destroy');
+                }
+            });
+        });
+
+        // Pastikan Select2 di-initialize setelah modal fully shown
+        $('#tambahWorkOrderModal').on('shown.bs.modal', function() {
+            // Focus ke field Jenis Work Order
+            setTimeout(function() {
+                $('#id_jenis_wo').focus();
+            }, 300);
+            
+            // Re-initialize Select2 dinamis jika jenis work order adalah Pembelian
+            const selectedJenisWo = $('#id_jenis_wo').find('option:selected').data('nama-jenis');
+            if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
+                setTimeout(function() {
+                    $('#unit_pembelian_container').find('.select2-unit-dynamic').each(function() {
+                        initSelect2Dynamic($(this));
+                    });
+                }, 100);
+            }
+        });
+
         // Event handler untuk button view
         $(document).on('click', '.btn-view', function() {
             var id = $(this).data('id');
@@ -673,10 +1360,58 @@
         });
     });
 
-    // Form tambah work order - biarkan submit normal ke server
-    $('#tambahWorkOrderForm').on('submit', function() {
-        // Form akan submit ke server secara normal
-        // Server akan handle validasi dan redirect
+    // Form tambah work order - pastikan nilai unit dikirim dengan benar
+    $('#tambahWorkOrderForm').on('submit', function(e) {
+        const unitInput = $('#unit');
+        const unitContainer = $('#unit_pembelian_container');
+        
+        // Hapus hidden input unit yang mungkin sudah ada
+        $('#hidden_unit_field').remove();
+        
+        // Handle unit field
+        if (unitContainer.length && unitContainer.find('.select2-unit-dynamic').length > 0) {
+            // Jika container dinamis ada dan memiliki select2, kumpulkan semua nilai dengan qty
+            const unitValues = [];
+            unitContainer.find('.select2-unit-dynamic').each(function() {
+                const value = $(this).val();
+                if (value) {
+                    const index = $(this).data('index');
+                    const qty = parseInt($(`.qty-input[data-index="${index}"]`).text()) || 1;
+                    // Format: "Barang (qty: 5)"
+                    unitValues.push(`${value} (qty: ${qty})`);
+                }
+            });
+            
+            // Buat hidden input dengan name="unit" yang berisi nilai gabungan
+            if (unitValues.length > 0) {
+                const unitString = unitValues.join(', ');
+                $('<input>').attr({
+                    type: 'hidden',
+                    id: 'hidden_unit_field',
+                    name: 'unit',
+                    value: unitString
+                }).appendTo($(this));
+            }
+            
+            // Hapus name attribute dari semua select2 dinamis
+            unitContainer.find('.select2-unit-dynamic').each(function() {
+                $(this).removeAttr('name');
+            });
+            
+            // Pastikan input text tidak memiliki name attribute
+            if (unitInput.attr('name')) {
+                unitInput.removeAttr('name');
+            }
+        } else if (unitInput.length && unitInput.val()) {
+            // Jika input text ada dan memiliki nilai, pastikan dikirim
+            if (!unitInput.attr('name')) {
+                unitInput.attr('name', 'unit');
+            }
+            // Pastikan semua select dinamis tidak memiliki name attribute
+            unitContainer.find('.select2-unit-dynamic').each(function() {
+                $(this).removeAttr('name');
+            });
+        }
     });
 
     // Form edit work order - biarkan submit normal ke server
@@ -696,16 +1431,94 @@
                 $('#viewTanggalLogistik').text(new Date(data.tanggal).toLocaleDateString('id-ID'));
                 $('#viewDivisiPengajuLogistik').text(data.divisi_pengaju);
                 $('#viewDitujukanLogistik').text(data.ditujukan);
-                // Fix unit display - show unit name if available, otherwise show unit string
+                
+                // Cek jenis work order
+                const jenisWo = data.jenis_wo ? data.jenis_wo.toLowerCase() : '';
+                const isPembelian = jenisWo === 'pembelian';
+                
+                // Parse format dengan qty dan tampilkan dalam table
                 let unitDisplay = '-';
-                if (data.unit && typeof data.unit === 'string') {
-                    unitDisplay = data.unit;
-                } else if (data.unit && data.unit.nama_unit) {
-                    unitDisplay = data.unit.nama_unit;
-                } else if (data.unit_code) {
-                    unitDisplay = data.unit_code;
+                let barangTable = '';
+                
+                if (isPembelian) {
+                    // Jika jenis WO adalah Pembelian, tampilkan tabel di div baru
+                    if (Array.isArray(data.unit)) {
+                        // Jika array, buat table dengan qty
+                        if (data.unit.length > 0) {
+                            barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
+                            barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 42%;">Nama Barang</th><th style="width: 25%;">Status</th><th style="width: 25%;">Qty</th></tr></thead><tbody>';
+                            data.unit.forEach(function(item, index) {
+                                const qtyMatch = item.match(/\(qty:\s*(\d+)\)/);
+                                if (qtyMatch) {
+                                    const qty = qtyMatch[1];
+                                    const barangName = item.replace(/\s*\(qty:\s*\d+\)/, '').trim();
+                                    barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${barangName}</td><td style="width: 25%;"></td><td style="width: 25%;" class="text-center"><strong>${qty}</strong></td></tr>`;
+                                } else {
+                                    barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${item}</td><td style="width: 25%;"></td><td style="width: 25%;" class="text-center"><strong>-</strong></td></tr>`;
+                                }
+                            });
+                            barangTable += '</tbody></table>';
+                        }
+                    } else if (data.unit && typeof data.unit === 'string') {
+                        // Parse string dengan format "Barang1 (qty: 5), Barang2 (qty: 3)"
+                        if (data.unit.includes(',')) {
+                            const parts = data.unit.split(',').map(v => v.trim()).filter(v => v);
+                            if (parts.length > 0) {
+                                barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
+                                barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 42%;">Nama Barang</th><th style="width: 25%;">Status</th><th style="width: 25%;">Qty</th></tr></thead><tbody>';
+                                parts.forEach(function(part, index) {
+                                    const qtyMatch = part.match(/\(qty:\s*(\d+)\)/);
+                                    if (qtyMatch) {
+                                        const qty = qtyMatch[1];
+                                        const barangName = part.replace(/\s*\(qty:\s*\d+\)/, '').trim();
+                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${barangName}</td><td style="width: 25%;"></td><td style="width: 25%;" class="text-center"><strong>${qty}</strong></td></tr>`;
+                                    } else {
+                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${part}</td><td style="width: 25%;"></td><td style="width: 25%;" class="text-center"><strong>-</strong></td></tr>`;
+                                    }
+                                });
+                                barangTable += '</tbody></table>';
+                            }
+                        } else {
+                            // Single value dengan atau tanpa qty
+                            const qtyMatch = data.unit.match(/\(qty:\s*(\d+)\)/);
+                            if (qtyMatch) {
+                                const qty = qtyMatch[1];
+                                const barangName = data.unit.replace(/\s*\(qty:\s*\d+\)/, '').trim();
+                                barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
+                                barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 42%;">Nama Barang</th><th style="width: 25%;">Status</th><th style="width: 25%;">Qty</th></tr></thead><tbody>';
+                                barangTable += `<tr><td style="width: 8%;">1</td><td style="width: 42%;">${barangName}</td><td style="width: 25%;"></td><td style="width: 25%;" class="text-center"><strong>${qty}</strong></td></tr>`;
+                                barangTable += '</tbody></table>';
+                            }
+                        }
+                    }
+                    
+                    // Tampilkan tabel di div baru dan sembunyikan field Unit
+                    if (barangTable) {
+                        $('#view_barang_table').html(barangTable);
+                        $('#view_barang_container').show();
+                    } else {
+                        $('#view_barang_container').hide();
+                    }
+                    $('#view_label_unit').closest('.form-group').hide();
+                } else {
+                    // Jika bukan Pembelian, tampilkan di field Unit seperti biasa
+                    if (Array.isArray(data.unit)) {
+                        if (data.unit.length > 0) {
+                            unitDisplay = data.unit.join(', ');
+                        }
+                    } else if (data.unit && typeof data.unit === 'string') {
+                        // Remove qty format jika ada untuk display di field Unit
+                        unitDisplay = data.unit.replace(/\s*\(qty:\s*\d+\)/g, '');
+                    } else if (data.unit && data.unit.nama_unit) {
+                        unitDisplay = data.unit.nama_unit;
+                    } else if (data.unit_code) {
+                        unitDisplay = data.unit_code;
+                    }
+                    $('#viewUnitLogistik').html(unitDisplay);
+                    $('#view_label_unit').html('<strong>Unit:</strong>');
+                    $('#view_label_unit').closest('.form-group').show();
+                    $('#view_barang_container').hide();
                 }
-                $('#viewUnitLogistik').text(unitDisplay);
                 
                 // Set status dengan badge berwarna sesuai status
                 var statusText = data.status || 'Menunggu';

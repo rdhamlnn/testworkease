@@ -76,16 +76,18 @@ class LogistikController extends Controller
     {
         $divisiId = Session::get('user_divisi');
         $divisiPengaju = Divisi::where('id_divisi', $divisiId)->value('nama_divisi') ?? 'Logistik';
+        $divisi = Divisi::where('nama_divisi', '!=', 'Administrator')->get();
         $divisiTujuan = Divisi::where('id_divisi', '!=', $divisiId)->orderBy('nama_divisi')->get();
         $unit = Unit::orderBy('nama_unit')->get();
         $jenisWorkOrder = JenisWorkOrder::all();
+        $daftarBarang = DaftarBarang::all();
         $nextNoWO = $this->generateWorkOrderNumber('LOG');
         $workOrders = SuratPengajuan::with(['unit', 'jenisWorkOrder', 'verifikator'])
             ->where('divisi_pengaju', $divisiPengaju)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('logistik.work_order', compact('divisiPengaju', 'divisiTujuan', 'unit', 'jenisWorkOrder', 'nextNoWO', 'workOrders'));
+        return view('logistik.work_order', compact('divisiPengaju', 'divisi', 'divisiTujuan', 'unit', 'jenisWorkOrder', 'daftarBarang', 'nextNoWO', 'workOrders'));
     }
 
     /**

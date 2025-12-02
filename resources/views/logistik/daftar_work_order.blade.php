@@ -309,11 +309,11 @@
 </section>
 
 <!-- Modal View Pengajuan -->
-<div class="modal fade" id="viewPengajuanModal" tabindex="-1" role="dialog" aria-labelledby="viewPengajuanModalLabel" aria-hidden="true">
+<div class="modal fade" id="viewWorkOrderModal" tabindex="-1" role="dialog" aria-labelledby="viewWorkOrderModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="viewPengajuanModalLabel">Detail Pengajuan Work Order</h5>
+                <h5 class="modal-title" id="viewWorkOrderModalLabel">Detail Work Order</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <i class="fas fa-times"></i>
                 </button>
@@ -323,13 +323,13 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label><strong>No. Surat Pengajuan:</strong></label>
-                            <p id="view_pengajuan_no_wo" class="form-control-plaintext border p-2 rounded"></p>
+                            <p id="view_no_wo" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             <label><strong>Tanggal:</strong></label>
-                            <p id="view_pengajuan_tanggal" class="form-control-plaintext border p-2 rounded"></p>
+                            <p id="view_tanggal" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
                 </div>
@@ -337,41 +337,36 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label><strong>Divisi Pengaju:</strong></label>
-                            <p id="view_pengajuan_divisi_pengaju" class="form-control-plaintext border p-2 rounded"></p>
+                            <p id="view_divisi_pengaju" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             <label><strong>Ditujukan:</strong></label>
-                            <p id="view_pengajuan_ditujukan" class="form-control-plaintext border p-2 rounded"></p>
+                            <p id="view_ditujukan" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label><strong>Unit:</strong></label>
-                            <p id="view_pengajuan_unit" class="form-control-plaintext border p-2 rounded"></p>
+                            <label id="view_label_unit"><strong>Unit:</strong></label>
+                            <p id="view_unit" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label><strong>Status:</strong></label>
-                            <p id="view_pengajuan_status" class="form-control-plaintext border p-2 rounded"></p>
-                        </div>
-                    </div>
+                </div>
+                <div class="form-group" id="view_barang_container" style="display: none;">
+                    <label><strong>Barang:</strong></label>
+                    <div id="view_barang_table" class="border rounded" style="padding: 0; overflow: hidden;"></div>
                 </div>
                 <div class="form-group">
                     <label><strong>Uraian:</strong></label>
-                    <p id="view_pengajuan_uraian" class="form-control-plaintext border p-2 rounded"></p>
+                    <p id="view_uraian" class="form-control-plaintext border p-2 rounded"></p>
                 </div>
                 <div class="form-group">
                     <label><strong>Dokumentasi:</strong></label>
-                    <div id="view_pengajuan_dokumentasi" class="form-control-plaintext border p-2 rounded"></div>
+                    <div id="view_dokumentasi" class="form-control-plaintext border p-2 rounded"></div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
