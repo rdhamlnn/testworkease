@@ -655,7 +655,7 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="no_work_order">No. Work Order</label>
-                                        <input type="text" class="form-control" id="no_work_order" name="no_work_order" readonly value="{{ $nextNoWO ?? '01/LOG/KCE/2025' }}">
+                                        <input type="text" class="form-control" id="no_work_order" name="no_work_order" readonly value="{{ $nextWorkOrderNumber ?? '01/LOG/KCE/2025' }}">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -669,6 +669,7 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Divisi Pengaju <span class="text-danger">*</span></label>
+                                        @php($divisiPengaju = Auth::user()->divisi->nama_divisi ?? session('divisi') ?? 'Logistik')
                                         <input type="text" class="form-control" value="{{ $divisiPengaju }}" readonly>
                                         <input type="hidden" name="divisi_pengaju" value="{{ $divisiPengaju }}">
                                     </div>
@@ -709,7 +710,9 @@
                                     <div class="form-group">
                                         <label for="unit" id="label_unit">Nama Unit / Code <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" id="unit" name="unit" required placeholder="Masukkan unit">
+                                        <!-- Container untuk Select2 dinamis (jenis work order Pembelian) -->
                                         <div id="unit_pembelian_container" style="display: none;"></div>
+                                        <!-- Template tersembunyi untuk option barang -->
                                         <select id="template_barang_options" style="display: none;">
                                             @foreach($daftarBarang as $barang)
                                                 <option value="{{ $barang->nama_barang }}">{{ $barang->nama_barang }}</option>
@@ -961,6 +964,43 @@
         // Nonaktifkan enforceFocus Bootstrap untuk kompatibilitas dengan Select2
         $.fn.modal.Constructor.prototype.enforceFocus = function() {};
 
+        // Inisialisasi Select2 untuk field jenis work order
+        function initSelect2JenisWO(selector) {
+            if ($(selector).hasClass('select2-hidden-accessible')) {
+                $(selector).select2('destroy');
+            }
+            
+            // Tentukan parent modal berdasarkan selector
+            let dropdownParent = $(selector).closest('.modal');
+            if (dropdownParent.length === 0) {
+                dropdownParent = $(document.body);
+            }
+            
+            // Simpan nilai sebelum initialize
+            const savedValue = $(selector).val();
+            
+            $(selector).select2({
+                theme: 'bootstrap4',
+                placeholder: 'Pilih Jenis Work Order...',
+                allowClear: true,
+                width: '100%',
+                dropdownParent: dropdownParent,
+                language: {
+                    noResults: function() {
+                        return "Tidak ada hasil";
+                    },
+                    searching: function() {
+                        return "Mencari...";
+                    }
+                }
+            });
+            
+            // Set nilai kembali setelah initialize
+            if (savedValue) {
+                $(selector).val(savedValue).trigger('change');
+            }
+        }
+
         // Inisialisasi Select2 untuk combobox unit
         function initSelect2Unit(selector) {
             if ($(selector).hasClass('select2-hidden-accessible')) {
@@ -1148,6 +1188,16 @@
                         return "Mencari...";
                     }
                 }
+            });
+            
+            // Paksa dropdown muncul di bawah (logika sederhana)
+            $(selector).on('select2:open', function() {
+                setTimeout(function() {
+                    const $dropdown = $(selector).next('.select2-container').find('.select2-dropdown');
+                    if ($dropdown.length) {
+                        $dropdown.removeClass('select2-dropdown--above');
+                    }
+                }, 10);
             });
             
             // Event handler: ketika user memilih barang, update visibility button dan tampilkan qty control
@@ -1460,7 +1510,7 @@
         }
         
         // Event listener untuk perubahan jenis work order
-        $('#id_jenis_wo').on('change', function() {
+        $(document).on('change', '#id_jenis_wo', function() {
             const selectedValue = $(this).val();
             const ditujukanSelect = $('#ditujukan');
             
@@ -1576,7 +1626,7 @@
             filterDivisiDitujukan();
             toggleUnitField();
         });
-
+        
         // Reset field ditujukan dan unit saat modal edit dibuka
         $('#modalEditWorkOrderLogistik').on('show.bs.modal', function() {
             $('#editJenisWoLogistik').val('');
@@ -1599,27 +1649,45 @@
                     $(this).select2('destroy');
                 }
             });
+            
+            // Destroy Select2 untuk id_jenis_wo
+            if ($('#id_jenis_wo').hasClass('select2-hidden-accessible')) {
+                $('#id_jenis_wo').select2('destroy');
+            }
+            
+            // Destroy Select2 untuk editJenisWoLogistik
+            if ($('#editJenisWoLogistik').hasClass('select2-hidden-accessible')) {
+                $('#editJenisWoLogistik').select2('destroy');
+            }
         });
 
         // Pastikan Select2 di-initialize setelah modal fully shown
         $('#tambahWorkOrderModal').on('shown.bs.modal', function() {
+            // Initialize Select2 untuk id_jenis_wo (jika diperlukan)
+            // initSelect2JenisWO('#id_jenis_wo');
+            
             // Focus ke field Jenis Work Order
             setTimeout(function() {
                 $('#id_jenis_wo').focus();
             }, 300);
             
             // Re-initialize Select2 dinamis jika jenis work order adalah Pembelian
-            const selectedJenisWo = $('#id_jenis_wo').find('option:selected').data('nama-jenis');
-            if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
-                setTimeout(function() {
+            setTimeout(function() {
+                const selectedJenisWo = $('#id_jenis_wo').find('option:selected').data('nama-jenis');
+                if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
                     $('#unit_pembelian_container').find('.select2-unit-dynamic').each(function() {
-                        initSelect2Dynamic($(this));
+                        if (!$(this).hasClass('select2-hidden-accessible')) {
+                            initSelect2Dynamic($(this));
+                        }
                     });
-                }, 100);
-            }
+                }
+            }, 200);
         });
         
         $('#modalEditWorkOrderLogistik').on('shown.bs.modal', function() {
+            // Initialize Select2 untuk editJenisWoLogistik
+            initSelect2JenisWO('#editJenisWoLogistik');
+            
             // Focus ke field Jenis Work Order
             setTimeout(function() {
                 $('#editJenisWoLogistik').focus();
