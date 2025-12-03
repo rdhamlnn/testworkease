@@ -181,10 +181,6 @@
                     <div id="view_pengajuan_barang_table" class="border rounded" style="padding: 0; overflow: hidden;"></div>
                 </div>
                 <div class="form-group">
-                    <label><strong>Status:</strong></label>
-                    <p id="view_pengajuan_status" class="form-control-plaintext border p-2 rounded"></p>
-                </div>
-                <div class="form-group">
                     <label><strong>Uraian:</strong></label>
                     <p id="view_pengajuan_uraian" class="form-control-plaintext border p-2 rounded"></p>
                 </div>

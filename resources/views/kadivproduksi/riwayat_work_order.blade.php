@@ -236,7 +236,7 @@
                                 <tbody>
                                     @forelse($workOrders as $i => $wo)
                                         <tr>
-                                            <td>{{ $i + 1 }}</td>
+                                            <td></td>
                                             <td>{{ $wo->no_surat_pengajuan }}</td>
                                             <td>
                                                 @if($wo->jenisWorkOrder)
@@ -247,7 +247,7 @@
                                             </td>
                                             <td>{{ $wo->divisi_pengaju }}</td>
                                             <td>{{ $wo->ditujukan }}</td>
-                                            <td>{{ \Carbon\Carbon::parse($wo->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
+                                            <td data-order="{{ \Carbon\Carbon::parse($wo->tanggal)->format('Y-m-d') }}">{{ \Carbon\Carbon::parse($wo->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
                                             <td>{{ $wo->unit_code ?? $wo->unit }}</td>
                                             <td>{{ Str::limit($wo->uraian, 30) }}</td>
                                             <td>
@@ -346,10 +346,6 @@
                     <div id="view_barang_table" class="border rounded" style="padding: 0; overflow: hidden;"></div>
                 </div>
                 <div class="form-group">
-                    <label><strong>Status:</strong></label>
-                    <p id="view_status" class="form-control-plaintext border p-2 rounded"></p>
-                </div>
-                <div class="form-group">
                     <label><strong>Uraian:</strong></label>
                     <p id="view_uraian" class="form-control-plaintext border p-2 rounded"></p>
                 </div>
@@ -375,6 +371,13 @@
             "autoWidth": false,
             "pageLength": 10,
             "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+            "order": [[5, "desc"]],
+            "columnDefs": [
+                {
+                    "orderable": false,
+                    "targets": 0
+                }
+            ],
             "language": {
                 "search": "Cari:",
                 "lengthMenu": "Tampilkan _MENU_ data per halaman",
@@ -386,6 +389,15 @@
                     "previous": "Sebelumnya"
                 },
                 "emptyTable": "Tidak ada data work order"
+            },
+            "drawCallback": function(settings) {
+                var api = this.api();
+                var start = api.page.info().start;
+                
+                // Update nomor urut berdasarkan urutan sorting dan pagination
+                api.column(0, {page: 'current'}).nodes().each(function(cell, i) {
+                    cell.innerHTML = start + i + 1;
+                });
             }
         });
 

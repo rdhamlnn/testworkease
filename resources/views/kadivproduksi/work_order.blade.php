@@ -1841,7 +1841,7 @@
                                 const qty = qtyMatch[1];
                                 const barangName = data.unit.replace(/\s*\(qty:\s*\d+\)/, '').trim();
                                 barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
-                                barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 42%;">Nama Barang</th><th style="width: 25%;">Status</th><th style="width: 25%;">Qty</th></tr></thead><tbody>';
+                                barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 42%;">Nama Barang</th><th style="width: 25%;">Qty</th></tr></thead><tbody>';
                                 barangTable += `<tr><td style="width: 8%;">1</td><td style="width: 42%;">${barangName}</td><td style="width: 25%;"></td><td style="width: 25%;" class="text-center"><strong>${qty}</strong></td></tr>`;
                                 barangTable += '</tbody></table>';
                             }
