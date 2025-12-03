@@ -137,8 +137,9 @@
         table-layout: fixed;
     }
     
-    #view_barang_table table th,
-    #view_barang_table table td {
+    #view_barang_table table th:nth-child(3),
+    #view_barang_table table td:nth-child(3) {
+        text-align: center !important;
         padding: 8px 12px;
         font-size: 14px;
         word-wrap: break-word;
@@ -428,7 +429,7 @@
                         // Jika array, buat table dengan qty
                         if (data.unit.length > 0) {
                             barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
-                            barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 42%;">Nama Barang</th><th style="width: 25%;">Status</th><th style="width: 25%;">Qty</th></tr></thead><tbody>';
+                            barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 42%;">Nama Barang</th><th style="width: 25%;">Qty</th></tr></thead><tbody>';
                             data.unit.forEach(function(item, index) {
                                 const qtyMatch = item.match(/\(qty:\s*(\d+)\)/);
                                 if (qtyMatch) {
@@ -447,15 +448,15 @@
                             const parts = data.unit.split(',').map(v => v.trim()).filter(v => v);
                             if (parts.length > 0) {
                                 barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
-                                barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 42%;">Nama Barang</th><th style="width: 25%;">Status</th><th style="width: 25%;">Qty</th></tr></thead><tbody>';
+                                barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 42%;">Nama Barang</th><th style="width: 25%;">Qty</th></tr></thead><tbody>';
                                 parts.forEach(function(part, index) {
                                     const qtyMatch = part.match(/\(qty:\s*(\d+)\)/);
                                     if (qtyMatch) {
                                         const qty = qtyMatch[1];
                                         const barangName = part.replace(/\s*\(qty:\s*\d+\)/, '').trim();
-                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${barangName}</td><td style="width: 25%;"></td><td style="width: 25%;" class="text-center"><strong>${qty}</strong></td></tr>`;
+                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${barangName}</td><td style="width: 25%;" class="text-center"><strong>${qty}</strong></td></tr>`;
                                     } else {
-                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${part}</td><td style="width: 25%;"></td><td style="width: 25%;" class="text-center"><strong>-</strong></td></tr>`;
+                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${part}</td>></td><td style="width: 25%;" class="text-center"><strong>-</strong></td></tr>`;
                                     }
                                 });
                                 barangTable += '</tbody></table>';
@@ -467,7 +468,7 @@
                                 const qty = qtyMatch[1];
                                 const barangName = data.unit.replace(/\s*\(qty:\s*\d+\)/, '').trim();
                                 barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
-                                barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 42%;">Nama Barang</th><th style="width: 25%;">Status</th><th style="width: 25%;">Qty</th></tr></thead><tbody>';
+                                barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 42%;">Nama Barang</th><th style="width: 25%;">Qty</th></tr></thead><tbody>';
                                 barangTable += `<tr><td style="width: 8%;">1</td><td style="width: 42%;">${barangName}</td><td style="width: 25%;"></td><td style="width: 25%;" class="text-center"><strong>${qty}</strong></td></tr>`;
                                 barangTable += '</tbody></table>';
                             }

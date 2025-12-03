@@ -431,8 +431,9 @@
         table-layout: fixed;
     }
     
-    #view_barang_table table th,
-    #view_barang_table table td {
+    #view_barang_table table th:nth-child(3),
+    #view_barang_table table td:nth-child(3) {
+        text-align: center !important;
         padding: 8px 12px;
         font-size: 14px;
         word-wrap: break-word;
@@ -1856,7 +1857,6 @@
 
     // View work order
     function viewWorkOrder(id) {
-        // Ambil data dari server
         fetch(`/kadivmekanik/work-order/${id}`)
             .then(response => response.json())
             .then(data => {
@@ -1879,7 +1879,7 @@
                         // Jika array, buat table dengan qty
                         if (data.unit.length > 0) {
                             barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
-                            barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 42%;">Nama Barang</th><th style="width: 25%;">Status</th><th style="width: 25%;">Qty</th></tr></thead><tbody>';
+                            barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 42%;">Nama Barang</th><th style="width: 25%;">Qty</th></tr></thead><tbody>';
                             data.unit.forEach(function(item, index) {
                                 const qtyMatch = item.match(/\(qty:\s*(\d+)\)/);
                                 if (qtyMatch) {
@@ -1898,15 +1898,15 @@
                             const parts = data.unit.split(',').map(v => v.trim()).filter(v => v);
                             if (parts.length > 0) {
                                 barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
-                                barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 42%;">Nama Barang</th><th style="width: 25%;">Status</th><th style="width: 25%;">Qty</th></tr></thead><tbody>';
+                                barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 42%;">Nama Barang</th><th style="width: 25%;">Qty</th></tr></thead><tbody>';
                                 parts.forEach(function(part, index) {
                                     const qtyMatch = part.match(/\(qty:\s*(\d+)\)/);
                                     if (qtyMatch) {
                                         const qty = qtyMatch[1];
                                         const barangName = part.replace(/\s*\(qty:\s*\d+\)/, '').trim();
-                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${barangName}</td><td style="width: 25%;"></td><td style="width: 25%;" class="text-center"><strong>${qty}</strong></td></tr>`;
+                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${barangName}</td><td style="width: 25%;" class="text-center"><strong>${qty}</strong></td></tr>`;
                                     } else {
-                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${part}</td><td style="width: 25%;"></td><td style="width: 25%;" class="text-center"><strong>-</strong></td></tr>`;
+                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${part}</td>></td><td style="width: 25%;" class="text-center"><strong>-</strong></td></tr>`;
                                     }
                                 });
                                 barangTable += '</tbody></table>';
@@ -1967,20 +1967,18 @@
                 }
                 $('#view_status').html('<span class="badge ' + badgeClass + '">' + statusText + '</span>');
                 
+                $('#view_jenis_wo').text(data.jenis_wo || '-');
                 $('#view_uraian').text(data.uraian);
                 if (data.dokumentasi && data.dokumentasi !== '-') {
                     // Cek apakah file adalah gambar
                     const fileExt = data.dokumentasi.split('.').pop().toLowerCase();
                     const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(fileExt);
                     
-                    // Gunakan dokumentasi_url jika ada, jika tidak gunakan path manual sebagai fallback
-                    const dokumentasiUrl = data.dokumentasi_url || '/storage/' + data.dokumentasi;
-                    
                     if (isImage) {
                         // Tampilkan button lihat foto
                         $('#view_dokumentasi').html(
                             '<button type="button" class="btn btn-sm btn-outline-primary btn-view-dokumentasi-modal" ' +
-                            'data-foto="' + dokumentasiUrl + '" ' +
+                            'data-foto="/storage/' + data.dokumentasi + '" ' +
                             'data-nama="' + (data.no_work_order || data.no_surat_pengajuan) + '">' +
                             '<i class="fas fa-image"></i> Lihat Foto' +
                             '</button>'
@@ -1988,7 +1986,7 @@
                     } else {
                         // Untuk file non-gambar, tampilkan button download
                         $('#view_dokumentasi').html(
-                            '<a href="' + dokumentasiUrl + '" target="_blank" class="btn btn-sm btn-outline-primary">' +
+                            '<a href="/storage/' + data.dokumentasi + '" target="_blank" class="btn btn-sm btn-outline-primary">' +
                             '<i class="fas fa-file"></i> Lihat Dokumentasi' +
                             '</a>'
                         );

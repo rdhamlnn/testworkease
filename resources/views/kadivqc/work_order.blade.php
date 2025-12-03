@@ -431,8 +431,9 @@
         table-layout: fixed;
     }
     
-    #view_barang_table table th,
-    #view_barang_table table td {
+    #view_barang_table table th:nth-child(3),
+    #view_barang_table table td:nth-child(3) {
+        text-align: center !important;
         padding: 8px 12px;
         font-size: 14px;
         word-wrap: break-word;
@@ -1844,7 +1845,6 @@
 
     // View work order
     function viewWorkOrder(id) {
-        // Ambil data dari server
         fetch(`/kadivqc/work-order/${id}`)
             .then(response => response.json())
             .then(data => {
@@ -1862,6 +1862,7 @@
                 let barangTable = '';
                 
                 if (isPembelian) {
+                    // Jika jenis WO adalah Pembelian, tampilkan tabel di div baru
                     if (Array.isArray(data.unit)) {
                         // Jika array, buat table dengan qty
                         if (data.unit.length > 0) {
@@ -1940,7 +1941,7 @@
                     $('#view_barang_container').hide();
                 }
                 
-                // Set status dengan badge berwarna sesuai status
+                // Set status dengan badge berwarna sesuai status (dipindahkan setelah unit/barang)
                 var statusText = data.status || 'Menunggu';
                 var badgeClass = 'badge-secondary';
                 if (statusText === 'Disetujui' || statusText === 'Selesai' || statusText === 'Disetujui Atasan' || statusText === 'Diterima Logistik' || statusText === 'Diserahkan ke Divisi' || statusText === 'Dibeli Purchasing' || statusText === 'Dikirim Purchasing') {
@@ -1954,13 +1955,9 @@
                 }
                 $('#view_status').html('<span class="badge ' + badgeClass + '">' + statusText + '</span>');
                 
+                $('#view_jenis_wo').text(data.jenis_wo || '-');
                 $('#view_uraian').text(data.uraian);
-                
-                // Handle dokumentasi
-                if (data.dokumentasi && data.dokumentasi !== '-' && data.dokumentasi.trim() !== '') {
-                    // Gunakan dokumentasi_url jika ada, jika tidak gunakan path manual sebagai fallback
-                    const dokumentasiUrl = data.dokumentasi_url || ('/storage/' + data.dokumentasi);
-                    
+                if (data.dokumentasi && data.dokumentasi !== '-') {
                     // Cek apakah file adalah gambar
                     const fileExt = data.dokumentasi.split('.').pop().toLowerCase();
                     const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(fileExt);
@@ -1969,15 +1966,15 @@
                         // Tampilkan button lihat foto
                         $('#view_dokumentasi').html(
                             '<button type="button" class="btn btn-sm btn-outline-primary btn-view-dokumentasi-modal" ' +
-                            'data-foto="' + dokumentasiUrl + '" ' +
+                            'data-foto="/storage/' + data.dokumentasi + '" ' +
                             'data-nama="' + (data.no_work_order || data.no_surat_pengajuan) + '">' +
                             '<i class="fas fa-image"></i> Lihat Foto' +
                             '</button>'
                         );
                     } else {
-                        // Untuk file non-gambar (PDF, dll), tampilkan button download
+                        // Untuk file non-gambar, tampilkan button download
                         $('#view_dokumentasi').html(
-                            '<a href="' + dokumentasiUrl + '" target="_blank" class="btn btn-sm btn-outline-primary">' +
+                            '<a href="/storage/' + data.dokumentasi + '" target="_blank" class="btn btn-sm btn-outline-primary">' +
                             '<i class="fas fa-file"></i> Lihat Dokumentasi' +
                             '</a>'
                         );

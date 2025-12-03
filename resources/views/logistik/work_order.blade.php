@@ -1725,7 +1725,7 @@
     });
 
     // Form tambah work order - pastikan nilai unit dikirim dengan benar
-    $('#tambahWorkOrderForm').on('submit', function(e) {
+    $(document).on('submit', '#tambahWorkOrderForm', function(e) {
         const unitInput = $('#unit');
         const unitContainer = $('#unit_pembelian_container');
         
@@ -1740,11 +1740,6 @@
         // Validasi manual untuk field required
         let isValid = true;
         const requiredFields = $form.find('[required]');
-        
-        // Enable semua field disabled sementara untuk validasi
-        const disabledFields = $form.find('[disabled]');
-        disabledFields.prop('disabled', false);
-        
         requiredFields.each(function() {
             const $field = $(this);
             let fieldValue = $field.val();
@@ -1788,18 +1783,6 @@
             }
         });
         
-        // Jika tidak valid, kembalikan disabled state
-        if (!isValid) {
-            // Kembalikan disabled state untuk field yang sebelumnya disabled
-            disabledFields.each(function() {
-                const $field = $(this);
-                // Hanya kembalikan jika field ini memang seharusnya disabled (bukan karena validasi)
-                if ($field.attr('id') === 'ditujukan' && !$('#id_jenis_wo').val()) {
-                    $field.prop('disabled', true);
-                }
-            });
-        }
-        
         // Validasi khusus untuk unit field (pembelian)
         const jenisWo = $('#id_jenis_wo').find('option:selected').data('nama-jenis');
         if (jenisWo && jenisWo.toLowerCase() === 'pembelian') {
@@ -1825,16 +1808,6 @@
             // Kembalikan display tab-pane
             $tabPanes.not('.active').css('display', 'none');
             $tabPanes.filter('.active').css('display', 'block');
-            
-            // Kembalikan disabled state untuk field yang sebelumnya disabled
-            disabledFields.each(function() {
-                const $field = $(this);
-                // Hanya kembalikan jika field ini memang seharusnya disabled (bukan karena validasi)
-                if ($field.attr('id') === 'ditujukan' && !$('#id_jenis_wo').val()) {
-                    $field.prop('disabled', true);
-                }
-            });
-            
             return false;
         }
         
@@ -1842,12 +1815,9 @@
         $tabPanes.not('.active').css('display', 'none');
         $tabPanes.filter('.active').css('display', 'block');
         
-        // Pastikan semua field disabled tetap enabled agar nilainya terkirim saat submit
-        // Field sudah di-enable di atas untuk validasi, pastikan tetap enabled
-        const ditujukanSelect = $('#ditujukan');
-        if (ditujukanSelect.length && ditujukanSelect.prop('disabled')) {
-            ditujukanSelect.prop('disabled', false);
-        }
+        // Pastikan semua field disabled di-enable agar nilainya terkirim saat submit
+        const disabledFields = $form.find('[disabled]');
+        disabledFields.prop('disabled', false);
         
         // Handle unit field
         if (unitContainer.length && unitContainer.find('.select2-unit-dynamic').length > 0) {
@@ -1855,7 +1825,7 @@
             const unitValues = [];
             unitContainer.find('.select2-unit-dynamic').each(function() {
                 const value = $(this).val();
-                if (value) {
+                if (value && value !== '') {
                     const index = $(this).data('index');
                     const qty = parseInt($(`.qty-input[data-index="${index}"]`).text()) || 1;
                     // Format: "Barang (qty: 5)"
