@@ -1,5 +1,6 @@
 <?php
 
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE);
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 
