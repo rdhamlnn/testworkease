@@ -288,6 +288,7 @@ Route::middleware(['role:kadiv'])->prefix('logistik')->name('logistik.')->group(
     Route::post('/work-order/approve/{id}', [LogistikController::class, 'approveWorkOrder'])->name('approve-work-order');
     Route::put('/work-order/{id}/reject', [LogistikController::class, 'rejectWorkOrder'])->name('work-order.reject');
     Route::post('/work-order/reject/{id}', [LogistikController::class, 'rejectWorkOrder'])->name('reject-work-order');
+    Route::post('/proses-serahkan-barang-langsung/{id}', [LogistikController::class, 'prosesSerahkanBarangLangsung'])->name('proses-serahkan-barang-langsung');
 
     // 🔹 PERMINTAAN BARANG
     Route::get('/permintaan-barang', [LogistikController::class, 'permintaanBarang'])->name('permintaan-barang');
@@ -314,6 +315,7 @@ Route::middleware(['role:kadiv'])->prefix('logistik')->name('logistik.')->group(
     // API untuk Work Order
     Route::get('/api/work-order/{id}', [LogistikController::class, 'showWorkOrder'])->name('api.work-order');
     Route::get('/api/units/search', [LogistikController::class, 'searchUnits'])->name('api.units.search');
+    Route::get('/api/daftar-barang-stock', [LogistikController::class, 'getAllDaftarBarangStock'])->name('api.daftar-barang-stock');
 
     // 🔹 PROFILE
     Route::get('/profile', [LogistikController::class, 'profile'])->name('profile');

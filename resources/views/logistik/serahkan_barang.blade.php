@@ -94,6 +94,27 @@
         max-width: 100% !important;
         overflow: hidden !important;
     }
+
+    /* Fix font size untuk tabel */
+    #serahkanBarangTable {
+        font-size: 14px !important;
+    }
+
+    #serahkanBarangTable th,
+    #serahkanBarangTable td {
+        font-size: 14px !important;
+        padding: 8px 12px !important;
+    }
+
+    #serahkanBarangTable .btn-sm {
+        font-size: 12px !important;
+        padding: 4px 8px !important;
+    }
+
+    #serahkanBarangTable .btn-icon {
+        font-size: 12px !important;
+        padding: 4px 8px !important;
+    }
 </style>
 @endsection
 
@@ -183,7 +204,8 @@
                                                                     title="Lihat Detail">
                                                                     <i class="fas fa-eye"></i>
                                                                 </button>
-                                                                <form action="{{ route('logistik.serahkan-barang.proses', $pb->id_permintaan_barang) }}" method="POST" class="confirm-form" style="display:inline;" 
+                                                                <form action="{{ route('logistik.serahkan-barang.proses', $pb->id_permintaan_barang) }}" method="POST" class="confirm-form no-transition" style="display:inline;" 
+                                                                    onsubmit="return false;"
                                                                     data-message="Yakin ingin menyerahkan barang ini ke divisi?"
                                                                     data-description="Tindakan ini akan mengubah status permintaan menjadi diserahkan ke divisi."
                                                                     data-button-text="Ya, Serahkan"
@@ -233,7 +255,8 @@
                                                             title="Lihat Detail">
                                                             <i class="fas fa-eye"></i>
                                                         </button>
-                                                        <form action="{{ route('logistik.serahkan-barang.proses', $pb->id_permintaan_barang) }}" method="POST" class="confirm-form" style="display:inline;" 
+                                                        <form action="{{ route('logistik.serahkan-barang.proses', $pb->id_permintaan_barang) }}" method="POST" class="confirm-form no-transition" style="display:inline;" 
+                                                            onsubmit="return false;"
                                                             data-message="Yakin ingin menyerahkan barang ini ke divisi?"
                                                             data-description="Tindakan ini akan mengubah status permintaan menjadi diserahkan ke divisi."
                                                             data-button-text="Ya, Serahkan"
@@ -322,33 +345,155 @@
 </div>
 @endsection
 
+@include('components.confirm-modal')
 @section('scripts')
 <script>
-    $(document).ready(function() {
-        // Initialize DataTable
-        $('#serahkanBarangTable').DataTable({
-            "responsive": false,
-            "scrollX": false,
-            "autoWidth": false,
-            "pageLength": 10,
-            "language": {
-                "search": "Cari:",
-                "lengthMenu": "Tampilkan _MENU_ data per halaman",
-                "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
-                "paginate": {
-                    "next": "Selanjutnya",
-                    "previous": "Sebelumnya"
-                }
+    // Handler form submit dengan vanilla JS untuk prioritas lebih tinggi - MENCEGAH SUBMIT NORMAL
+    document.addEventListener('submit', function(e) {
+        const form = e.target;
+        if (form && form.tagName === 'FORM' && form.classList.contains('confirm-form')) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            console.log('Form submit prevented (vanilla JS)!'); // Debug
+            return false;
+        }
+    }, true); // Gunakan capture phase untuk prioritas lebih tinggi
+    
+    // Pastikan jQuery tersedia sebelum menggunakan
+    (function() {
+        function initSerahkanBarang() {
+            if (typeof jQuery === 'undefined' || typeof $ === 'undefined') {
+                console.warn('jQuery belum tersedia, menunggu...');
+                setTimeout(initSerahkanBarang, 100);
+                return;
             }
-        });
+            
+            // Sekarang jQuery sudah tersedia
+            $(document).ready(function() {
+                // Handler untuk confirm-form - HANYA SATU HANDLER YANG LENGKAP
+                $(document).on('submit', '.confirm-form', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    
+                    console.log('Form submit handler triggered!'); // Debug
+                    
+                    const form = $(this);
+                    const url = form.attr('action');
+                    const message = form.data('message') || 'Yakin ingin melanjutkan?';
+                    const description = form.data('description') || 'Tindakan ini akan memproses data.';
+                    const buttonText = form.data('button-text') || 'Konfirmasi';
+                    const buttonClass = form.data('button-class') || 'btn-primary';
+                    const iconClass = form.data('icon-class') || 'fas fa-question-circle';
+                    
+                    console.log('showConfirmModal available:', typeof showConfirmModal); // Debug
+                    
+                    // Gunakan modal konfirmasi jika tersedia
+                    if (typeof showConfirmModal === 'function') {
+                        console.log('Calling showConfirmModal'); // Debug
+                        showConfirmModal(url, message, description, buttonText, buttonClass, iconClass);
+                    } else {
+                        console.log('Using fallback AJAX'); // Debug
+                        // Fallback: submit via AJAX langsung jika modal belum tersedia
+                        if (confirm(message)) {
+                            const submitBtn = form.find('button[type="submit"]');
+                            const originalHtml = submitBtn.html();
+                            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Memproses...');
+                            
+                            $.ajax({
+                                url: url,
+                                type: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || $('input[name="_token"]').first().val(),
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                },
+                                data: form.serialize(),
+                                dataType: 'json',
+                                success: function(response) {
+                                    if (response && response.success) {
+                                        // Redirect dengan URL yang sudah include from=crud untuk trigger notifikasi toast
+                                        if (response.redirect) {
+                                            window.location.href = response.redirect;
+                                        } else {
+                                            // Fallback: redirect dengan from=crud
+                                            const currentUrl = new URL(window.location.href);
+                                            currentUrl.searchParams.set('from', 'crud');
+                                            window.location.href = currentUrl.toString();
+                                        }
+                                    } else {
+                                        submitBtn.prop('disabled', false).html(originalHtml);
+                                        // Gunakan toast jika tersedia, jika tidak alert
+                                        if (typeof triggerToast === 'function') {
+                                            triggerToast('Gagal memproses: ' + (response.message || 'Error tidak diketahui'), 'danger');
+                                        } else {
+                                            alert('Gagal memproses: ' + (response.message || 'Error tidak diketahui'));
+                                        }
+                                    }
+                                },
+                                error: function(xhr) {
+                                    submitBtn.prop('disabled', false).html(originalHtml);
+                                    let errorMessage = 'Gagal memproses. Silakan coba lagi.';
+                                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                                        errorMessage = xhr.responseJSON.message;
+                                    }
+                                    // Gunakan toast jika tersedia, jika tidak alert
+                                    if (typeof triggerToast === 'function') {
+                                        triggerToast(errorMessage, 'danger');
+                                    } else {
+                                        alert(errorMessage);
+                                    }
+                                }
+                            });
+                        }
+                    }
+                    
+                    return false;
+                });
+                
+                // Tunggu confirm modal ter-inisialisasi sebelum mendaftarkan handler
+                function initHandlers() {
+            // Initialize DataTable dengan error handling
+            try {
+                // Cek apakah tabel sudah ada dan valid
+                if ($('#serahkanBarangTable').length > 0) {
+                    // Cek apakah DataTable sudah diinisialisasi
+                    if ($.fn.DataTable.isDataTable('#serahkanBarangTable')) {
+                        // Jika sudah, destroy dulu
+                        $('#serahkanBarangTable').DataTable().destroy();
+                    }
+                    
+                    $('#serahkanBarangTable').DataTable({
+                        "responsive": false,
+                        "scrollX": false,
+                        "autoWidth": false,
+                        "pageLength": 10,
+                        "language": {
+                            "search": "Cari:",
+                            "lengthMenu": "Tampilkan _MENU_ data per halaman",
+                            "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                            "paginate": {
+                                "next": "Selanjutnya",
+                                "previous": "Sebelumnya"
+                            }
+                        },
+                        "error": function(xhr, error, thrown) {
+                            console.error('DataTables error:', error, thrown);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error initializing DataTable:', error);
+            }
 
-        // Auto hide alerts
-        setTimeout(function() {
-            $('.alert').fadeOut();
-        }, 3000);
+            // Auto hide alerts
+            setTimeout(function() {
+                $('.alert').fadeOut();
+            }, 3000);
 
-        // Handler untuk tombol view detail
-        $(document).on('click', '.btn-view', function() {
+            // Handler untuk tombol view detail
+            $(document).on('click', '.btn-view', function() {
             var $btn = $(this);
             var noPermintaan = $btn.data('no-permintaan') || '-';
             var noWo = $btn.data('no-wo') || '-';
@@ -430,29 +575,37 @@
 
             $('#viewPermintaanModal').modal('show');
         });
-
-        // Handler untuk confirm-form
-        $(document).on('submit', '.confirm-form', function(e) {
-            e.preventDefault();
-            const form = $(this);
-            const url = form.attr('action');
-            const message = form.data('message') || 'Yakin ingin melanjutkan?';
-            const description = form.data('description') || 'Tindakan ini akan memproses data.';
-            const buttonText = form.data('button-text') || 'Konfirmasi';
-            const buttonClass = form.data('button-class') || 'btn-primary';
-            const iconClass = form.data('icon-class') || 'fas fa-question-circle';
-            
-            // Gunakan modal konfirmasi
-            if (typeof showConfirmModal === 'function') {
-                showConfirmModal(url, message, description, buttonText, buttonClass, iconClass);
-            } else {
-                // Fallback ke confirm biasa jika modal belum tersedia
-                if (confirm(message)) {
-                    form.off('submit').submit();
+        
+        // Inisialisasi handler dengan retry jika confirm modal belum tersedia
+        if (typeof showConfirmModal !== 'undefined') {
+            initHandlers();
+        } else {
+            // Tunggu confirm modal ter-inisialisasi (max 2 detik)
+            let retryCount = 0;
+            const maxRetries = 20;
+            const checkInterval = setInterval(function() {
+                if (typeof showConfirmModal !== 'undefined') {
+                    clearInterval(checkInterval);
+                    initHandlers();
+                } else {
+                    retryCount++;
+                    if (retryCount >= maxRetries) {
+                        clearInterval(checkInterval);
+                        console.warn('Confirm modal tidak tersedia setelah beberapa kali percobaan. Menggunakan fallback.');
+                        initHandlers(); // Tetap inisialisasi dengan fallback
+                    }
                 }
-            }
-        });
+            }, 100);
+        }
     });
+        }
+        
+        // Mulai inisialisasi
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initSerahkanBarang);
+        } else {
+            initSerahkanBarang();
+        }
+    })();
 </script>
-@include('components.confirm-modal')
 @endsection

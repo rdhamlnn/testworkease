@@ -90,7 +90,6 @@
         color: white;
     }
     
-    /* FIX empty table message to appear in first column (No) and left-aligned */
     .dataTables_empty,
     table.dataTable tbody tr td.dataTables_empty,
     table.dataTable tbody tr td:first-child.dataTables_empty,

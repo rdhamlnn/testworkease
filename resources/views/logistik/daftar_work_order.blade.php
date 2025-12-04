@@ -188,11 +188,120 @@
         table-layout: fixed;
     }
     
-    #view_barang_table table th,
-    #view_barang_table table td {
+    #view_barang_table table th:nth-child(3),
+    #view_barang_table table td:nth-child(3) {
+        text-align: center !important;
         padding: 8px 12px;
         font-size: 14px;
         word-wrap: break-word;
+    }
+    
+    /* CSS untuk modal cek stock barang */
+    #stockCheckResults {
+        max-width: 100%;
+    }
+    
+    #stockCheckResults .table-responsive {
+        max-height: 400px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        margin-bottom: 0;
+        width: 100%;
+        display: block;
+    }
+    
+    #stockCheckResults .table {
+        width: 100% !important;
+        table-layout: fixed;
+        margin-bottom: 0;
+        border-collapse: collapse;
+    }
+    
+    #stockCheckResults .table thead {
+        background-color: #f8f9fa;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    #stockCheckResults .table thead th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        padding: 10px 8px;
+        font-size: 13px;
+        border-bottom: 2px solid #dee2e6;
+        text-align: center;
+    }
+    
+    #stockCheckResults .table thead th:first-child {
+        text-align: left;
+    }
+    
+    #stockCheckResults .table tbody td {
+        padding: 10px 8px;
+        font-size: 13px;
+        vertical-align: middle;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    #stockCheckResults .table tbody td:first-child {
+        font-weight: 500;
+        text-align: left;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    #stockCheckResults .table tbody td:nth-child(2),
+    #stockCheckResults .table tbody td:nth-child(3) {
+        text-align: center;
+        white-space: nowrap;
+    }
+    
+    #stockCheckResults .table tbody td:nth-child(4) {
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        max-width: 100%;
+    }
+    
+    #stockCheckResults .table tbody td:last-child .badge {
+        display: inline-block;
+        white-space: nowrap;
+        min-width: 50px;
+        max-width: 100%;
+        box-sizing: border-box;
+        padding: 5px 8px;
+        font-size: 12px;
+    }
+    
+    /* Set width untuk setiap kolom - lebih presisi */
+    #stockCheckResults .table thead th:nth-child(1),
+    #stockCheckResults .table tbody td:nth-child(1) {
+        width: 40% !important;
+        max-width: 40% !important;
+    }
+    
+    #stockCheckResults .table thead th:nth-child(2),
+    #stockCheckResults .table tbody td:nth-child(2) {
+        width: 20% !important;
+        max-width: 20% !important;
+    }
+    
+    #stockCheckResults .table thead th:nth-child(3),
+    #stockCheckResults .table tbody td:nth-child(3) {
+        width: 20% !important;
+        max-width: 20% !important;
+    }
+    
+    #stockCheckResults .table thead th:nth-child(4),
+    #stockCheckResults .table tbody td:nth-child(4) {
+        width: 20% !important;
+        max-width: 20% !important;
+        overflow: visible;
     }
     
     #view_barang_table table th {
@@ -338,6 +447,16 @@
                                                         <img src="https://cdn-icons-png.flaticon.com/128/709/709612.png" alt="view">
                                                     </button>
                                                     @if($status == 'Menunggu')
+                                                        @if(($wo->jenis_kebutuhan === 'barang') || ($wo->jenisWorkOrder && strtolower($wo->jenisWorkOrder->nama_jenis_wo) === 'pembelian'))
+                                                            <button type="button" 
+                                                                    class="btn btn-warning btn-sm btn-icon btn-cek-stock-barang" 
+                                                                    data-id="{{ $wo->id_surat_pengajuan }}"
+                                                                    title="Cek Stock Barang">
+                                                                <i class="fas fa-boxes"></i>
+                                                            </button>
+                                                        @endif
+                                                    @endif
+                                                    @if($status == 'Menunggu')
                                                         @if($wo->jenis_kebutuhan === 'barang')
                                                             {{-- Button untuk WO dengan jenis kebutuhan barang --}}
                                                             <button type="button" 
@@ -368,7 +487,7 @@
                                                             </button>
                                                         @else
                                                             {{-- Button untuk WO dengan jenis kebutuhan jasa --}}
-                                                            <form action="{{ route('logistik.approve-work-order', $wo->id_surat_pengajuan) }}" method="POST" class="approve-form" style="display:inline;" 
+                                                            <form action="{{ route('logistik.approve-work-order', $wo->id_surat_pengajuan) }}" method="POST" class="approve-form btn-approve-wo-{{ $wo->id_surat_pengajuan }}" style="display:inline;" 
                                                                 data-message="Yakin ingin menyetujui work order ini?"
                                                                 data-wo-id="{{ $wo->id_surat_pengajuan }}">
                                                                 @csrf
@@ -595,15 +714,15 @@
                             // Jika array, buat table dengan qty
                             if (data.unit.length > 0) {
                                 barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
-                                barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 42%;">Nama Barang</th><th style="width: 25%;">Status</th><th style="width: 25%;">Qty</th></tr></thead><tbody>';
+                                barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 42%;">Nama Barang</th><th style="width: 25%;">Qty</th></tr></thead><tbody>';
                                 data.unit.forEach(function(item, index) {
                                     const qtyMatch = item.match(/\(qty:\s*(\d+)\)/);
                                     if (qtyMatch) {
                                         const qty = qtyMatch[1];
                                         const barangName = item.replace(/\s*\(qty:\s*\d+\)/, '').trim();
-                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${barangName}</td><td style="width: 25%;"></td><td style="width: 25%;" class="text-center"><strong>${qty}</strong></td></tr>`;
+                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${barangName}</td<td style="width: 25%;" class="text-center"><strong>${qty}</strong></td></tr>`;
                                     } else {
-                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${item}</td><td style="width: 25%;"></td><td style="width: 25%;" class="text-center"><strong>-</strong></td></tr>`;
+                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${item}</td><td style="width: 25%;" class="text-center"><strong>-</strong></td></tr>`;
                                     }
                                 });
                                 barangTable += '</tbody></table>';
@@ -614,15 +733,15 @@
                                 const parts = data.unit.split(',').map(v => v.trim()).filter(v => v);
                                 if (parts.length > 0) {
                                     barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
-                                    barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 42%;">Nama Barang</th><th style="width: 25%;">Status</th><th style="width: 25%;">Qty</th></tr></thead><tbody>';
+                                    barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 42%;">Nama Barang</th><th style="width: 25%;">Qty</th></tr></thead><tbody>';
                                     parts.forEach(function(part, index) {
                                         const qtyMatch = part.match(/\(qty:\s*(\d+)\)/);
                                         if (qtyMatch) {
                                             const qty = qtyMatch[1];
                                             const barangName = part.replace(/\s*\(qty:\s*\d+\)/, '').trim();
-                                            barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${barangName}</td><td style="width: 25%;"></td><td style="width: 25%;" class="text-center"><strong>${qty}</strong></td></tr>`;
+                                            barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${barangName}</td><td style="width: 25%;" class="text-center"><strong>${qty}</strong></td></tr>`;
                                         } else {
-                                            barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${part}</td><td style="width: 25%;"></td><td style="width: 25%;" class="text-center"><strong>-</strong></td></tr>`;
+                                            barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${part}</td><td style="width: 25%;" class="text-center"><strong>-</strong></td></tr>`;
                                         }
                                     });
                                     barangTable += '</tbody></table>';
@@ -634,8 +753,8 @@
                                     const qty = qtyMatch[1];
                                     const barangName = data.unit.replace(/\s*\(qty:\s*\d+\)/, '').trim();
                                     barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
-                                    barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 42%;">Nama Barang</th><th style="width: 25%;">Status</th><th style="width: 25%;">Qty</th></tr></thead><tbody>';
-                                    barangTable += `<tr><td style="width: 8%;">1</td><td style="width: 42%;">${barangName}</td><td style="width: 25%;"></td><td style="width: 25%;" class="text-center"><strong>${qty}</strong></td></tr>`;
+                                    barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 42%;">Nama Barang</th><th style="width: 25%;">Qty</th></tr></thead><tbody>';
+                                    barangTable += `<tr><td style="width: 8%;">1</td><td style="width: 42%;">${barangName}</td><td style="width: 25%;" class="text-center"><strong>${qty}</strong></td></tr>`;
                                     barangTable += '</tbody></table>';
                                 }
                             }
@@ -740,6 +859,317 @@
         });
     });
 
+    // Function untuk cek stock barang
+    function cekStockBarang(workOrderId) {
+        // Reset modal
+        $('#stockCheckResults').html(`
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <p class="mt-2">Memeriksa stock barang...</p>
+            </div>
+        `);
+        $('#btnProsesSerahkan').hide();
+        $('#btnBuatPermintaan').hide();
+        
+        // Ambil data work order
+        fetch(`/logistik/api/work-order/${workOrderId}`)
+            .then(response => response.json())
+            .then(workOrderData => {
+                // Ambil data stock barang
+                fetch('/logistik/api/daftar-barang-stock')
+                    .then(response => response.json())
+                    .then(stockData => {
+                        if (!stockData.success) {
+                            $('#stockCheckResults').html(`
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-exclamation-triangle"></i> Gagal mengambil data stock: ${stockData.message || 'Error tidak diketahui'}
+                                </div>
+                            `);
+                            return;
+                        }
+                        
+                        const stockBarang = stockData.data;
+                        
+                        // Parse barang yang diajukan
+                        let barangDiajukan = [];
+                        
+                        // Cek jenis kebutuhan
+                        if (workOrderData.jenis_kebutuhan === 'barang' && workOrderData.daftar_barang) {
+                            // Parse dari daftar_barang (JSON)
+                            try {
+                                const daftarBarang = typeof workOrderData.daftar_barang === 'string' 
+                                    ? JSON.parse(workOrderData.daftar_barang) 
+                                    : workOrderData.daftar_barang;
+                                
+                                if (Array.isArray(daftarBarang)) {
+                                    daftarBarang.forEach(item => {
+                                        barangDiajukan.push({
+                                            nama_barang: item.nama_barang || item,
+                                            qty: parseInt(item.qty || item.quantity || 1),
+                                            satuan: item.satuan || '-'
+                                        });
+                                    });
+                                }
+                            } catch (e) {
+                                console.error('Error parsing daftar_barang:', e);
+                            }
+                        } else if (workOrderData.jenis_wo && workOrderData.jenis_wo.toLowerCase() === 'pembelian' && workOrderData.unit) {
+                            // Parse dari unit (format: "Barang (qty: 5)")
+                            let unitData = workOrderData.unit;
+                            if (typeof unitData === 'string') {
+                                if (unitData.includes(',')) {
+                                    // Multiple items
+                                    unitData.split(',').forEach(part => {
+                                        const qtyMatch = part.match(/\(qty:\s*(\d+)\)/);
+                                        if (qtyMatch) {
+                                            const qty = parseInt(qtyMatch[1]);
+                                            const namaBarang = part.replace(/\s*\(qty:\s*\d+\)/, '').trim();
+                                            barangDiajukan.push({
+                                                nama_barang: namaBarang,
+                                                qty: qty,
+                                                satuan: '-'
+                                            });
+                                        } else {
+                                            // Jika tidak ada format qty, anggap qty 1
+                                            barangDiajukan.push({
+                                                nama_barang: part.trim(),
+                                                qty: 1,
+                                                satuan: '-'
+                                            });
+                                        }
+                                    });
+                                } else {
+                                    // Single item
+                                    const qtyMatch = unitData.match(/\(qty:\s*(\d+)\)/);
+                                    if (qtyMatch) {
+                                        const qty = parseInt(qtyMatch[1]);
+                                        const namaBarang = unitData.replace(/\s*\(qty:\s*\d+\)/, '').trim();
+                                        barangDiajukan.push({
+                                            nama_barang: namaBarang,
+                                            qty: qty,
+                                            satuan: '-'
+                                        });
+                                    } else {
+                                        // Jika tidak ada format qty, anggap qty 1
+                                        barangDiajukan.push({
+                                            nama_barang: unitData.trim(),
+                                            qty: 1,
+                                            satuan: '-'
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Jika tidak ada barang yang diajukan
+                        if (barangDiajukan.length === 0) {
+                            $('#stockCheckResults').html(`
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle"></i> Tidak ada data barang yang ditemukan pada work order ini.
+                                </div>
+                            `);
+                            return;
+                        }
+                        
+                        // Bandingkan dengan stock
+                        let hasilCek = [];
+                        let semuaCukup = true;
+                        let adaYangKurang = false;
+                        
+                        barangDiajukan.forEach(barang => {
+                            // Cari di stock (case insensitive, trim whitespace)
+                            const stockItem = stockBarang.find(item => 
+                                item.nama_barang.toLowerCase().trim() === barang.nama_barang.toLowerCase().trim()
+                            );
+                            
+                            const stockTersedia = stockItem ? (parseInt(stockItem.stok) || 0) : 0;
+                            const qtyDibutuhkan = barang.qty || 0;
+                            
+                            let status = '';
+                            let badgeClass = '';
+                            let cukup = false;
+                            
+                            if (!stockItem) {
+                                // Barang tidak ada di stock
+                                status = 'Tidak Ada';
+                                badgeClass = 'badge-danger';
+                                semuaCukup = false;
+                                adaYangKurang = true;
+                            } else if (stockTersedia >= qtyDibutuhkan) {
+                                // Stock cukup
+                                status = 'Cukup';
+                                badgeClass = 'badge-success';
+                                cukup = true;
+                            } else {
+                                // Stock kurang
+                                status = 'Kurang';
+                                badgeClass = 'badge-warning';
+                                semuaCukup = false;
+                                adaYangKurang = true;
+                            }
+                            
+                            hasilCek.push({
+                                nama_barang: barang.nama_barang,
+                                qty_dibutuhkan: qtyDibutuhkan,
+                                stock_tersedia: stockTersedia,
+                                status: status,
+                                badge_class: badgeClass,
+                                cukup: cukup,
+                                kurang: stockTersedia < qtyDibutuhkan,
+                                satuan: stockItem ? (stockItem.satuan || barang.satuan) : barang.satuan
+                            });
+                        });
+                        
+                        // Tampilkan hasil
+                        let html = '<h6 class="mb-3">Hasil Cek Stock:</h6>';
+                        html += '<div class="table-responsive" style="width: 100%; display: block;">';
+                        html += '<table class="table table-bordered table-sm mb-0" style="table-layout: fixed; width: 100%; margin: 0;">';
+                        html += '<thead class="thead-light"><tr>';
+                        html += '<th style="width: 40%;">Nama Barang</th>';
+                        html += '<th class="text-center" style="width: 20%;">Qty Dibutuhkan</th>';
+                        html += '<th class="text-center" style="width: 20%;">Stock Tersedia</th>';
+                        html += '<th class="text-center" style="width: 20%;">Status</th>';
+                        html += '</tr></thead><tbody>';
+                        
+                        hasilCek.forEach(item => {
+                            html += '<tr>';
+                            html += `<td style="word-wrap: break-word; overflow-wrap: break-word;"><strong>${$('<div>').text(item.nama_barang).html()}</strong></td>`;
+                            html += `<td class="text-center" style="white-space: nowrap;">${item.qty_dibutuhkan} ${item.satuan || ''}</td>`;
+                            html += `<td class="text-center" style="white-space: nowrap;">${item.stock_tersedia} ${item.satuan || ''}</td>`;
+                            html += `<td class="text-center" style="white-space: nowrap; overflow: hidden;"><span class="badge ${item.badge_class}" style="display: inline-block; min-width: 50px; max-width: 100%; box-sizing: border-box; padding: 5px 8px; font-size: 12px;">${item.status}</span></td>`;
+                            html += '</tr>';
+                        });
+                        
+                        html += '</tbody></table></div>';
+                        
+                        // Tambahkan summary
+                        if (semuaCukup) {
+                            html += '<div class="alert alert-success mt-3">';
+                            html += '<i class="fas fa-check-circle"></i> <strong>Stock Cukup!</strong> Semua barang yang dibutuhkan tersedia di stock.';
+                            html += '</div>';
+                        } else if (adaYangKurang) {
+                            html += '<div class="alert alert-warning mt-3">';
+                            html += '<i class="fas fa-exclamation-triangle"></i> <strong>Stock Tidak Cukup!</strong> Ada barang yang stock-nya kurang atau tidak tersedia. Silakan buat permintaan barang.';
+                            html += '</div>';
+                        }
+                        
+                        $('#stockCheckResults').html(html);
+                        
+                        // Tampilkan button sesuai hasil
+                        if (semuaCukup && hasilCek.length > 0) {
+                            // Semua stock cukup, bisa langsung proses serahkan
+                            // Hide button "Setujui" di kolom aksi
+                            $('.btn-approve-wo-' + workOrderId).hide();
+                            
+                            $('#btnProsesSerahkan').show().off('click').on('click', function() {
+                                // Proses serahkan barang langsung (approve + buat permintaan + redirect)
+                                prosesSerahkanBarangLangsung(workOrderId, workOrderData, hasilCek);
+                            });
+                            $('#btnBuatPermintaan').hide();
+                        } else {
+                            // Ada yang kurang/tidak ada, perlu buat permintaan
+                            // Show button "Setujui" di kolom aksi (jika sebelumnya di-hide)
+                            $('.btn-approve-wo-' + workOrderId).show();
+                            
+                            $('#btnBuatPermintaan').show().off('click').on('click', function() {
+                                window.location.href = '{{ route("logistik.permintaan-barang.create", ":id") }}'.replace(':id', workOrderId);
+                            });
+                            $('#btnProsesSerahkan').hide();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        $('#stockCheckResults').html(`
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle"></i> Gagal mengambil data stock. Silakan coba lagi.
+                            </div>
+                        `);
+                    });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                $('#stockCheckResults').html(`
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> Gagal mengambil data work order. Silakan coba lagi.
+                    </div>
+                `);
+            });
+    }
+
+    // Fungsi untuk proses serahkan barang langsung
+    function prosesSerahkanBarangLangsung(workOrderId, workOrderData, hasilCek) {
+        // Show loading
+        $('#btnProsesSerahkan').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Memproses...');
+        
+        // Panggil endpoint untuk proses serahkan barang langsung
+        $.ajax({
+            url: '{{ route("logistik.proses-serahkan-barang-langsung", ":id") }}'.replace(':id', workOrderId),
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                work_order_data: JSON.stringify(workOrderData),
+                hasil_cek: JSON.stringify(hasilCek)
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Tutup modal
+                    $('#modalCekStockBarang').modal('hide');
+                    
+                    // Redirect langsung ke halaman serahkan barang
+                    // Toast notification akan muncul otomatis dari session flash
+                    window.location.href = response.redirect || '{{ route("logistik.serahkan-barang", ["from" => "crud"]) }}';
+                } else {
+                    // Tampilkan error toast jika tersedia, jika tidak redirect dengan error message
+                    if (typeof triggerToast === 'function') {
+                        triggerToast('Gagal memproses: ' + (response.message || 'Error tidak diketahui'), 'danger');
+                    }
+                    $('#btnProsesSerahkan').prop('disabled', false).html('<i class="fas fa-hand-holding"></i> Proses Serahkan Barang');
+                }
+            },
+            error: function(xhr) {
+                let errorMessage = 'Gagal memproses. Silakan coba lagi.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                
+                // Tampilkan error toast jika tersedia
+                if (typeof triggerToast === 'function') {
+                    triggerToast(errorMessage, 'danger');
+                }
+                
+                $('#btnProsesSerahkan').prop('disabled', false).html('<i class="fas fa-hand-holding"></i> Proses Serahkan Barang');
+            }
+        });
+    }
+
+    // Event handler untuk button cek stock
+    $(document).on('click', '.btn-cek-stock-barang', function() {
+        const workOrderId = $(this).data('id');
+        
+        // Reset modal state
+        $('#stockCheckResults').html(`
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <p class="mt-2">Memeriksa stock barang...</p>
+            </div>
+        `);
+        $('#btnProsesSerahkan').hide();
+        $('#btnBuatPermintaan').hide();
+        
+        $('#modalCekStockBarang').modal('show');
+        cekStockBarang(workOrderId);
+    });
+    
+    // Reset button "Setujui" visibility saat modal ditutup
+    $('#modalCekStockBarang').on('hidden.bs.modal', function() {
+        // Show kembali semua button "Setujui" yang mungkin di-hide
+        $('[class*="btn-approve-wo-"]').show();
+    });
+
 </script>
 
 <!-- Modal View Dokumentasi -->
@@ -758,6 +1188,39 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Cek Stock Barang -->
+<div class="modal fade" id="modalCekStockBarang" tabindex="-1" role="dialog" aria-labelledby="modalCekStockBarangLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCekStockBarangLabel">Cek Stock Barang</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="stockCheckResults">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <p class="mt-2">Memeriksa stock barang...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-success" id="btnProsesSerahkan" style="display: none;">
+                    <i class="fas fa-hand-holding"></i> Proses Serahkan Barang
+                </button>
+                <button type="button" class="btn btn-primary" id="btnBuatPermintaan" style="display: none;">
+                    <i class="fas fa-shopping-cart"></i> Buat Permintaan Barang
+                </button>
             </div>
         </div>
     </div>

@@ -439,9 +439,9 @@
         width: 100%;
         table-layout: fixed;
     }
-    
-    #view_barang_table table th,
-    #view_barang_table table td {
+    #view_barang_table table th:nth-child(3),
+    #view_barang_table table td:nth-child(3) {
+        text-align: center !important;
         padding: 8px 12px;
         font-size: 14px;
         word-wrap: break-word;
@@ -655,7 +655,7 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="no_work_order">No. Work Order</label>
-                                        <input type="text" class="form-control" id="no_work_order" name="no_work_order" readonly value="{{ $nextWorkOrderNumber ?? '01/LOG/KCE/2025' }}">
+                                        <input type="text" class="form-control" id="no_work_order" name="no_surat_pengajuan" readonly value="{{ $nextNoWO ?? '001/LOG/KCE/2025' }}">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -893,10 +893,6 @@
                     <div id="view_barang_table" class="border rounded" style="padding: 0; overflow: hidden;"></div>
                 </div>
                 <div class="form-group">
-                    <label><strong>Status:</strong></label>
-                    <p class="form-control-plaintext border p-2 rounded" id="viewStatusLogistik"></p>
-                </div>
-                <div class="form-group">
                     <label><strong>Uraian</strong></label>
                     <p class="form-control-plaintext border p-2 rounded" id="viewUraianLogistik"></p>
                 </div>
@@ -917,22 +913,80 @@
 
 @section('scripts')
 <script>
+    console.log('Script work_order.blade.php mulai dimuat...');
+    console.log('jQuery tersedia?', typeof jQuery !== 'undefined');
+    console.log('$ tersedia?', typeof $ !== 'undefined');
+    
+    // Pastikan jQuery tersedia sebelum menggunakan
+    if (typeof jQuery === 'undefined') {
+        console.error('ERROR: jQuery tidak tersedia saat script dimuat!');
+        console.error('Mencoba menunggu jQuery dimuat...');
+        
+        // Coba tunggu jQuery dimuat
+        var waitForJQuery = setInterval(function() {
+            if (typeof jQuery !== 'undefined') {
+                console.log('jQuery berhasil dimuat setelah menunggu');
+                clearInterval(waitForJQuery);
+                initializeWorkOrderScripts();
+            }
+        }, 100);
+        
+        // Timeout setelah 5 detik
+        setTimeout(function() {
+            if (typeof jQuery === 'undefined') {
+                console.error('ERROR: jQuery masih tidak tersedia setelah 5 detik!');
+                clearInterval(waitForJQuery);
+                alert('Error: jQuery library tidak dapat dimuat. Silakan refresh halaman.');
+            }
+        }, 5000);
+    } else {
+        console.log('jQuery sudah tersedia, versi:', jQuery.fn.jquery);
+        // jQuery sudah tersedia, langsung jalankan
+        if (document.readyState === 'loading') {
+            jQuery(document).ready(function() {
+                initializeWorkOrderScripts();
+            });
+        } else {
+            // DOM sudah ready
+            initializeWorkOrderScripts();
+        }
+    }
+    
     function isLockedAction(element) {
-        const raw = $(element).data('locked');
+        if (typeof jQuery === 'undefined') {
+            console.error('jQuery tidak tersedia di isLockedAction');
+            return false;
+        }
+        const raw = jQuery(element).data('locked');
         return raw === true || raw === 'true';
     }
 
     function notifyLockedAction(element, fallbackMessage) {
-        const message = $(element).data('lockMessage') || fallbackMessage || 'Work Order tidak dapat diproses karena status saat ini.';
+        if (typeof jQuery === 'undefined') {
+            alert(fallbackMessage || 'Work Order tidak dapat diproses karena status saat ini.');
+            return;
+        }
+        const message = jQuery(element).data('lockMessage') || fallbackMessage || 'Work Order tidak dapat diproses karena status saat ini.';
         if (typeof window.triggerToast === 'function') {
             window.triggerToast(message, 'danger', 5200);
         } else {
             alert(message);
         }
     }
-
-    // Initialize DataTable
-    $(document).ready(function() {
+    
+    // Fungsi utama untuk inisialisasi semua script
+    function initializeWorkOrderScripts() {
+        console.log('initializeWorkOrderScripts dipanggil');
+        
+        if (typeof jQuery === 'undefined') {
+            console.error('ERROR: jQuery tidak tersedia di initializeWorkOrderScripts');
+            return;
+        }
+        
+        var $ = jQuery;
+        
+        // Initialize DataTable
+        $(document).ready(function() {
         $('#logistikWorkOrderTable').DataTable({
             "responsive": false,
             "scrollX": false,
@@ -1722,24 +1776,89 @@
             var id = $(this).data('id');
             editWorkOrderLogistik(id);
         });
-    });
-
-    // Form tambah work order - pastikan nilai unit dikirim dengan benar
-    $(document).on('submit', '#tambahWorkOrderForm', function(e) {
+        
+        // Form edit work order - pastikan nilai unit dikirim dengan benar
+        console.log('Mendaftarkan event handler form submit edit work order...');
+        $('#formEditWorkOrderLogistik').on('submit', function(e) {
+        const unitInput = $('#editUnitLogistik');
+        const unitContainer = $('#edit_unit_pembelian_container');
+        
+        // Hapus hidden input unit yang mungkin sudah ada
+        $('#hidden_edit_unit_field').remove();
+        
+        if (unitContainer.is(':visible')) {
+            // Jika container dinamis terlihat, kumpulkan semua nilai dari select2 dengan qty
+            const unitValues = [];
+            unitContainer.find('.select2-unit-dynamic').each(function() {
+                const value = $(this).val();
+                if (value) {
+                    const index = $(this).data('index');
+                    const qty = parseInt($(`.qty-input-edit[data-index="${index}"]`).text()) || 1;
+                    // Format: "Barang (qty: 5)"
+                    unitValues.push(`${value} (qty: ${qty})`);
+                }
+            });
+            
+            // Buat hidden input dengan name="unit" yang berisi nilai gabungan
+            if (unitValues.length > 0) {
+                const unitString = unitValues.join(', ');
+                $('<input>').attr({
+                    type: 'hidden',
+                    id: 'hidden_edit_unit_field',
+                    name: 'unit',
+                    value: unitString
+                }).appendTo($(this));
+            }
+            
+            // Hapus name attribute dari semua select2 dinamis
+            unitContainer.find('.select2-unit-dynamic').each(function() {
+                $(this).removeAttr('name');
+            });
+            
+            // Pastikan input text tidak memiliki name attribute
+            if (unitInput.attr('name')) {
+                unitInput.removeAttr('name');
+            }
+        } else if (unitInput.is(':visible')) {
+            // Jika input text terlihat, pastikan nilainya dikirim
+            if (!unitInput.attr('name')) {
+                unitInput.attr('name', 'unit');
+            }
+            // Pastikan semua select dinamis tidak memiliki name attribute
+            unitContainer.find('.select2-unit-dynamic').each(function() {
+                $(this).removeAttr('name');
+            });
+        }
+        });
+        
+        console.log('Semua event handler berhasil didaftarkan');
+        
+        }); // End of $(document).ready()
+    } // End of initializeWorkOrderScripts()
+    
+    // Form tambah work order - menggunakan direct binding seperti kadivproduksi
+    // Pastikan handler terdaftar setelah DOM ready
+    $(document).ready(function() {
+        $('#tambahWorkOrderForm').on('submit', function(e) {
         const unitInput = $('#unit');
         const unitContainer = $('#unit_pembelian_container');
         
         // Hapus hidden input unit yang mungkin sudah ada
         $('#hidden_unit_field').remove();
         
-        // Pastikan semua tab-pane terlihat untuk validasi (temporary)
+        // Pastikan semua field disabled di-enable TERLEBIH DAHULU agar nilainya terkirim dan bisa divalidasi
         const $form = $(this);
+        const disabledFields = $form.find('[disabled]');
+        disabledFields.prop('disabled', false);
+        
+        // Pastikan semua tab-pane terlihat untuk validasi (temporary)
         const $tabPanes = $form.find('.tab-pane');
         $tabPanes.css('display', 'block');
         
         // Validasi manual untuk field required
         let isValid = true;
-        const requiredFields = $form.find('[required]');
+        const requiredFields = $form.find('[required]').filter(':visible');
+        
         requiredFields.each(function() {
             const $field = $(this);
             let fieldValue = $field.val();
@@ -1815,10 +1934,6 @@
         $tabPanes.not('.active').css('display', 'none');
         $tabPanes.filter('.active').css('display', 'block');
         
-        // Pastikan semua field disabled di-enable agar nilainya terkirim saat submit
-        const disabledFields = $form.find('[disabled]');
-        disabledFields.prop('disabled', false);
-        
         // Handle unit field
         if (unitContainer.length && unitContainer.find('.select2-unit-dynamic').length > 0) {
             // Jika container dinamis ada dan memiliki select2, kumpulkan semua nilai dengan qty
@@ -1863,60 +1978,8 @@
                 $(this).removeAttr('name');
             });
         }
-    });
-
-    // Form edit work order - pastikan nilai unit dikirim dengan benar
-    $('#formEditWorkOrderLogistik').on('submit', function(e) {
-        const unitInput = $('#editUnitLogistik');
-        const unitContainer = $('#edit_unit_pembelian_container');
-        
-        // Hapus hidden input unit yang mungkin sudah ada
-        $('#hidden_edit_unit_field').remove();
-        
-        if (unitContainer.is(':visible')) {
-            // Jika container dinamis terlihat, kumpulkan semua nilai dari select2 dengan qty
-            const unitValues = [];
-            unitContainer.find('.select2-unit-dynamic').each(function() {
-                const value = $(this).val();
-                if (value) {
-                    const index = $(this).data('index');
-                    const qty = parseInt($(`.qty-input-edit[data-index="${index}"]`).text()) || 1;
-                    // Format: "Barang (qty: 5)"
-                    unitValues.push(`${value} (qty: ${qty})`);
-                }
-            });
-            
-            // Buat hidden input dengan name="unit" yang berisi nilai gabungan
-            if (unitValues.length > 0) {
-                const unitString = unitValues.join(', ');
-                $('<input>').attr({
-                    type: 'hidden',
-                    id: 'hidden_edit_unit_field',
-                    name: 'unit',
-                    value: unitString
-                }).appendTo($(this));
-            }
-            
-            // Hapus name attribute dari semua select2 dinamis
-            unitContainer.find('.select2-unit-dynamic').each(function() {
-                $(this).removeAttr('name');
-            });
-            
-            // Pastikan input text tidak memiliki name attribute
-            if (unitInput.attr('name')) {
-                unitInput.removeAttr('name');
-            }
-        } else if (unitInput.is(':visible')) {
-            // Jika input text terlihat, pastikan nilainya dikirim
-            if (!unitInput.attr('name')) {
-                unitInput.attr('name', 'unit');
-            }
-            // Pastikan semua select dinamis tidak memiliki name attribute
-            unitContainer.find('.select2-unit-dynamic').each(function() {
-                $(this).removeAttr('name');
-            });
-        }
-    });
+        });
+    }); // End of $(document).ready() for form submit handler
 
     // View work order
     function viewWorkOrderLogistik(id) {
@@ -1950,9 +2013,9 @@
                                 if (qtyMatch) {
                                     const qty = qtyMatch[1];
                                     const barangName = item.replace(/\s*\(qty:\s*\d+\)/, '').trim();
-                                    barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${barangName}</td><td style="width: 25%;"></td><td style="width: 25%;" class="text-center"><strong>${qty}</strong></td></tr>`;
+                                    barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${barangName}</td><td style="width: 25%;" class="text-center"><strong>${qty}</strong></td></tr>`;
                                 } else {
-                                    barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${item}</td><td style="width: 25%;"></td><td style="width: 25%;" class="text-center"><strong>-</strong></td></tr>`;
+                                    barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${item}</td><td style="width: 25%;" class="text-center"><strong>-</strong></td></tr>`;
                                 }
                             });
                             barangTable += '</tbody></table>';
@@ -1969,9 +2032,9 @@
                                     if (qtyMatch) {
                                         const qty = qtyMatch[1];
                                         const barangName = part.replace(/\s*\(qty:\s*\d+\)/, '').trim();
-                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${barangName}</td><td style="width: 25%;"></td><td style="width: 25%;" class="text-center"><strong>${qty}</strong></td></tr>`;
+                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${barangName}</td><td style="width: 25%;" class="text-center"><strong>${qty}</strong></td></tr>`;
                                     } else {
-                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${part}</td><td style="width: 25%;"></td><td style="width: 25%;" class="text-center"><strong>-</strong></td></tr>`;
+                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 42%;">${part}</td><td style="width: 25%;" class="text-center"><strong>-</strong></td></tr>`;
                                     }
                                 });
                                 barangTable += '</tbody></table>';
@@ -2304,6 +2367,8 @@
             $('#modalViewWorkOrderLogistik').off('hidden.bs.modal');
         });
     });
+    
+    console.log('Script work_order.blade.php selesai dimuat');
 
 </script>
 

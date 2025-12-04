@@ -608,6 +608,198 @@ class LogistikController extends Controller
     }
     
     /**
+     * Proses serahkan barang langsung (approve + buat permintaan + redirect).
+     */
+    public function prosesSerahkanBarangLangsung(Request $request, $id)
+    {
+        try {
+            $workOrder = SuratPengajuan::with('jenisWorkOrder')->findOrFail($id);
+            $userDivisi = Session::get('user_divisi');
+            $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi');
+            
+            // Validasi akses
+            if ($workOrder->ditujukan !== $userDivisiNama) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki akses untuk memproses work order ini.'
+                ], 403);
+            }
+            
+            // 1. Approve work order
+            $workOrder->update([
+                'id_verifikator' => 2, // 2 = Disetujui
+                'status' => 'Disetujui'
+            ]);
+            
+            // 2. Cek apakah permintaan barang sudah ada
+            $permintaanBarang = PermintaanBarang::where('id_surat_pengajuan', $id)->first();
+            
+            // 3. Parse daftar barang dari request atau work order
+            $daftarBarangArray = [];
+            
+            // Ambil dari request jika ada (dari hasil cek stock)
+            if ($request->has('hasil_cek') && $request->hasil_cek) {
+                $hasilCek = json_decode($request->hasil_cek, true);
+                if (is_array($hasilCek)) {
+                    foreach ($hasilCek as $item) {
+                        if (isset($item['nama_barang'])) {
+                            $daftarBarangArray[] = [
+                                'nama_barang' => $item['nama_barang'],
+                                'jumlah' => $item['qty_dibutuhkan'] ?? 1,
+                                'satuan' => $item['satuan'] ?? '-'
+                            ];
+                        }
+                    }
+                }
+            }
+            
+            // Jika belum ada dari request, ambil dari work order atau permintaan barang yang sudah ada
+            if (empty($daftarBarangArray)) {
+                if ($permintaanBarang && $permintaanBarang->daftarBarang) {
+                    // Jika sudah ada permintaan barang, ambil dari detail barang
+                    $permintaanBarang->load('daftarBarang');
+                    foreach ($permintaanBarang->daftarBarang as $detail) {
+                        $daftarBarangArray[] = [
+                            'nama_barang' => $detail->nama_barang,
+                            'jumlah' => $detail->jumlah,
+                            'satuan' => $detail->satuan ?? '-'
+                        ];
+                    }
+                } else {
+                    // Cek jenis work order
+                    $isPembelian = $workOrder->jenisWorkOrder && strtolower($workOrder->jenisWorkOrder->nama_jenis_wo) === 'pembelian';
+                    
+                    if ($isPembelian && $workOrder->unit) {
+                        // Parse dari unit (format: "Barang (qty: 5)")
+                        $unitData = $workOrder->unit;
+                        if (is_string($unitData)) {
+                            if (strpos($unitData, ',') !== false) {
+                                $parts = explode(',', $unitData);
+                                foreach ($parts as $part) {
+                                    $part = trim($part);
+                                    $qtyMatch = [];
+                                    preg_match('/\(qty:\s*(\d+)\)/', $part, $qtyMatch);
+                                    if (!empty($qtyMatch)) {
+                                        $qty = (int)$qtyMatch[1];
+                                        $namaBarang = trim(preg_replace('/\s*\(qty:\s*\d+\)/', '', $part));
+                                    } else {
+                                        $qty = 1;
+                                        $namaBarang = $part;
+                                    }
+                                    $daftarBarangArray[] = [
+                                        'nama_barang' => $namaBarang,
+                                        'jumlah' => $qty,
+                                        'satuan' => '-'
+                                    ];
+                                }
+                            } else {
+                                $qtyMatch = [];
+                                preg_match('/\(qty:\s*(\d+)\)/', $unitData, $qtyMatch);
+                                if (!empty($qtyMatch)) {
+                                    $qty = (int)$qtyMatch[1];
+                                    $namaBarang = trim(preg_replace('/\s*\(qty:\s*\d+\)/', '', $unitData));
+                                } else {
+                                    $qty = 1;
+                                    $namaBarang = trim($unitData);
+                                }
+                                $daftarBarangArray[] = [
+                                    'nama_barang' => $namaBarang,
+                                    'jumlah' => $qty,
+                                    'satuan' => '-'
+                                ];
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // 4. Jika belum ada permintaan barang, buat permintaan barang
+            // Cek ulang apakah permintaan barang sudah ada (untuk menghindari race condition)
+            $permintaanBarang = PermintaanBarang::where('id_surat_pengajuan', $id)->first();
+            
+            if (!$permintaanBarang && !empty($daftarBarangArray)) {
+                $statusDiterimaId = StatusWo::where('nama_status', 'Diterima Logistik')->value('id_status_wo');
+                
+                // Gunakan database transaction untuk memastikan atomicity dan menghindari race condition
+                $permintaanBarang = DB::transaction(function () use ($id, $statusDiterimaId, $daftarBarangArray) {
+                    // Cek ulang dalam transaction dengan lock
+                    $existingPermintaan = PermintaanBarang::where('id_surat_pengajuan', $id)->lockForUpdate()->first();
+                    if ($existingPermintaan) {
+                        return $existingPermintaan;
+                    }
+                    
+                    // Generate nomor permintaan (sudah menggunakan transaction dan lock di dalam method)
+                    $noPermintaan = $this->generateNoPermintaan();
+                    
+                    // Buat permintaan barang
+                    $permintaanBarang = PermintaanBarang::create([
+                        'no_permintaan_barang' => $noPermintaan,
+                        'id_surat_pengajuan' => $id,
+                        'tanggal_permintaan' => date('Y-m-d'),
+                        'status' => 'Diterima Logistik',
+                        'id_status_wo' => $statusDiterimaId,
+                        'total_estimasi_harga' => 0,
+                        'catatan_logistik' => 'Permintaan dibuat otomatis karena stock mencukupi',
+                        'id_logistik' => Session::get('user_id'),
+                        'id_akun' => Session::get('user_id'),
+                    ]);
+                    
+                    return $permintaanBarang;
+                });
+                
+                $isNewPermintaan = true;
+                
+                // Simpan detail barang hanya jika permintaan baru dibuat
+                if ($isNewPermintaan) {
+                    foreach ($daftarBarangArray as $item) {
+                        $master = DaftarBarang::firstOrCreate(
+                            [
+                                'nama_barang' => $item['nama_barang'],
+                                'satuan' => $item['satuan'] ?? null,
+                            ],
+                            [
+                                'stok' => 0,
+                            ]
+                        );
+                        
+                        DetailBarangPermintaan::create([
+                            'id_permintaan_barang' => $permintaanBarang->id_permintaan_barang,
+                            'id_daftar_barang_master' => $master->id_daftar_barang,
+                            'nama_barang' => $item['nama_barang'],
+                            'jumlah' => $item['jumlah'],
+                            'satuan' => $item['satuan'] ?? null,
+                            'estimasi_harga' => null,
+                        ]);
+                    }
+                }
+            } else if ($permintaanBarang) {
+                // Jika sudah ada, pastikan status sudah benar
+                $statusDiterimaId = StatusWo::where('nama_status', 'Diterima Logistik')->value('id_status_wo');
+                if (!$permintaanBarang->id_status_wo) {
+                    $permintaanBarang->update([
+                        'id_status_wo' => $statusDiterimaId,
+                        'status' => 'Diterima Logistik'
+                    ]);
+                }
+            }
+            
+            Session::flash('success', 'Work Order berhasil disetujui dan barang siap diserahkan!');
+            Session::flash('from_crud', true);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Work Order berhasil diproses!',
+                'redirect' => route('logistik.serahkan-barang', ['from' => 'crud'])
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memproses: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
      * Edit permintaan barang page.
      */
     public function editPermintaanBarang($id)
@@ -788,8 +980,10 @@ class LogistikController extends Controller
         $year = Carbon::now()->year;
         $month = Carbon::now()->month;
         
+        // Lock table untuk menghindari race condition
         $lastPermintaan = PermintaanBarang::whereYear('created_at', $year)
             ->whereMonth('created_at', $month)
+            ->lockForUpdate() // Lock untuk update
             ->orderBy('created_at', 'desc')
             ->first();
         
@@ -800,7 +994,33 @@ class LogistikController extends Controller
             $sequence = '001';
         }
         
-        return "{$sequence}/LOG/KCE/{$year}";
+        // Loop untuk memastikan nomor benar-benar unik
+        $maxAttempts = 50;
+        $attempt = 0;
+        
+        while ($attempt < $maxAttempts) {
+            $noPermintaan = "{$sequence}/LOG/KCE/{$year}";
+            
+            // Cek apakah nomor sudah ada dengan lock
+            $existing = PermintaanBarang::where('no_permintaan_barang', $noPermintaan)
+                ->lockForUpdate()
+                ->first();
+            
+            if (!$existing) {
+                // Nomor unik ditemukan
+                return $noPermintaan;
+            }
+            
+            // Jika sudah ada, increment sequence
+            $lastNumber = explode('/', $existing->no_permintaan_barang)[0];
+            $sequence = str_pad((int)$lastNumber + 1, 3, '0', STR_PAD_LEFT);
+            $attempt++;
+        }
+        
+        // Jika masih gagal setelah banyak percobaan, gunakan timestamp untuk memastikan unik
+        $timestamp = time();
+        $sequence = str_pad((int)$sequence, 3, '0', STR_PAD_LEFT);
+        return "{$sequence}/LOG/KCE/{$year}-" . substr($timestamp, -4);
     }
     
     /**
@@ -844,17 +1064,46 @@ class LogistikController extends Controller
     public function prosesSerahkanBarang($id)
     {
         try {
-            $permintaan = PermintaanBarang::findOrFail($id);
+            $permintaan = PermintaanBarang::with('daftarBarang')->findOrFail($id);
+            
+            // Kurangi stock barang dari daftar_barang berdasarkan detail_barang_permintaan
+            if ($permintaan->daftarBarang && $permintaan->daftarBarang->count() > 0) {
+                foreach ($permintaan->daftarBarang as $detail) {
+                    if ($detail->id_daftar_barang_master) {
+                        $masterBarang = DaftarBarang::find($detail->id_daftar_barang_master);
+                        if ($masterBarang) {
+                            // Kurangi stock
+                            $jumlahDiserahkan = $detail->jumlah ?? 0;
+                            $stokSekarang = $masterBarang->stok ?? 0;
+                            $stokBaru = max(0, $stokSekarang - $jumlahDiserahkan); // Pastikan tidak negatif
+                            
+                            $masterBarang->update([
+                                'stok' => $stokBaru
+                            ]);
+                        }
+                    } else {
+                        // Jika tidak ada id_daftar_barang_master, cari berdasarkan nama_barang
+                        $masterBarang = DaftarBarang::where('nama_barang', $detail->nama_barang)->first();
+                        if ($masterBarang) {
+                            $jumlahDiserahkan = $detail->jumlah ?? 0;
+                            $stokSekarang = $masterBarang->stok ?? 0;
+                            $stokBaru = max(0, $stokSekarang - $jumlahDiserahkan);
+                            
+                            $masterBarang->update([
+                                'stok' => $stokBaru
+                            ]);
+                        }
+                    }
+                }
+            }
+            
+            // Update status permintaan barang
+            $statusDiserahkanId = StatusWo::where('nama_status', 'Diserahkan ke Divisi')->value('id_status_wo');
             $permintaan->update([
                 'status' => 'Diserahkan ke Divisi',
+                'id_status_wo' => $statusDiserahkanId,
                 'updated_at' => now(),
             ]);
-            
-            // Update id_status_wo juga
-            $statusDiserahkanId = StatusWo::where('nama_status', 'Diserahkan ke Divisi')->value('id_status_wo');
-            if ($statusDiserahkanId) {
-                $permintaan->update(['id_status_wo' => $statusDiserahkanId]);
-            }
             
             // Simpan success message di session untuk toast notification
             Session::flash('success', 'Barang berhasil diserahkan!');
@@ -866,9 +1115,13 @@ class LogistikController extends Controller
                 'redirect' => route('logistik.serahkan-barang', ['from' => 'crud'])
             ]);
         } catch (\Exception $e) {
+            Session::flash('error', 'Gagal menyerahkan barang: ' . $e->getMessage());
+            Session::flash('from_crud', true);
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menyerahkan barang: ' . $e->getMessage()
+                'message' => 'Gagal menyerahkan barang: ' . $e->getMessage(),
+                'redirect' => route('logistik.serahkan-barang', ['from' => 'crud'])
             ], 500);
         }
     }
@@ -879,6 +1132,41 @@ class LogistikController extends Controller
     public function showWorkOrder($id)
     {
         $workOrder = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])->findOrFail($id);
+        
+        // Ambil jenis_kebutuhan dan daftar_barang dari permintaan_barang jika ada
+        $jenisKebutuhan = null;
+        $daftarBarang = null;
+        
+        // Cek apakah ada permintaan barang terkait
+        $permintaanBarang = PermintaanBarang::where('id_surat_pengajuan', $id)->first();
+        if ($permintaanBarang) {
+            // Jika ada permintaan barang, jenis kebutuhan adalah 'barang'
+            $jenisKebutuhan = 'barang';
+            
+            // Ambil daftar barang dari detail
+            $detailBarang = DetailBarangPermintaan::where('id_permintaan_barang', $permintaanBarang->id_permintaan_barang)
+                ->get()
+                ->map(function($item) {
+                    return [
+                        'nama_barang' => $item->nama_barang,
+                        'qty' => $item->jumlah,
+                        'quantity' => $item->jumlah,
+                        'satuan' => $item->satuan
+                    ];
+                })
+                ->toArray();
+            
+            if (count($detailBarang) > 0) {
+                $daftarBarang = json_encode($detailBarang);
+            }
+        } else {
+            // Jika tidak ada permintaan barang, cek jenis work order
+            if ($workOrder->jenisWorkOrder && strtolower($workOrder->jenisWorkOrder->nama_jenis_wo) === 'pembelian') {
+                $jenisKebutuhan = 'barang';
+            } else {
+                $jenisKebutuhan = 'jasa';
+            }
+        }
         
         $data = [
             'id_surat_pengajuan' => $workOrder->id_surat_pengajuan,
@@ -896,9 +1184,33 @@ class LogistikController extends Controller
             'dokumentasi' => $workOrder->dokumentasi,
             'status' => $workOrder->verifikator ? $workOrder->verifikator->nama_status : ($workOrder->status ?? 'Menunggu'),
             'id_verifikator' => $workOrder->id_verifikator,
+            'jenis_kebutuhan' => $jenisKebutuhan,
+            'daftar_barang' => $daftarBarang,
         ];
         
         return response()->json($data);
+    }
+
+    /**
+     * Get all daftar barang stock (API).
+     */
+    public function getAllDaftarBarangStock()
+    {
+        try {
+            $daftarBarang = DaftarBarang::select('id_daftar_barang', 'nama_barang', 'stok', 'satuan')
+                ->orderBy('nama_barang', 'asc')
+                ->get();
+            
+            return response()->json([
+                'success' => true,
+                'data' => $daftarBarang
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data stock: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
