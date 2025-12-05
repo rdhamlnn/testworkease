@@ -234,6 +234,6 @@ class AkunSeeder extends Seeder
             $karyawanList[8]->id_karyawan ?? 8, // Karyawan QC
             $qcDivisiId,
             $kadivRole ? $kadivRole->id_peran : 2
-        );a
+        );
     }
 }
