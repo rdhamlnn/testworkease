@@ -15,6 +15,7 @@ use App\Models\Unit;
 use App\Models\Akun;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Exports\LaporanPemakaianBarangExport;
 
 class KadivMekanikController extends Controller
 {
@@ -1425,7 +1426,22 @@ class KadivMekanikController extends Controller
 
             $data = $query->orderBy('created_at', 'desc')->get();
             
-            return Excel::download(new LaporanPemakaianBarangExport($data), 'laporan_pemakaian_barang_' . date('Y-m-d_H-i-s') . '.xlsx');
+            // Generate period string
+            $periode = 'Semua_Data';
+            if ($request->has('tahun') && $request->tahun) {
+                $periode = 'Tahun_' . $request->tahun;
+                if ($request->has('bulan') && $request->bulan) {
+                    $bulanNames = [
+                        1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+                        5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+                        9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+                    ];
+                    $periode = $bulanNames[$request->bulan] . '_' . $request->tahun;
+                }
+            }
+            
+            $export = new LaporanPemakaianBarangExport($data, $periode);
+            return $export->download('laporan_pemakaian_barang_' . date('Y-m-d_H-i-s') . '.xlsx');
                 
         } catch (\Exception $e) {
             return redirect()->route('kadivmekanik.laporan-pemakaian-barang')->with('error', 'Gagal mengexport data: ' . $e->getMessage());

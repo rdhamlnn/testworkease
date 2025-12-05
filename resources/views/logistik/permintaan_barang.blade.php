@@ -402,10 +402,6 @@
                     <label><strong>Daftar Barang:</strong></label>
                     <div id="view_daftar_barang" class="mt-2"></div>
                 </div>
-                <div class="form-group">
-                    <label><strong>Status</strong></label>
-                    <p class="form-control-plaintext border p-2 rounded" id="viewStatus"></p>
-                </div>
                 <div class="form-group" id="viewCatatanGroup" style="display: none;">
                     <label><strong>Alasan Penolakan</strong></label>
                     <div class="form-control-plaintext border p-2 rounded bg-danger text-white" id="viewCatatan"></div>

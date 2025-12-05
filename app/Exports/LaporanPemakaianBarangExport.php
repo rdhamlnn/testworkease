@@ -2,16 +2,13 @@
 
 namespace App\Exports;
 
-use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithColumnWidths;
-use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Events\AfterSheet;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 
-class LaporanPemakaianBarangExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths, WithEvents
+class LaporanPemakaianBarangExport
 {
     protected $data;
     protected $periode;
@@ -22,14 +19,34 @@ class LaporanPemakaianBarangExport implements FromCollection, WithHeadings, With
         $this->periode = $periode;
     }
 
-    public function collection()
+    public function download($filename = null)
     {
-        return $this->data;
-    }
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
 
-    public function headings(): array
-    {
-        return [
+        // Insert header rows
+        $sheet->insertNewRowBefore(1, 4);
+
+        // Set company name
+        $sheet->setCellValue('A1', 'PT. KALIMANTAN CONCRETE ENGINEERING');
+        $sheet->mergeCells('A1:I1');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Set report title
+        $sheet->setCellValue('A2', 'LAPORAN PEMAKAIAN BARANG');
+        $sheet->mergeCells('A2:I2');
+        $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(12);
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Set period
+        $sheet->setCellValue('A3', 'PERIODE: ' . str_replace('_', ' ', $this->periode));
+        $sheet->mergeCells('A3:I3');
+        $sheet->getStyle('A3')->getFont()->setBold(true);
+        $sheet->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Set headers
+        $headers = [
             'No',
             'Tanggal',
             'Sparepart/Material/Jasa',
@@ -40,102 +57,83 @@ class LaporanPemakaianBarangExport implements FromCollection, WithHeadings, With
             'Total Harga',
             'Keterangan',
         ];
-    }
+        
+        $sheet->fromArray($headers, null, 'A5');
+        
+        // Style headers
+        $headerRow = 5;
+        $sheet->getStyle("A{$headerRow}:I{$headerRow}")->getFont()->setBold(true);
+        $sheet->getStyle("A{$headerRow}:I{$headerRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("A{$headerRow}:I{$headerRow}")->getFill()
+            ->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()->setARGB('FFE0E0E0');
 
-    public function map($row): array
-    {
-        static $no = 0;
-        $no++;
+        // Add data
+        $row = 6;
+        $no = 0;
 
-        $tanggal = \Carbon\Carbon::parse($row->tanggal ?? now())->format('d/m/Y');
+        foreach ($this->data as $item) {
+            $no++;
+            
+            $tanggal = \Carbon\Carbon::parse($item->tanggal ?? now())->format('d/m/Y');
 
-        $hargaSatuan = (float) ($row->harga_satuan ?? 0);
-        $total = isset($row->total_harga) && $row->total_harga !== null && $row->total_harga !== ''
-            ? (float) $row->total_harga
-            : ((float) ($row->jumlah ?? 0) * $hargaSatuan);
+            $hargaSatuan = (float) ($item->harga_satuan ?? 0);
+            $total = isset($item->total_harga) && $item->total_harga !== null && $item->total_harga !== ''
+                ? (float) $item->total_harga
+                : ((float) ($item->jumlah ?? 0) * $hargaSatuan);
 
-        return [
-            $no,
-            $tanggal,
-            $row->nama_barang ?? '-',
-            $row->kode_unit ?? '-',
-            (float) ($row->jumlah ?? 0),
-            $row->bentuk_satuan ?? '-',
-            $hargaSatuan,
-            $total,
-            $row->keterangan ?? '-',
-        ];
-    }
-
-    public function columnWidths(): array
-    {
-        return [
-            'A' => 6,
-            'B' => 12,
-            'C' => 30,
-            'D' => 12,
-            'E' => 10,
-            'F' => 16,
-            'G' => 16,
-            'H' => 16,
-            'I' => 25,
-        ];
-    }
-
-    public function styles(Worksheet $sheet)
-    {
-        return [
-            1 => ['font' => ['bold' => true]],
-        ];
-    }
-
-    public function registerEvents(): array
-    {
-        return [
-            AfterSheet::class => function (AfterSheet $event) {
-                $sheet = $event->sheet->getDelegate();
-
-                // Sisipkan header seperti preview
-                $sheet->insertNewRowBefore(1, 4);
-
-                $sheet->setCellValue('A1', 'PT. KALIMANTAN CONCRETE ENGINEERING');
-                $sheet->mergeCells('A1:I1');
-                $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
-                $sheet->getStyle('A1')->getAlignment()->setHorizontal('center');
-
-                $sheet->setCellValue('A2', 'LAPORAN PEMAKAIAN BARANG');
-                $sheet->mergeCells('A2:I2');
-                $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(12);
-                $sheet->getStyle('A2')->getAlignment()->setHorizontal('center');
-
-                $sheet->setCellValue('A3', 'PERIODE: ' . str_replace('_', ' ', $this->periode));
-                $sheet->mergeCells('A3:I3');
-                $sheet->getStyle('A3')->getFont()->setBold(true);
-                $sheet->getStyle('A3')->getAlignment()->setHorizontal('center');
-
-                // Header kolom tebal dan rata tengah
-                $headerRow = 5;
-                $sheet->getStyle("A{$headerRow}:I{$headerRow}")->getFont()->setBold(true);
-                $sheet->getStyle("A{$headerRow}:I{$headerRow}")->getAlignment()->setHorizontal('center');
-
-                // Format angka untuk harga
-                $highestRow = $sheet->getHighestRow();
-                if ($highestRow >= 6) {
-                    $sheet->getStyle("G6:G{$highestRow}")->getNumberFormat()->setFormatCode('#,##0');
-                    $sheet->getStyle("H6:H{$highestRow}")->getNumberFormat()->setFormatCode('#,##0');
-
-                    // Baris total sesuai preview (JUMLAH)
-                    $totalRow = $highestRow + 1;
-                    $sheet->mergeCells("A{$totalRow}:F{$totalRow}");
-                    $sheet->setCellValue("G{$totalRow}", 'JUMLAH');
-                    $sheet->getStyle("G{$totalRow}")->getFont()->setBold(true);
-                    $sheet->setCellValue("H{$totalRow}", "=SUM(H6:H{$highestRow})");
-                    $sheet->getStyle("H{$totalRow}")->getFont()->setBold(true);
-                    $sheet->getStyle("H{$totalRow}")->getNumberFormat()->setFormatCode('#,##0');
-                }
-            },
-        ];
+            $sheet->setCellValue('A' . $row, $no);
+            $sheet->setCellValue('B' . $row, $tanggal);
+            $sheet->setCellValue('C' . $row, $item->nama_barang ?? '-');
+            $sheet->setCellValue('D' . $row, $item->kode_unit ?? '-');
+            $sheet->setCellValue('E' . $row, (float) ($item->jumlah ?? 0));
+            $sheet->setCellValue('F' . $row, $item->bentuk_satuan ?? '-');
+            $sheet->setCellValue('G' . $row, $hargaSatuan);
+            $sheet->setCellValue('H' . $row, $total);
+            $sheet->setCellValue('I' . $row, $item->keterangan ?? '-');
+            
+            // Format angka untuk harga
+            $sheet->getStyle('G' . $row)->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle('H' . $row)->getNumberFormat()->setFormatCode('#,##0');
+            
+            $row++;
+        }
+        
+        // Set column widths
+        $sheet->getColumnDimension('A')->setWidth(6);
+        $sheet->getColumnDimension('B')->setWidth(12);
+        $sheet->getColumnDimension('C')->setWidth(30);
+        $sheet->getColumnDimension('D')->setWidth(12);
+        $sheet->getColumnDimension('E')->setWidth(10);
+        $sheet->getColumnDimension('F')->setWidth(16);
+        $sheet->getColumnDimension('G')->setWidth(16);
+        $sheet->getColumnDimension('H')->setWidth(16);
+        $sheet->getColumnDimension('I')->setWidth(25);
+        
+        // Add total row
+        $highestRow = $sheet->getHighestRow();
+        if ($highestRow >= 6) {
+            $totalRow = $highestRow + 1;
+            $sheet->mergeCells("A{$totalRow}:F{$totalRow}");
+            $sheet->setCellValue("G{$totalRow}", 'JUMLAH');
+            $sheet->getStyle("G{$totalRow}")->getFont()->setBold(true);
+            $sheet->setCellValue("H{$totalRow}", "=SUM(H6:H{$highestRow})");
+            $sheet->getStyle("H{$totalRow}")->getFont()->setBold(true);
+            $sheet->getStyle("H{$totalRow}")->getNumberFormat()->setFormatCode('#,##0');
+        }
+        
+        // Set default filename if not provided
+        if (!$filename) {
+            $filename = 'laporan_pemakaian_barang_' . date('Y-m-d_H-i-s') . '.xlsx';
+        }
+        
+        // Create writer and return response
+        $writer = new Xlsx($spreadsheet);
+        
+        return response()->streamDownload(function() use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
     }
 }
-
-

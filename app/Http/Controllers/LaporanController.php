@@ -11,11 +11,9 @@ use App\Models\Divisi;
 use App\Models\Unit;
 use App\Models\Akun;
 use Carbon\Carbon;
-use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Exports\LaporanHarianMekanikExport;
 use App\Exports\LaporanPemakaianBarangExport;
-use App\Exports\LaporanArsipWoExport;
 
 class LaporanController extends Controller
 {
@@ -560,7 +558,22 @@ class LaporanController extends Controller
 
             $data = $query->orderBy('created_at', 'desc')->get();
             
-            return Excel::download(new LaporanHarianMekanikExport($data), 'laporan_harian_mekanik_' . date('Y-m-d_H-i-s') . '.xlsx');
+            // Generate period string
+            $periode = 'Semua_Data';
+            if ($request->has('tahun') && $request->tahun) {
+                $periode = 'Tahun_' . $request->tahun;
+                if ($request->has('bulan') && $request->bulan) {
+                    $bulanNames = [
+                        1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+                        5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+                        9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+                    ];
+                    $periode = $bulanNames[$request->bulan] . '_' . $request->tahun;
+                }
+            }
+            
+            $export = new LaporanHarianMekanikExport($data, $periode);
+            return $export->download('laporan_harian_mekanik_' . date('Y-m-d_H-i-s') . '.xlsx');
         } catch (\Exception $e) {
             return response()->json(['error' => 'Gagal mengekspor laporan: ' . $e->getMessage()], 500);
         }
@@ -585,7 +598,22 @@ class LaporanController extends Controller
 
             $data = $query->orderBy('created_at', 'desc')->get();
             
-            return Excel::download(new LaporanPemakaianBarangExport($data), 'laporan_pemakaian_barang_' . date('Y-m-d_H-i-s') . '.xlsx');
+            // Generate period string
+            $periode = 'Semua_Data';
+            if ($request->has('tahun') && $request->tahun) {
+                $periode = 'Tahun_' . $request->tahun;
+                if ($request->has('bulan') && $request->bulan) {
+                    $bulanNames = [
+                        1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+                        5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+                        9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+                    ];
+                    $periode = $bulanNames[$request->bulan] . '_' . $request->tahun;
+                }
+            }
+            
+            $export = new LaporanPemakaianBarangExport($data, $periode);
+            return $export->download('laporan_pemakaian_barang_' . date('Y-m-d_H-i-s') . '.xlsx');
         } catch (\Exception $e) {
             return response()->json(['error' => 'Gagal mengekspor laporan: ' . $e->getMessage()], 500);
         }
@@ -616,7 +644,8 @@ class LaporanController extends Controller
 
             $data = $query->orderBy('created_at', 'desc')->get();
             
-            return Excel::download(new LaporanArsipWoExport($data), 'laporan_arsip_wo_' . date('Y-m-d_H-i-s') . '.xlsx');
+            // LaporanArsipWoExport tidak ada, skip untuk sementara
+            return response()->json(['error' => 'Export laporan arsip WO belum tersedia'], 500);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Gagal mengekspor laporan: ' . $e->getMessage()], 500);
         }

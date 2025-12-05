@@ -15,7 +15,9 @@ use App\Models\DetailBarangPermintaan; // pivot detail permintaan
 use App\Models\Divisi;
 use App\Models\Unit;
 use App\Models\JenisWorkOrder;
+use App\Models\Akun;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class LogistikController extends Controller
 {
@@ -1134,13 +1136,12 @@ class LogistikController extends Controller
         $workOrder = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])->findOrFail($id);
         
         // Ambil jenis_kebutuhan dan daftar_barang dari permintaan_barang jika ada
-        $jenisKebutuhan = null;
         $daftarBarang = null;
+        $jenisKebutuhan = 'jasa'; // Default value
         
         // Cek apakah ada permintaan barang terkait
         $permintaanBarang = PermintaanBarang::where('id_surat_pengajuan', $id)->first();
         if ($permintaanBarang) {
-            // Jika ada permintaan barang, jenis kebutuhan adalah 'barang'
             $jenisKebutuhan = 'barang';
             
             // Ambil daftar barang dari detail
@@ -1347,6 +1348,45 @@ class LogistikController extends Controller
             ->findOrFail($id);
         
         return view('work_order.cetak', compact('workOrder'));
+    }
+
+    /**
+     * Print work order as PDF.
+     */
+    public function cetakpdf($id)
+    {
+        $wo = SuratPengajuan::with([
+            'jenisWorkOrder',
+            'verifikator',
+            'akun.karyawan',
+            'akun.divisi',
+            'divisiPengaju',
+            'unit'
+        ])->findOrFail($id);
+
+        // Akun pembuat WO
+        $dibuatOleh = $wo->akun;
+
+        // Akun divisi tujuan berdasarkan nama divisi di kolom 'ditujukan'
+        $diketahuiOleh = Akun::with(['karyawan', 'divisi'])
+            ->whereHas('divisi', function ($q) use ($wo) {
+                $q->where('nama_divisi', $wo->ditujukan);
+            })
+            ->first();
+
+        // Status badge
+        $wo->status_text = $wo->verifikator->nama_status ?? $wo->status ?? 'Menunggu';
+
+        $pdf = Pdf::loadView('admin.cetak_work_order_pdf', [
+            'wo' => $wo,
+            'dibuatOleh' => $dibuatOleh,
+            'diketahuiOleh' => $diketahuiOleh,
+        ])->setPaper('A4', 'portrait');
+
+        $cleanNo = str_replace(['/', '\\'], '-', $wo->no_surat_pengajuan);
+        $filename = "WorkOrder_{$cleanNo}.pdf";
+
+        return $pdf->stream($filename);
     }
 
     private function generateWorkOrderNumber(string $prefix = 'LOG')
