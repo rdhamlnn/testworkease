@@ -11,6 +11,8 @@ use App\Models\SuratPengajuan;
 use App\Models\Divisi;
 use App\Models\Unit;
 use App\Models\DaftarBarang;
+use App\Models\PermintaanBarang;
+use App\Models\DetailBarangPermintaan;
 use Carbon\Carbon;
 
 class KadivProduksiController extends Controller
@@ -185,6 +187,56 @@ class KadivProduksiController extends Controller
     }
     
     /**
+     * Generate nomor permintaan barang.
+     */
+    private function generateNoPermintaan()
+    {
+        $year = Carbon::now()->year;
+        $month = Carbon::now()->month;
+        
+        // Lock table untuk menghindari race condition
+        $lastPermintaan = PermintaanBarang::whereYear('created_at', $year)
+            ->whereMonth('created_at', $month)
+            ->lockForUpdate()
+            ->orderBy('created_at', 'desc')
+            ->first();
+        
+        if ($lastPermintaan) {
+            $lastNumber = explode('/', $lastPermintaan->no_permintaan_barang)[0];
+            $sequence = str_pad((int)$lastNumber + 1, 3, '0', STR_PAD_LEFT);
+        } else {
+            $sequence = '001';
+        }
+        
+        // Loop untuk memastikan nomor benar-benar unik
+        $maxAttempts = 50;
+        $attempt = 0;
+        
+        while ($attempt < $maxAttempts) {
+            $noPermintaan = "{$sequence}/LOG/KCE/{$year}";
+            
+            // Cek apakah nomor sudah ada dengan lock
+            $existing = PermintaanBarang::where('no_permintaan_barang', $noPermintaan)
+                ->lockForUpdate()
+                ->first();
+            
+            if (!$existing) {
+                return $noPermintaan;
+            }
+            
+            // Jika sudah ada, increment sequence
+            $lastNumber = explode('/', $existing->no_permintaan_barang)[0];
+            $sequence = str_pad((int)$lastNumber + 1, 3, '0', STR_PAD_LEFT);
+            $attempt++;
+        }
+        
+        // Jika masih gagal setelah banyak percobaan, gunakan timestamp untuk memastikan unik
+        $timestamp = time();
+        $sequence = str_pad((int)$sequence, 3, '0', STR_PAD_LEFT);
+        return "{$sequence}/LOG/KCE/{$year}-" . substr($timestamp, -4);
+    }
+    
+    /**
      * Store work order.
      */
     public function storeWorkOrder(Request $request)
@@ -220,7 +272,7 @@ class KadivProduksiController extends Controller
 
             $workOrderNumber = $this->generateWorkOrderNumber();
 
-            SuratPengajuan::create([
+            $workOrder = SuratPengajuan::create([
                 'no_surat_pengajuan' => $workOrderNumber,
                 'ditujukan' => $request->ditujukan,
                 'id_jenis_wo' => $request->id_jenis_wo,
@@ -235,6 +287,80 @@ class KadivProduksiController extends Controller
                 'id_akun' => Session::get('user_id', 1),
                 'id_unit' => $unitId
             ]);
+
+            // Parse data dari Select2 dinamis (format: "Barang1 (qty: 5), Barang2 (qty: 3)")
+            $barangItems = [];
+            if (!empty($request->unit) && strpos($request->unit, '(qty:') !== false) {
+                // Format dari Select2 dinamis
+                $parts = explode(',', $request->unit);
+                foreach ($parts as $part) {
+                    $part = trim($part);
+                    if (preg_match('/^(.+?)\s*\(qty:\s*(\d+)\)$/', $part, $matches)) {
+                        $namaBarang = trim($matches[1]);
+                        $qty = (int)$matches[2];
+                        if (!empty($namaBarang) && $qty > 0) {
+                            // Cari master barang untuk mendapatkan satuan
+                            $master = DaftarBarang::where('nama_barang', $namaBarang)->first();
+                            $barangItems[] = [
+                                'nama_barang' => $namaBarang,
+                                'jumlah' => $qty,
+                                'satuan' => $master ? $master->satuan : null,
+                                'estimasi_harga' => null,
+                            ];
+                        }
+                    }
+                }
+            } elseif ($request->has('barang') && is_array($request->barang) && count($request->barang) > 0) {
+                // Format dari form manual (fallback)
+                $barangItems = array_filter($request->barang, function($item) {
+                    return !empty($item['nama_barang']) && !empty($item['jumlah']);
+                });
+            }
+            
+            // Jika ada barang yang diisi, buat PermintaanBarang otomatis
+            if (count($barangItems) > 0) {
+                // Hitung total estimasi harga
+                $totalHarga = 0;
+                foreach ($barangItems as $item) {
+                    $totalHarga += ($item['estimasi_harga'] ?? 0) * ($item['jumlah'] ?? 0);
+                }
+                
+                // Generate nomor permintaan
+                $noPermintaan = $this->generateNoPermintaan();
+                
+                // Buat PermintaanBarang
+                $permintaan = PermintaanBarang::create([
+                    'no_permintaan_barang' => $noPermintaan,
+                    'id_surat_pengajuan' => $workOrder->id_surat_pengajuan,
+                    'tanggal_permintaan' => $request->tanggal,
+                    'status' => 'Menunggu Logistik',
+                    'total_estimasi_harga' => $totalHarga,
+                    'id_akun' => Session::get('user_id', 1),
+                ]);
+                
+                // Simpan detail barang
+                foreach ($barangItems as $item) {
+                    // Cari atau buat master stok barang
+                    $master = DaftarBarang::firstOrCreate(
+                        [
+                            'nama_barang' => $item['nama_barang'],
+                            'satuan' => $item['satuan'] ?? null,
+                        ],
+                        [
+                            'stok' => 0,
+                        ]
+                    );
+                    
+                    DetailBarangPermintaan::create([
+                        'id_permintaan_barang' => $permintaan->id_permintaan_barang,
+                        'id_daftar_barang_master' => $master->id_daftar_barang,
+                        'nama_barang' => $item['nama_barang'],
+                        'jumlah' => (int)($item['jumlah'] ?? 0),
+                        'satuan' => $item['satuan'] ?? null,
+                        'estimasi_harga' => isset($item['estimasi_harga']) ? (float)$item['estimasi_harga'] : null,
+                    ]);
+                }
+            }
 
             return redirect()->route('kadivproduksi.work-order', ['from' => 'crud'])->with('success', 'Data berhasil ditambahkan');
         } catch (\Exception $e) {

@@ -753,74 +753,125 @@
                 @method('PUT')
                 <input type="hidden" id="edit_id" name="id">
                 <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="edit_no_work_order">No. Work Order</label>
-                                <input type="text" class="form-control" id="edit_no_work_order" name="no_work_order" readonly>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="edit_tanggal">Tanggal <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control" id="edit_tanggal" name="tanggal" required>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="edit_divisi_pengaju">Divisi Pengaju</label>
-                                <input type="text" class="form-control" id="edit_divisi_pengaju" name="divisi_pengaju" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="edit_ditujukan">Ditujukan <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="edit_ditujukan" name="ditujukan" required disabled>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="edit_id_jenis_wo">Jenis Work Order <span class="text-danger">*</span></label>
-                                <select class="form-control" name="id_jenis_wo" id="edit_id_jenis_wo" required autofocus>
-                                    <option value="">-- Pilih Jenis Work Order --</option>
-                                    @foreach($jenisWorkOrder as $jenis)
-                                        <option value="{{ $jenis->id_jenis_wo }}" data-nama-jenis="{{ $jenis->nama_jenis_wo }}">{{ $jenis->nama_jenis_wo }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="edit_unit" id="label_edit_unit">Nama Unit / Code <span class="text-danger">*</span></label>
-                                <!-- Input text untuk jenis work order selain Pembelian -->
-                                <input type="text" class="form-control" id="edit_unit" name="unit" required>
-                                <!-- Container untuk Select2 dinamis (jenis work order Pembelian) -->
-                                <div id="edit_unit_pembelian_container" style="display: none;"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="edit_dokumentasi">Dokumentasi</label>
-                                <div id="currentDokumentasiKadiv" class="mb-2" style="display: none;">
-                                    <small class="text-muted d-block">File saat ini: <span id="currentDokumentasiNameKadiv" class="font-weight-bold"></span></small>
+                    <!-- Scrollable Tabs Navigation -->
+                    <ul class="nav nav-tabs nav-tabs-scrollable" id="editWorkOrderTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" id="edit-info-dasar-tab" data-toggle="tab" href="#edit-info-dasar" role="tab" aria-controls="edit-info-dasar" aria-selected="true">
+                                <i class="fas fa-info-circle"></i> Informasi Dasar
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="edit-detail-wo-tab" data-toggle="tab" href="#edit-detail-wo" role="tab" aria-controls="edit-detail-wo" aria-selected="false">
+                                <i class="fas fa-clipboard-list"></i> Detail Work Order
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="edit-dokumentasi-tab" data-toggle="tab" href="#edit-dokumentasi" role="tab" aria-controls="edit-dokumentasi" aria-selected="false">
+                                <i class="fas fa-file-upload"></i> Dokumentasi
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <!-- Tab Content -->
+                    <div class="tab-content tab-content-scrollable" id="editWorkOrderTabContent">
+                        <!-- Tab 1: Informasi Dasar -->
+                        <div class="tab-pane fade show active" id="edit-info-dasar" role="tabpanel" aria-labelledby="edit-info-dasar-tab">
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="edit_no_work_order">No. Work Order</label>
+                                        <input type="text" class="form-control" id="edit_no_work_order" name="no_work_order" readonly>
+                                    </div>
                                 </div>
-                                <input type="file" class="form-control" id="edit_dokumentasi" name="dokumentasi" accept=".pdf,.jpg,.jpeg,.png" onchange="previewDokumentasiEditKadiv(this)">
-                                <small class="form-text text-muted">Format: JPG, PNG, PDF. Maks. 2MB</small>
-                                <div id="previewDokumentasiContainerKadiv" class="mt-2" style="display: none;">
-                                    <img id="previewDokumentasiKadiv" src="" alt="Preview Dokumentasi" style="max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 8px; border: 1px solid #ddd;">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="edit_tanggal">Tanggal <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control" id="edit_tanggal" name="tanggal" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="edit_divisi_pengaju">Divisi Pengaju</label>
+                                        <input type="text" class="form-control" id="edit_divisi_pengaju" name="divisi_pengaju" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="edit_id_jenis_wo">Jenis Work Order <span class="text-danger">*</span></label>
+                                        <select class="form-control" name="id_jenis_wo" id="edit_id_jenis_wo" required autofocus>
+                                            <option value="">-- Pilih Jenis Work Order --</option>
+                                            @foreach($jenisWorkOrder as $jenis)
+                                                <option value="{{ $jenis->id_jenis_wo }}" data-nama-jenis="{{ $jenis->nama_jenis_wo }}">{{ $jenis->nama_jenis_wo }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_uraian">Uraian <span class="text-danger">*</span></label>
-                        <textarea class="form-control" id="edit_uraian" name="uraian" rows="3" required></textarea>
+                        
+                        <!-- Tab 2: Detail Work Order -->
+                        <div class="tab-pane fade" id="edit-detail-wo" role="tabpanel" aria-labelledby="edit-detail-wo-tab">
+                            <div class="row mt-3">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="edit_ditujukan">Ditujukan <span class="text-danger">*</span></label>
+                                        <select class="form-control" name="ditujukan" id="edit_ditujukan" required disabled>
+                                            <option value="">-- Pilih Jenis Work Order terlebih dahulu --</option>
+                                            @foreach($divisi as $d)
+                                                @if($d->nama_divisi !== 'Administrator' && $d->nama_divisi !== 'Produksi')
+                                                    <option value="{{ $d->nama_divisi }}">{{ $d->nama_divisi }}</option>
+                                                @endif
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="edit_unit" id="label_edit_unit">Nama Unit / Code <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="edit_unit" name="unit" required>
+                                        <!-- Container untuk Select2 dinamis (jenis work order Pembelian) -->
+                                        <div id="edit_unit_pembelian_container" style="display: none;"></div>
+                                        <!-- Template tersembunyi untuk option barang -->
+                                        <select id="edit_template_barang_options" style="display: none;">
+                                            @foreach($daftarBarang as $barang)
+                                                <option value="{{ $barang->nama_barang }}">{{ $barang->nama_barang }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="edit_uraian">Uraian <span class="text-danger">*</span></label>
+                                        <textarea class="form-control" id="edit_uraian" name="uraian" rows="4" required></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tab 3: Dokumentasi -->
+                        <div class="tab-pane fade" id="edit-dokumentasi" role="tabpanel" aria-labelledby="edit-dokumentasi-tab">
+                            <div class="row mt-3">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="edit_dokumentasi">Dokumentasi</label>
+                                        <div id="currentDokumentasiKadiv" class="mb-2" style="display: none;">
+                                            <small class="text-muted d-block">File saat ini: <span id="currentDokumentasiNameKadiv" class="font-weight-bold"></span></small>
+                                        </div>
+                                        <input type="file" class="form-control" id="edit_dokumentasi" name="dokumentasi" accept=".pdf,.jpg,.jpeg,.png" onchange="previewDokumentasiEditKadiv(this)">
+                                        <small class="form-text text-muted">Format: JPG, PNG, PDF. Maks. 2MB</small>
+                                        <div id="previewDokumentasiContainerKadiv" class="mt-2" style="display: none;">
+                                            <img id="previewDokumentasiKadiv" src="" alt="Preview Dokumentasi" style="max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 8px; border: 1px solid #ddd;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -1319,12 +1370,17 @@
             const unitContainer = $('#unit_pembelian_container');
             const unitLabel = $('#label_unit');
             
-            // Jika jenis work order adalah "Pembelian", tampilkan container dinamis dan sembunyikan input
-            if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
+            // Jika jenis work order adalah "Pembelian" atau "Perbaikan", tampilkan container dinamis
+            if (selectedJenisWo && (selectedJenisWo.toLowerCase() === 'pembelian' || selectedJenisWo.toLowerCase() === 'perbaikan')) {
                 unitInput.hide().removeAttr('required').removeAttr('name');
                 unitContainer.show();
-                // Ubah label menjadi "Daftar barang"
-                unitLabel.html('Daftar barang <span class="text-danger">*</span>');
+                
+                // Untuk Pembelian: wajib, untuk Perbaikan: opsional
+                if (selectedJenisWo.toLowerCase() === 'pembelian') {
+                    unitLabel.html('Daftar barang <span class="text-danger">*</span>');
+                } else {
+                    unitLabel.html('Daftar barang <small class="text-muted">(Opsional)</small>');
+                }
                 
                 // Jika container kosong, tambahkan select pertama
                 if (unitContainer.find('.unit-select-wrapper').length === 0) {
@@ -1338,7 +1394,7 @@
                     });
                 }
             } else {
-                // Jika bukan "Pembelian", tampilkan input dan sembunyikan container
+                // Jika bukan "Pembelian" atau "Perbaikan", tampilkan input dan sembunyikan container
                 unitInput.show().attr('required', 'required').attr('name', 'unit');
                 unitContainer.hide();
                 // Clear semua select2 dinamis
@@ -1356,12 +1412,17 @@
             const unitContainer = $('#edit_unit_pembelian_container');
             const unitLabel = $('#label_edit_unit');
             
-            // Jika jenis work order adalah "Pembelian", tampilkan container dinamis dan sembunyikan input
-            if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
+            // Jika jenis work order adalah "Pembelian" atau "Perbaikan", tampilkan container dinamis
+            if (selectedJenisWo && (selectedJenisWo.toLowerCase() === 'pembelian' || selectedJenisWo.toLowerCase() === 'perbaikan')) {
                 unitInput.hide().removeAttr('required').removeAttr('name');
                 unitContainer.show();
-                // Ubah label menjadi "Daftar barang"
-                unitLabel.html('Daftar barang <span class="text-danger">*</span>');
+                
+                // Untuk Pembelian: wajib, untuk Perbaikan: opsional
+                if (selectedJenisWo.toLowerCase() === 'pembelian') {
+                    unitLabel.html('Daftar barang <span class="text-danger">*</span>');
+                } else {
+                    unitLabel.html('Daftar barang <small class="text-muted">(Opsional)</small>');
+                }
                 
                 // Jika container kosong, tambahkan select pertama
                 if (unitContainer.find('.unit-select-wrapper').length === 0) {
@@ -1375,7 +1436,7 @@
                     });
                 }
             } else {
-                // Jika bukan "Pembelian", tampilkan input dan sembunyikan container
+                // Jika bukan "Pembelian" atau "Perbaikan", tampilkan input dan sembunyikan container
                 unitInput.show().attr('required', 'required').attr('name', 'unit');
                 unitContainer.hide();
                 // Clear semua select2 dinamis
@@ -1386,6 +1447,17 @@
         }
         
         // Event listener untuk perubahan jenis work order
+        // Counter untuk barang items
+        let barangItemCount = 0;
+        
+        // Toggle section barang berdasarkan jenis WO
+        function toggleBarangSection() {
+            // SELALU hide karena sudah diwakili oleh Select2 dinamis (unit_pembelian_container)
+            $('#barang-section').hide();
+            $('#daftar-barang-container').empty();
+            barangItemCount = 0;
+        }
+        
         $('#id_jenis_wo').on('change', function() {
             const selectedValue = $(this).val();
             const ditujukanSelect = $('#ditujukan');
@@ -1397,12 +1469,27 @@
             } else {
                 ditujukanSelect.prop('disabled', true);
                 ditujukanSelect.val('');
+            }
+            
+            // Toggle section barang
+            toggleBarangSection();
                 ditujukanSelect.find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
             }
             
             filterDivisiDitujukan();
             toggleUnitField();
+            toggleBarangSection();
         });
+        
+        // Jalankan toggle saat halaman dimuat
+        toggleBarangSection();
+        
+        // Toggle section barang untuk form edit
+        function toggleBarangSectionEdit() {
+            // SELALU hide karena sudah diwakili oleh Select2 dinamis (edit_unit_pembelian_container)
+            $('#edit-barang-section').hide();
+            $('#edit-daftar-barang-container').empty();
+        }
         
         // Event listener untuk perubahan jenis work order di form edit
         $('#edit_id_jenis_wo').on('change', function() {
@@ -1420,11 +1507,68 @@
             }
             
             toggleUnitFieldEdit();
+            toggleBarangSectionEdit();
+        });
+        
+        // Counter untuk barang items
+        let barangItemCount = 0;
+        
+        // Toggle section barang berdasarkan jenis WO
+        function toggleBarangSection() {
+            const jenisWO = $('#id_jenis_wo option:selected').data('nama-jenis');
+            const barangSection = $('#barang-section');
+            
+            // Tampilkan section barang jika jenis WO = Perbaikan atau Pembelian
+            if (jenisWO === 'Perbaikan' || jenisWO === 'Pembelian') {
+                barangSection.show();
+            } else {
+                barangSection.hide();
+                // Clear semua barang items jika section disembunyikan
+                $('#daftar-barang-container').empty();
+                barangItemCount = 0;
+            }
+        }
+        
+        // Tambah item barang
+        $('#tambah-barang-btn').on('click', function() {
+            const html = `
+                <div class="row mb-2 barang-item" data-index="${barangItemCount}">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="barang[${barangItemCount}][nama_barang]" 
+                               placeholder="Nama Barang">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" class="form-control" name="barang[${barangItemCount}][jumlah]" 
+                               placeholder="Jumlah" min="1">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" class="form-control" name="barang[${barangItemCount}][satuan]" 
+                               placeholder="Satuan (pcs/kg)">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" class="form-control" name="barang[${barangItemCount}][estimasi_harga]" 
+                               placeholder="Estimasi Harga" min="0" step="0.01">
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-danger btn-sm btn-remove-barang" title="Hapus">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            $('#daftar-barang-container').append(html);
+            barangItemCount++;
+        });
+        
+        // Hapus item barang
+        $(document).on('click', '.btn-remove-barang', function() {
+            $(this).closest('.barang-item').remove();
         });
         
         // Jalankan filter saat halaman dimuat (jika ada nilai yang sudah dipilih)
         filterDivisiDitujukan();
         toggleUnitField();
+        toggleBarangSection();
         
         // Event handler untuk button tambah barang (form create)
         $(document).on('click', '.btn-tambah-barang', function() {
@@ -1543,9 +1687,9 @@
 
         // Pastikan Select2 di-initialize setelah modal fully shown
         $('#tambahWorkOrderModal').on('shown.bs.modal', function() {
-            // Re-initialize Select2 dinamis jika jenis work order adalah Pembelian
+            // Re-initialize Select2 dinamis jika jenis work order adalah Pembelian atau Perbaikan
             const selectedJenisWo = $('#id_jenis_wo').find('option:selected').data('nama-jenis');
-            if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
+            if (selectedJenisWo && (selectedJenisWo.toLowerCase() === 'pembelian' || selectedJenisWo.toLowerCase() === 'perbaikan')) {
                 setTimeout(function() {
                     $('#unit_pembelian_container').find('.select2-unit-dynamic').each(function() {
                         initSelect2Dynamic($(this));
@@ -1555,9 +1699,9 @@
         });
 
         $('#editWorkOrderModal').on('shown.bs.modal', function() {
-            // Re-initialize Select2 dinamis jika jenis work order adalah Pembelian
+            // Re-initialize Select2 dinamis jika jenis work order adalah Pembelian atau Perbaikan
             const selectedJenisWo = $('#edit_id_jenis_wo').find('option:selected').data('nama-jenis');
-            if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
+            if (selectedJenisWo && (selectedJenisWo.toLowerCase() === 'pembelian' || selectedJenisWo.toLowerCase() === 'perbaikan')) {
                 setTimeout(function() {
                     $('#edit_unit_pembelian_container').find('.select2-unit-dynamic').each(function() {
                         initSelect2Dynamic($(this));
@@ -1644,11 +1788,14 @@
             }
         });
         
-        // Validasi khusus untuk unit field (pembelian)
+        // Validasi khusus untuk unit field (pembelian wajib, perbaikan opsional)
         const jenisWo = $('#id_jenis_wo').find('option:selected').data('nama-jenis');
-        if (jenisWo && jenisWo.toLowerCase() === 'pembelian') {
+        if (jenisWo && (jenisWo.toLowerCase() === 'pembelian' || jenisWo.toLowerCase() === 'perbaikan')) {
             const unitSelects = unitContainer.find('.select2-unit-dynamic');
-            if (unitSelects.length === 0 || unitSelects.filter(function() { return $(this).val(); }).length === 0) {
+            const hasSelectedBarang = unitSelects.length > 0 && unitSelects.filter(function() { return $(this).val(); }).length > 0;
+            
+            // Untuk Pembelian: wajib, untuk Perbaikan: opsional
+            if (jenisWo.toLowerCase() === 'pembelian' && !hasSelectedBarang) {
                 isValid = false;
                 unitContainer.addClass('border border-danger');
                 
@@ -1937,7 +2084,7 @@
                 $('#edit_no_work_order').val(data.no_work_order);
                 $('#edit_tanggal').val(data.tanggal);
                 $('#edit_divisi_pengaju').val(data.divisi_pengaju);
-                $('#edit_id_jenis_wo').val(data.id_jenis_wo);
+                $('#edit_id_jenis_wo').val(data.id_jenis_wo).trigger('change');
                 
                 // Enable field Ditujukan setelah Jenis Work Order dipilih
                 if (data.id_jenis_wo) {
@@ -1949,6 +2096,11 @@
                 
                 // Toggle field unit berdasarkan jenis work order
                 toggleUnitFieldEdit();
+                
+                // Toggle section barang berdasarkan jenis WO
+                setTimeout(function() {
+                    toggleBarangSectionEdit();
+                }, 100);
                 
                 // Set nilai unit ke field yang sesuai
                 const selectedJenisWo = $('#edit_id_jenis_wo').find('option:selected').data('nama-jenis');

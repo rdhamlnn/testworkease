@@ -326,7 +326,7 @@ class AtasanController extends Controller
             ], 500);
         }
     }
-
+    
     /**
      * Display profile page.
      */

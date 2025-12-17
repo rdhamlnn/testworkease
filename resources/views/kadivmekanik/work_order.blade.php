@@ -176,6 +176,32 @@
         min-width: 180px !important;
         padding: 10px 8px !important;
     }
+    
+    .btn-icon img {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .btn-icon {
+        cursor: pointer !important;
+        pointer-events: auto !important;
+        position: relative;
+        z-index: 10;
+    }
+    
+    .btn-icon:disabled {
+        cursor: not-allowed !important;
+        opacity: 0.6;
+    }
+    
+    .btn-edit,
+    .btn-delete,
+    .btn-view {
+        cursor: pointer !important;
+        pointer-events: auto !important;
+        position: relative;
+        z-index: 10;
+    }
 
     .card-body {
         overflow-x: auto !important;
@@ -758,80 +784,125 @@
                 @method('PUT')
                 <input type="hidden" id="edit_id" name="id">
                 <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="edit_no_work_order">No. Work Order</label>
-                                <input type="text" class="form-control" id="edit_no_work_order" name="no_work_order" readonly>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="edit_tanggal">Tanggal <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control" id="edit_tanggal" name="tanggal" required>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="edit_divisi_pengaju">Divisi Pengaju</label>
-                                <input type="text" class="form-control" id="edit_divisi_pengaju" name="divisi_pengaju" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="edit_ditujukan">Ditujukan <span class="text-danger">*</span></label>
-                                <select class="form-control" name="ditujukan" id="edit_ditujukan" required disabled>
-                                    <option value="">-- Pilih Jenis Work Order terlebih dahulu --</option>
-                                    @foreach($divisi as $d)
-                                        @if($d->nama_divisi !== 'Administrator')
-                                            <option value="{{ $d->nama_divisi }}">{{ $d->nama_divisi }}</option>
-                                        @endif
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="edit_id_jenis_wo">Jenis Work Order <span class="text-danger">*</span></label>
-                                <select class="form-control" name="id_jenis_wo" id="edit_id_jenis_wo" required autofocus>
-                                    <option value="">-- Pilih Jenis Work Order --</option>
-                                    @foreach($jenisWorkOrder as $jenis)
-                                        <option value="{{ $jenis->id_jenis_wo }}" data-nama-jenis="{{ $jenis->nama_jenis_wo }}">{{ $jenis->nama_jenis_wo }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="edit_unit" id="edit_label_unit">Nama Unit / Code <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="edit_unit" name="unit" required>
-                                <!-- Container untuk Select2 dinamis (jenis work order Pembelian) -->
-                                <div id="edit_unit_pembelian_container" style="display: none;"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="edit_dokumentasi">Dokumentasi</label>
-                                <div id="currentDokumentasiKadiv" class="mb-2" style="display: none;">
-                                    <small class="text-muted d-block">File saat ini: <span id="currentDokumentasiNameKadiv" class="font-weight-bold"></span></small>
+                    <!-- Scrollable Tabs Navigation -->
+                    <ul class="nav nav-tabs nav-tabs-scrollable" id="editWorkOrderTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" id="edit-info-dasar-tab" data-toggle="tab" href="#edit-info-dasar" role="tab" aria-controls="edit-info-dasar" aria-selected="true">
+                                <i class="fas fa-info-circle"></i> Informasi Dasar
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="edit-detail-wo-tab" data-toggle="tab" href="#edit-detail-wo" role="tab" aria-controls="edit-detail-wo" aria-selected="false">
+                                <i class="fas fa-clipboard-list"></i> Detail Work Order
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="edit-dokumentasi-tab" data-toggle="tab" href="#edit-dokumentasi" role="tab" aria-controls="edit-dokumentasi" aria-selected="false">
+                                <i class="fas fa-file-upload"></i> Dokumentasi
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <!-- Tab Content -->
+                    <div class="tab-content tab-content-scrollable" id="editWorkOrderTabContent">
+                        <!-- Tab 1: Informasi Dasar -->
+                        <div class="tab-pane fade show active" id="edit-info-dasar" role="tabpanel" aria-labelledby="edit-info-dasar-tab">
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="edit_no_work_order">No. Work Order</label>
+                                        <input type="text" class="form-control" id="edit_no_work_order" name="no_work_order" readonly>
+                                    </div>
                                 </div>
-                                <input type="file" class="form-control" id="edit_dokumentasi" name="dokumentasi" accept=".pdf,.jpg,.jpeg,.png" onchange="previewDokumentasiEditKadiv(this)">
-                                <small class="form-text text-muted">Format: JPG, PNG, PDF. Maks. 2MB</small>
-                                <div id="previewDokumentasiContainerKadiv" class="mt-2" style="display: none;">
-                                    <img id="previewDokumentasiKadiv" src="" alt="Preview Dokumentasi" style="max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 8px; border: 1px solid #ddd;">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="edit_tanggal">Tanggal <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control" id="edit_tanggal" name="tanggal" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="edit_divisi_pengaju">Divisi Pengaju</label>
+                                        <input type="text" class="form-control" id="edit_divisi_pengaju" name="divisi_pengaju" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="edit_id_jenis_wo">Jenis Work Order <span class="text-danger">*</span></label>
+                                        <select class="form-control" name="id_jenis_wo" id="edit_id_jenis_wo" required autofocus>
+                                            <option value="">-- Pilih Jenis Work Order --</option>
+                                            @foreach($jenisWorkOrder as $jenis)
+                                                <option value="{{ $jenis->id_jenis_wo }}" data-nama-jenis="{{ $jenis->nama_jenis_wo }}">{{ $jenis->nama_jenis_wo }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit_uraian">Uraian <span class="text-danger">*</span></label>
-                        <textarea class="form-control" id="edit_uraian" name="uraian" rows="3" required></textarea>
+                        
+                        <!-- Tab 2: Detail Work Order -->
+                        <div class="tab-pane fade" id="edit-detail-wo" role="tabpanel" aria-labelledby="edit-detail-wo-tab">
+                            <div class="row mt-3">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="edit_ditujukan">Ditujukan <span class="text-danger">*</span></label>
+                                        <select class="form-control" name="ditujukan" id="edit_ditujukan" required disabled>
+                                            <option value="">-- Pilih Jenis Work Order terlebih dahulu --</option>
+                                            @foreach($divisi as $d)
+                                                @if($d->nama_divisi !== 'Administrator')
+                                                    <option value="{{ $d->nama_divisi }}">{{ $d->nama_divisi }}</option>
+                                                @endif
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="edit_unit" id="edit_label_unit">Nama Unit / Code <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="edit_unit" name="unit" required>
+                                        <!-- Container untuk Select2 dinamis (jenis work order Pembelian) -->
+                                        <div id="edit_unit_pembelian_container" style="display: none;"></div>
+                                        <!-- Template tersembunyi untuk option barang -->
+                                        <select id="edit_template_barang_options" style="display: none;">
+                                            @foreach($daftarBarang as $barang)
+                                                <option value="{{ $barang->nama_barang }}">{{ $barang->nama_barang }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="edit_uraian">Uraian <span class="text-danger">*</span></label>
+                                        <textarea class="form-control" id="edit_uraian" name="uraian" rows="4" required></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tab 3: Dokumentasi -->
+                        <div class="tab-pane fade" id="edit-dokumentasi" role="tabpanel" aria-labelledby="edit-dokumentasi-tab">
+                            <div class="row mt-3">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label for="edit_dokumentasi">Dokumentasi</label>
+                                        <div id="currentDokumentasiKadiv" class="mb-2" style="display: none;">
+                                            <small class="text-muted d-block">File saat ini: <span id="currentDokumentasiNameKadiv" class="font-weight-bold"></span></small>
+                                        </div>
+                                        <input type="file" class="form-control" id="edit_dokumentasi" name="dokumentasi" accept=".pdf,.jpg,.jpeg,.png" onchange="previewDokumentasiEditKadiv(this)">
+                                        <small class="form-text text-muted">Format: JPG, PNG, PDF. Maks. 2MB</small>
+                                        <div id="previewDokumentasiContainerKadiv" class="mt-2" style="display: none;">
+                                            <img id="previewDokumentasiKadiv" src="" alt="Preview Dokumentasi" style="max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 8px; border: 1px solid #ddd;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">

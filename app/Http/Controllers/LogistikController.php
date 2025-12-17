@@ -164,7 +164,7 @@ class LogistikController extends Controller
                 $dokumentasiPath = $request->file('dokumentasi')->store('work-orders', 'public');
             }
 
-            SuratPengajuan::create([
+            $workOrder = SuratPengajuan::create([
                 'no_surat_pengajuan' => $request->no_surat_pengajuan,
                 'ditujukan' => $request->ditujukan,
                 'id_jenis_wo' => $request->id_jenis_wo,
@@ -180,6 +180,57 @@ class LogistikController extends Controller
                 'id_akun' => Session::get('user_id'),
                 'id_unit' => $unitId,
             ]);
+
+            // Jika ada barang yang diisi, buat PermintaanBarang otomatis
+            if ($request->has('barang') && is_array($request->barang) && count($request->barang) > 0) {
+                $barangItems = array_filter($request->barang, function($item) {
+                    return !empty($item['nama_barang']) && !empty($item['jumlah']);
+                });
+                
+                if (count($barangItems) > 0) {
+                    // Hitung total estimasi harga
+                    $totalHarga = 0;
+                    foreach ($barangItems as $item) {
+                        $totalHarga += ($item['estimasi_harga'] ?? 0) * ($item['jumlah'] ?? 0);
+                    }
+                    
+                    // Generate nomor permintaan
+                    $noPermintaan = $this->generateNoPermintaan();
+                    
+                    // Buat PermintaanBarang
+                    $permintaan = PermintaanBarang::create([
+                        'no_permintaan_barang' => $noPermintaan,
+                        'id_surat_pengajuan' => $workOrder->id_surat_pengajuan,
+                        'tanggal_permintaan' => $request->tanggal,
+                        'status' => 'Menunggu Logistik',
+                        'total_estimasi_harga' => $totalHarga,
+                        'id_akun' => Session::get('user_id', 1),
+                    ]);
+                    
+                    // Simpan detail barang
+                    foreach ($barangItems as $item) {
+                        // Cari atau buat master stok barang
+                        $master = DaftarBarang::firstOrCreate(
+                            [
+                                'nama_barang' => $item['nama_barang'],
+                                'satuan' => $item['satuan'] ?? null,
+                            ],
+                            [
+                                'stok' => 0,
+                            ]
+                        );
+                        
+                        DetailBarangPermintaan::create([
+                            'id_permintaan_barang' => $permintaan->id_permintaan_barang,
+                            'id_daftar_barang_master' => $master->id_daftar_barang,
+                            'nama_barang' => $item['nama_barang'],
+                            'jumlah' => (int)($item['jumlah'] ?? 0),
+                            'satuan' => $item['satuan'] ?? null,
+                            'estimasi_harga' => isset($item['estimasi_harga']) ? (float)$item['estimasi_harga'] : null,
+                        ]);
+                    }
+                }
+            }
 
             return redirect()->route('logistik.work-order', ['from' => 'crud'])->with('success', 'Data berhasil ditambahkan');
         } catch (\Exception $e) {

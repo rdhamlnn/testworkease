@@ -32,7 +32,7 @@ return new class extends Migration
         if (empty($foreignKeys)) {
             Schema::table('surat_pengajuan', function (Blueprint $table) {
                 $table->foreign('id_surat_pengajuan_parent')->references('id_surat_pengajuan')->on('surat_pengajuan')->onDelete('set null')->onUpdate('cascade');
-            });
+        });
         }
     }
 

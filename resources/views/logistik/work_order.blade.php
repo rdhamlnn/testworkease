@@ -757,6 +757,22 @@
                                     </div>
                                 </div>
                             </div>
+                            
+                            <!-- Section Daftar Barang (Optional) -->
+                            <div class="row" id="barang-section" style="display: none;">
+                                <div class="col-md-12">
+                                    <hr>
+                                    <div class="form-group">
+                                        <label>Daftar Barang yang Diperlukan <small class="text-muted">(Opsional - hanya jika diperlukan)</small></label>
+                                        <div id="daftar-barang-container">
+                                            <!-- Barang items akan ditambahkan di sini -->
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-primary mt-2" id="tambah-barang-btn">
+                                            <i class="fas fa-plus"></i> Tambah Barang
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
                         <!-- Tab 3: Dokumentasi -->
@@ -797,67 +813,138 @@
                 @csrf
                 @method('PUT')
                 <div class="modal-body">
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label>No. Work Order</label>
-                            <input type="text" class="form-control" id="editNoWorkOrderLogistik" readonly>
-                        </div>
-                        <div class="form-group col-md-6">
-                            <label>Tanggal <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" id="editTanggalLogistik" name="tanggal" required>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label>Divisi Pengaju</label>
-                            <input type="text" class="form-control" value="{{ $divisiPengaju }}" readonly>
-                        </div>
-                        <div class="form-group col-md-6">
-                            <label>Ditujukan <span class="text-danger">*</span></label>
-                            <select class="form-control" name="ditujukan" id="editDitujukanLogistik" required>
-                                @foreach($divisiTujuan as $div)
-                                    <option value="{{ $div->nama_divisi }}">{{ $div->nama_divisi }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label>Jenis Work Order <span class="text-danger">*</span></label>
-                            <select class="form-control" name="id_jenis_wo" id="editJenisWoLogistik" required>
-                                <option value="">-- Pilih Jenis --</option>
-                                @foreach($jenisWorkOrder as $jenis)
-                                    <option value="{{ $jenis->id_jenis_wo }}" data-nama-jenis="{{ $jenis->nama_jenis_wo }}">{{ $jenis->nama_jenis_wo }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label id="label_edit_unit">Nama Unit / Code <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="unit" id="editUnitLogistik" required placeholder="Masukkan unit">
-                            <!-- Container untuk Select2 dinamis (jenis work order Pembelian) -->
-                            <div id="edit_unit_pembelian_container" style="display: none;"></div>
-                        </div>
-                        <div class="form-group col-md-6">
-                            <label>Dokumentasi</label>
-                            <div id="currentDokumentasiLogistik" class="mb-2" style="display: none;">
-                                <small class="text-muted d-block">File saat ini: <span id="currentDokumentasiNameLogistik" class="font-weight-bold"></span></small>
+                    <!-- Scrollable Tabs Navigation -->
+                    <ul class="nav nav-tabs nav-tabs-scrollable" id="editWorkOrderTabsLogistik" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" id="edit-info-dasar-tab-logistik" data-toggle="tab" href="#edit-info-dasar-logistik" role="tab" aria-controls="edit-info-dasar-logistik" aria-selected="true">
+                                <i class="fas fa-info-circle"></i> Informasi Dasar
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="edit-detail-wo-tab-logistik" data-toggle="tab" href="#edit-detail-wo-logistik" role="tab" aria-controls="edit-detail-wo-logistik" aria-selected="false">
+                                <i class="fas fa-clipboard-list"></i> Detail Work Order
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="edit-dokumentasi-tab-logistik" data-toggle="tab" href="#edit-dokumentasi-logistik" role="tab" aria-controls="edit-dokumentasi-logistik" aria-selected="false">
+                                <i class="fas fa-file-upload"></i> Dokumentasi
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <!-- Tab Content -->
+                    <div class="tab-content tab-content-scrollable" id="editWorkOrderTabContentLogistik">
+                        <!-- Tab 1: Informasi Dasar -->
+                        <div class="tab-pane fade show active" id="edit-info-dasar-logistik" role="tabpanel" aria-labelledby="edit-info-dasar-tab-logistik">
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>No. Work Order</label>
+                                        <input type="text" class="form-control" id="editNoWorkOrderLogistik" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Tanggal <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control" id="editTanggalLogistik" name="tanggal" required>
+                                    </div>
+                                </div>
                             </div>
-                            <input type="file" class="form-control" name="dokumentasi" id="editDokumentasiLogistik" accept=".pdf,.jpg,.jpeg,.png" onchange="previewDokumentasiEdit(this)">
-                            <small class="form-text text-muted">Format: JPG, PNG, PDF. Maks. 2MB</small>
-                            <div id="previewDokumentasiContainerLogistik" class="mt-2" style="display: none;">
-                                <img id="previewDokumentasiLogistik" src="" alt="Preview Dokumentasi" style="max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 8px; border: 1px solid #ddd;">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Divisi Pengaju</label>
+                                        <input type="text" class="form-control" value="{{ $divisiPengaju }}" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Jenis Work Order <span class="text-danger">*</span></label>
+                                        <select class="form-control" name="id_jenis_wo" id="editJenisWoLogistik" required>
+                                            <option value="">-- Pilih Jenis --</option>
+                                            @foreach($jenisWorkOrder as $jenis)
+                                                <option value="{{ $jenis->id_jenis_wo }}" data-nama-jenis="{{ $jenis->nama_jenis_wo }}">{{ $jenis->nama_jenis_wo }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Uraian Pekerjaan <span class="text-danger">*</span></label>
-                        <textarea class="form-control" name="uraian" id="editUraianLogistik" rows="4" required></textarea>
+                        
+                        <!-- Tab 2: Detail Work Order -->
+                        <div class="tab-pane fade" id="edit-detail-wo-logistik" role="tabpanel" aria-labelledby="edit-detail-wo-tab-logistik">
+                            <div class="row mt-3">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label>Ditujukan <span class="text-danger">*</span></label>
+                                        <select class="form-control" name="ditujukan" id="editDitujukanLogistik" required>
+                                            @foreach($divisiTujuan as $div)
+                                                <option value="{{ $div->nama_divisi }}">{{ $div->nama_divisi }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label id="label_edit_unit">Nama Unit / Code <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="unit" id="editUnitLogistik" required placeholder="Masukkan unit">
+                                        <!-- Container untuk Select2 dinamis (jenis work order Pembelian) -->
+                                        <div id="edit_unit_pembelian_container" style="display: none;"></div>
+                                        <!-- Template tersembunyi untuk option barang -->
+                                        <select id="edit_template_barang_options_logistik" style="display: none;">
+                                            @foreach($daftarBarang as $barang)
+                                                <option value="{{ $barang->nama_barang }}">{{ $barang->nama_barang }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label>Uraian Pekerjaan <span class="text-danger">*</span></label>
+                                        <textarea class="form-control" name="uraian" id="editUraianLogistik" rows="4" required></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Section Daftar Barang (Optional) -->
+                            <div class="row" id="edit-barang-section-logistik" style="display: none;">
+                                <div class="col-md-12">
+                                    <hr>
+                                    <div class="form-group">
+                                        <label>Daftar Barang yang Diperlukan <small class="text-muted">(Opsional - hanya jika diperlukan)</small></label>
+                                        <div id="edit-daftar-barang-container-logistik">
+                                            <!-- Barang items akan ditambahkan di sini -->
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-primary mt-2" id="edit-tambah-barang-btn-logistik">
+                                            <i class="fas fa-plus"></i> Tambah Barang
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tab 3: Dokumentasi -->
+                        <div class="tab-pane fade" id="edit-dokumentasi-logistik" role="tabpanel" aria-labelledby="edit-dokumentasi-tab-logistik">
+                            <div class="row mt-3">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label>Dokumentasi</label>
+                                        <div id="currentDokumentasiLogistik" class="mb-2" style="display: none;">
+                                            <small class="text-muted d-block">File saat ini: <span id="currentDokumentasiNameLogistik" class="font-weight-bold"></span></small>
+                                        </div>
+                                        <input type="file" class="form-control" name="dokumentasi" id="editDokumentasiLogistik" accept=".pdf,.jpg,.jpeg,.png" onchange="previewDokumentasiEdit(this)">
+                                        <small class="form-text text-muted">Format: JPG, PNG, PDF. Maks. 2MB</small>
+                                        <div id="previewDokumentasiContainerLogistik" class="mt-2" style="display: none;">
+                                            <img id="previewDokumentasiLogistik" src="" alt="Preview Dokumentasi" style="max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 8px; border: 1px solid #ddd;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -1425,12 +1512,17 @@
             const unitContainer = $('#unit_pembelian_container');
             const unitLabel = $('#label_unit');
             
-            // Jika jenis work order adalah "Pembelian", tampilkan container dinamis dan sembunyikan input
-            if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
+            // Jika jenis work order adalah "Pembelian" atau "Perbaikan", tampilkan container dinamis
+            if (selectedJenisWo && (selectedJenisWo.toLowerCase() === 'pembelian' || selectedJenisWo.toLowerCase() === 'perbaikan')) {
                 unitInput.hide().removeAttr('required').removeAttr('name');
                 unitContainer.show();
-                // Ubah label menjadi "Daftar barang"
-                unitLabel.html('Daftar barang <span class="text-danger">*</span>');
+                
+                // Untuk Pembelian: wajib, untuk Perbaikan: opsional
+                if (selectedJenisWo.toLowerCase() === 'pembelian') {
+                    unitLabel.html('Daftar barang <span class="text-danger">*</span>');
+                } else {
+                    unitLabel.html('Daftar barang <small class="text-muted">(Opsional)</small>');
+                }
                 
                 // Jika container kosong, tambahkan select pertama
                 if (unitContainer.find('.unit-select-wrapper').length === 0) {
@@ -1444,7 +1536,7 @@
                     });
                 }
             } else {
-                // Jika bukan "Pembelian", tampilkan input dan sembunyikan container
+                // Jika bukan "Pembelian" atau "Perbaikan", tampilkan input dan sembunyikan container
                 unitInput.show().attr('required', 'required').attr('name', 'unit');
                 unitContainer.hide();
                 // Clear semua select2 dinamis
@@ -1524,6 +1616,102 @@
         // Filter divisi "Ditujukan" untuk form edit - menggunakan fungsi global
         // (fungsi filterDivisiDitujukanEdit sudah didefinisikan di global scope)
         
+        // Counter untuk barang items
+        let barangItemCount = 0;
+        
+        // Toggle section barang berdasarkan jenis WO
+        function toggleBarangSection() {
+            // SELALU hide karena sudah diwakili oleh Select2 dinamis (unit_pembelian_container)
+            $('#barang-section').hide();
+            $('#daftar-barang-container').empty();
+            barangItemCount = 0;
+        }
+        
+        // Toggle section barang untuk form edit
+        function toggleBarangSectionEdit() {
+            // SELALU hide karena sudah diwakili oleh Select2 dinamis (edit_unit_pembelian_container)
+            $('#edit-barang-section-logistik').hide();
+            $('#edit-daftar-barang-container').empty();
+                barangSection.show();
+            } else {
+                barangSection.hide();
+                // Clear semua barang items jika section disembunyikan
+                $('#edit-daftar-barang-container-logistik').empty();
+            }
+        }
+        
+        // Tambah item barang
+        $('#tambah-barang-btn').on('click', function() {
+            const html = `
+                <div class="row mb-2 barang-item" data-index="${barangItemCount}">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="barang[${barangItemCount}][nama_barang]" 
+                               placeholder="Nama Barang" required>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" class="form-control" name="barang[${barangItemCount}][jumlah]" 
+                               placeholder="Jumlah" min="1" required>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" class="form-control" name="barang[${barangItemCount}][satuan]" 
+                               placeholder="Satuan (pcs/kg)" required>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" class="form-control" name="barang[${barangItemCount}][estimasi_harga]" 
+                               placeholder="Estimasi Harga" min="0" step="0.01">
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-danger btn-sm btn-remove-barang" title="Hapus">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            $('#daftar-barang-container').append(html);
+            barangItemCount++;
+        });
+        
+        // Hapus item barang
+        $(document).on('click', '.btn-remove-barang', function() {
+            $(this).closest('.barang-item').remove();
+        });
+        
+        // Tambah item barang untuk form edit
+        $('#edit-tambah-barang-btn-logistik').on('click', function() {
+            const currentCount = $('#edit-daftar-barang-container-logistik .barang-item').length;
+            const html = `
+                <div class="row mb-2 barang-item" data-index="${currentCount}">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="barang[${currentCount}][nama_barang]" 
+                               placeholder="Nama Barang" required>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" class="form-control" name="barang[${currentCount}][jumlah]" 
+                               placeholder="Jumlah" min="1" required>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" class="form-control" name="barang[${currentCount}][satuan]" 
+                               placeholder="Satuan (pcs/kg)" required>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" class="form-control" name="barang[${currentCount}][estimasi_harga]" 
+                               placeholder="Estimasi Harga" min="0" step="0.01">
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-danger btn-sm btn-remove-barang-edit" title="Hapus">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            $('#edit-daftar-barang-container-logistik').append(html);
+        });
+        
+        // Hapus item barang untuk form edit
+        $(document).on('click', '.btn-remove-barang-edit', function() {
+            $(this).closest('.barang-item').remove();
+        });
+        
         // Event listener untuk perubahan jenis work order
         $(document).on('change', '#id_jenis_wo', function() {
             const selectedValue = $(this).val();
@@ -1541,6 +1729,7 @@
             
             filterDivisiDitujukan();
             toggleUnitField();
+            toggleBarangSection();
         });
         
         // Event listener untuk perubahan jenis work order di form edit
@@ -1560,7 +1749,11 @@
             
             filterDivisiDitujukanEdit();
             toggleUnitFieldEdit();
+            toggleBarangSectionEdit();
         });
+        
+        // Jalankan toggle saat halaman dimuat
+        toggleBarangSection();
         
         // Jalankan filter saat halaman dimuat (jika ada nilai yang sudah dipilih)
         filterDivisiDitujukan();
@@ -2082,12 +2275,17 @@
         const unitContainer = $('#edit_unit_pembelian_container');
         const unitLabel = $('#label_edit_unit');
         
-        // Jika jenis work order adalah "Pembelian", tampilkan container dinamis dan sembunyikan input
-        if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
+        // Jika jenis work order adalah "Pembelian" atau "Perbaikan", tampilkan container dinamis
+        if (selectedJenisWo && (selectedJenisWo.toLowerCase() === 'pembelian' || selectedJenisWo.toLowerCase() === 'perbaikan')) {
             unitInput.hide().removeAttr('required').removeAttr('name');
             unitContainer.show();
-            // Ubah label menjadi "Daftar barang"
-            unitLabel.html('Daftar barang <span class="text-danger">*</span>');
+            
+            // Untuk Pembelian: wajib, untuk Perbaikan: opsional
+            if (selectedJenisWo.toLowerCase() === 'pembelian') {
+                unitLabel.html('Daftar barang <span class="text-danger">*</span>');
+            } else {
+                unitLabel.html('Daftar barang <small class="text-muted">(Opsional)</small>');
+            }
             
             // Jika container kosong, tambahkan select pertama
             if (unitContainer.find('.unit-select-wrapper').length === 0) {
@@ -2101,7 +2299,7 @@
                 });
             }
         } else {
-            // Jika bukan "Pembelian", tampilkan input dan sembunyikan container
+            // Jika bukan "Pembelian" atau "Perbaikan", tampilkan input dan sembunyikan container
             unitInput.show().attr('required', 'required').attr('name', 'unit');
             unitContainer.hide();
             // Clear semua select2 dinamis
@@ -2552,7 +2750,7 @@
                     // Set nilai unit ke field yang sesuai
                     const selectedJenisWo = $('#editJenisWoLogistik').find('option:selected').data('nama-jenis');
                     
-                    if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
+                    if (selectedJenisWo && (selectedJenisWo.toLowerCase() === 'pembelian' || selectedJenisWo.toLowerCase() === 'perbaikan')) {
                     // Handle multiple values - jika data.unit adalah array atau string yang dipisah koma
                     let unitValues = [];
                     let unitQtys = [];
@@ -2723,7 +2921,7 @@
                         // Set nilai unit ke field yang sesuai
                         const selectedJenisWo = $('#editJenisWoLogistik').find('option:selected').data('nama-jenis');
                         
-                        if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
+                        if (selectedJenisWo && (selectedJenisWo.toLowerCase() === 'pembelian' || selectedJenisWo.toLowerCase() === 'perbaikan')) {
                             // Handle multiple values - jika data.unit adalah array atau string yang dipisah koma
                             let unitValues = [];
                             let unitQtys = [];
