@@ -109,4 +109,12 @@ class SuratPengajuan extends Model
     {
         return $this->hasMany(SuratPengajuan::class, 'id_surat_pengajuan_parent');
     }
+
+    /**
+     * Relasi ke permintaan barang (jika ada)
+     */
+    public function permintaanBarang()
+    {
+        return $this->hasOne(PermintaanBarang::class, 'id_surat_pengajuan');
+    }
 }

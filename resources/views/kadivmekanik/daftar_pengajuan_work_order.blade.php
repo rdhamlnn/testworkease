@@ -75,6 +75,15 @@
                                                 <img src="https://cdn-icons-png.flaticon.com/128/709/709612.png" alt="view">
                                             </button>
                                             @if($status == 'Menunggu')
+                                                <!-- Button Cek Stok -->
+                                                <button type="button" 
+                                                        class="btn btn-warning btn-sm btn-icon btn-cek-stok" 
+                                                        data-wo-id="{{ $wo->id_surat_pengajuan }}"
+                                                        title="Cek Stok Barang">
+                                                    <i class="fas fa-box"></i>
+                                                </button>
+                                                
+                                                <!-- Button Approve (akan di-disable jika stok tidak cukup) -->
                                                 <form action="{{ route('kadivmekanik.approve-work-order', $wo->id_surat_pengajuan) }}" method="POST" class="approve-form" style="display:inline;" 
                                                     data-message="Yakin ingin menyetujui work order ini?"
                                                     data-wo-id="{{ $wo->id_surat_pengajuan }}">
@@ -82,6 +91,7 @@
                                                     <button type="submit" 
                                                             class="btn btn-success btn-sm btn-icon approve-btn" 
                                                             data-wo-id="{{ $wo->id_surat_pengajuan }}"
+                                                            id="approve-btn-{{ $wo->id_surat_pengajuan }}"
                                                             title="Setujui">
                                                         <i class="fas fa-check"></i>
                                                     </button>
@@ -706,7 +716,154 @@
         });
     });
 
+    // Cek Stok Barang
+    $(document).on('click', '.btn-cek-stok', function() {
+        const woId = $(this).data('wo-id');
+        const modal = $('#cekStokModal');
+        const content = $('#cekStokContent');
+        
+        // Show loading
+        content.html('<p class="text-center"><i class="fas fa-spinner fa-spin"></i> Memeriksa stok barang...</p>');
+        modal.modal('show');
+        
+        // AJAX request
+        $.ajax({
+            url: `{{ url('kadivmekanik/work-order') }}/${woId}/cek-stok`,
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    if (!response.has_barang) {
+                        content.html(`
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> ${response.message}
+                            </div>
+                        `);
+                        return;
+                    }
+                    
+                    let html = `
+                        <div class="alert ${response.all_stok_cukup ? 'alert-success' : 'alert-warning'}">
+                            <i class="fas ${response.all_stok_cukup ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i> 
+                            <strong>${response.message}</strong>
+                        </div>
+                        <table class="table table-bordered table-striped">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Nama Barang</th>
+                                    <th>Jumlah Diminta</th>
+                                    <th>Stok Tersedia</th>
+                                    <th>Status</th>
+                                    <th>Keterangan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    
+                    response.stok_info.forEach(function(item) {
+                        let badgeClass = 'badge-success';
+                        let statusText = 'Cukup';
+                        let keterangan = '';
+                        
+                        if (item.status_stok === 'habis') {
+                            badgeClass = 'badge-danger';
+                            statusText = 'HABIS';
+                            keterangan = '<span class="text-danger">Stok habis, perlu pembelian</span>';
+                        } else if (item.status_stok === 'kurang') {
+                            badgeClass = 'badge-warning';
+                            statusText = 'KURANG';
+                            keterangan = `<span class="text-warning">Kurang ${item.kekurangan} ${item.satuan}</span>`;
+                        } else {
+                            keterangan = '<span class="text-success">Stok mencukupi</span>';
+                        }
+                        
+                        html += `
+                            <tr>
+                                <td><strong>${item.nama_barang}</strong></td>
+                                <td>${item.jumlah_diminta} ${item.satuan}</td>
+                                <td>${item.stok_tersedia} ${item.satuan}</td>
+                                <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                                <td>${keterangan}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                            </tbody>
+                        </table>
+                    `;
+                    
+                    if (!response.all_stok_cukup) {
+                        html += `
+                            <div class="alert alert-warning mt-3">
+                                <i class="fas fa-exclamation-triangle"></i> 
+                                <strong>Perhatian:</strong> Button "Setujui" telah dinonaktifkan karena stok tidak mencukupi. 
+                                Silakan buat Work Order Pembelian ke Logistik terlebih dahulu.
+                            </div>
+                        `;
+                    }
+                    
+                    content.html(html);
+                    
+                    // Disable/Enable button approve berdasarkan stok
+                    const approveBtn = $(`#approve-btn-${woId}`);
+                    if (!response.all_stok_cukup) {
+                        approveBtn.prop('disabled', true);
+                        approveBtn.css({
+                            'opacity': '0.5',
+                            'cursor': 'not-allowed'
+                        });
+                        approveBtn.attr('title', 'Stok tidak mencukupi. Silakan cek stok terlebih dahulu.');
+                    } else {
+                        approveBtn.prop('disabled', false);
+                        approveBtn.css({
+                            'opacity': '1',
+                            'cursor': 'pointer'
+                        });
+                        approveBtn.attr('title', 'Setujui');
+                    }
+                    
+                } else {
+                    content.html(`
+                        <div class="alert alert-danger">
+                            <i class="fas fa-times-circle"></i> ${response.message || 'Gagal mengecek stok'}
+                        </div>
+                    `);
+                }
+            },
+            error: function(xhr) {
+                const errorMsg = xhr.responseJSON?.message || 'Terjadi kesalahan saat mengecek stok';
+                content.html(`
+                    <div class="alert alert-danger">
+                        <i class="fas fa-times-circle"></i> ${errorMsg}
+                    </div>
+                `);
+            }
+        });
+    });
+
 </script>
+
+<!-- Modal Cek Stok -->
+<div class="modal fade" id="cekStokModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cek Stok Barang</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="cekStokContent">
+                    <p class="text-center">Memuat data stok...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Modal View Dokumentasi -->
 <div class="modal fade" id="modalViewDokumentasiKadiv" tabindex="-1" role="dialog" aria-labelledby="modalViewDokumentasiKadivLabel" aria-hidden="true">

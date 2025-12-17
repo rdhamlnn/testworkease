@@ -163,6 +163,7 @@ Route::middleware(['role:kadiv'])->prefix('kadivmekanik')->name('kadivmekanik.')
     Route::post('/work-order/approve/{id}', [KadivMekanikController::class, 'approveWorkOrder'])->name('approve-work-order');
     Route::put('/work-order/{id}/reject', [KadivMekanikController::class, 'rejectWorkOrder'])->name('work-order.reject');
     Route::post('/work-order/reject/{id}', [KadivMekanikController::class, 'rejectWorkOrder'])->name('reject-work-order');
+    Route::get('/work-order/{id}/cek-stok', [KadivMekanikController::class, 'cekStokBarang'])->name('cek-stok-barang');
     Route::put('/work-order/{id}/status', [KadivMekanikController::class, 'updateStatusWorkOrder'])->name('work-order.update-status');
 
     // Work Order Search & Filter

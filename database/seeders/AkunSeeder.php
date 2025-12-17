@@ -112,7 +112,7 @@ class AkunSeeder extends Seeder
         }
 
         // Helper function untuk insert atau update akun tanpa mengubah password jika sudah ada
-        // Juga update email dari example.com ke kce.com jika ada
+        // Juga update email dari example.com ke kce.com jika ada, dan update email lama dengan format kadiv*
         $upsertAkun = function($email, $password, $idKaryawan, $idDivisi, $idPeran) {
             // Cek apakah email baru (kce.com) sudah ada
             $exists = DB::table('akun')->where('email', $email)->exists();
@@ -126,12 +126,29 @@ class AkunSeeder extends Seeder
                     'updated_at' => now(),
                 ]);
             } else {
-                // Cek apakah ada email lama (example.com) yang perlu diupdate
-                $oldEmail = str_replace('@kce.com', '@example.com', $email);
-                $oldExists = DB::table('akun')->where('email', $oldEmail)->first();
+                // Cek apakah ada email lama dengan format kadiv*@kce.com atau kadiv*@example.com
+                $emailParts = explode('@', $email);
+                $emailName = $emailParts[0];
+                $oldEmailVariants = [
+                    'kadiv' . $emailName . '@kce.com',
+                    'kadiv' . $emailName . '@example.com',
+                    $emailName . '@example.com',
+                ];
+                
+                $oldExists = null;
+                $oldEmail = null;
+                
+                foreach ($oldEmailVariants as $variant) {
+                    $found = DB::table('akun')->where('email', $variant)->first();
+                    if ($found) {
+                        $oldExists = $found;
+                        $oldEmail = $variant;
+                        break;
+                    }
+                }
                 
                 if ($oldExists) {
-                    // Update email dari example.com ke kce.com tanpa mengubah password
+                    // Update email dari format lama ke format baru tanpa mengubah password
                     DB::table('akun')->where('email', $oldEmail)->update([
                         'email' => $email,
                         'id_karyawan' => $idKaryawan,
@@ -211,7 +228,7 @@ class AkunSeeder extends Seeder
         
         // Kadiv Produksi
         $upsertAkun(
-            'kadivproduksi@kce.com',
+            'produksi@kce.com',
             'password',
             $karyawanList[6]->id_karyawan ?? 6, // Karyawan Produksi
             $produksiDivisiId,
@@ -220,7 +237,7 @@ class AkunSeeder extends Seeder
         
         // Kadiv Plasma
         $upsertAkun(
-            'kadivplasma@kce.com',
+            'plasma@kce.com',
             'password',
             $karyawanList[7]->id_karyawan ?? 7, // Karyawan Plasma
             $plasmaDivisiId,
@@ -229,7 +246,7 @@ class AkunSeeder extends Seeder
         
         // Kadiv QC
         $upsertAkun(
-            'kadivqc@kce.com',
+            'qualitycontrol@kce.com',
             'password',
             $karyawanList[8]->id_karyawan ?? 8, // Karyawan QC
             $qcDivisiId,

@@ -13,6 +13,9 @@ use App\Models\SuratPengajuan;
 use App\Models\Divisi;
 use App\Models\Unit;
 use App\Models\Akun;
+use App\Models\PermintaanBarang;
+use App\Models\DetailBarangPermintaan;
+use App\Models\DaftarBarang;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Exports\LaporanPemakaianBarangExport;
@@ -521,6 +524,91 @@ class KadivMekanikController extends Controller
                 'success' => false,
                 'message' => 'Gagal menolak work order: ' . $e->getMessage(),
                 'redirect' => route('kadivmekanik.daftar-pengajuan-work-order', ['from' => 'crud'])
+            ], 500);
+        }
+    }
+
+    /**
+     * Cek stok barang untuk work order
+     */
+    public function cekStokBarang($id)
+    {
+        try {
+            $workOrder = SuratPengajuan::findOrFail($id);
+            
+            // Cek apakah ada permintaan barang terkait
+            $permintaanBarang = PermintaanBarang::where('id_surat_pengajuan', $id)->first();
+            
+            if (!$permintaanBarang) {
+                return response()->json([
+                    'success' => true,
+                    'has_barang' => false,
+                    'message' => 'Work Order ini tidak memiliki daftar barang (mungkin jenis jasa/perbaikan)',
+                    'stok_info' => []
+                ]);
+            }
+            
+            // Ambil detail barang
+            $detailBarang = DetailBarangPermintaan::where('id_permintaan_barang', $permintaanBarang->id_permintaan_barang)
+                ->with('masterBarang')
+                ->get();
+            
+            $stokInfo = [];
+            $allStokCukup = true;
+            $adaBarangHabis = false;
+            
+            foreach ($detailBarang as $detail) {
+                $namaBarang = $detail->nama_barang;
+                $jumlahDiminta = $detail->jumlah ?? 0;
+                
+                // Cek stok dari master barang
+                $masterBarang = null;
+                if ($detail->id_daftar_barang_master) {
+                    $masterBarang = DaftarBarang::find($detail->id_daftar_barang_master);
+                } else {
+                    // Jika tidak ada id_daftar_barang_master, cari berdasarkan nama
+                    $masterBarang = DaftarBarang::where('nama_barang', $namaBarang)->first();
+                }
+                
+                $stokTersedia = $masterBarang ? ($masterBarang->stok ?? 0) : 0;
+                $stokCukup = $stokTersedia >= $jumlahDiminta;
+                $statusStok = 'cukup';
+                
+                if ($stokTersedia == 0) {
+                    $statusStok = 'habis';
+                    $adaBarangHabis = true;
+                    $allStokCukup = false;
+                } elseif ($stokTersedia < $jumlahDiminta) {
+                    $statusStok = 'kurang';
+                    $allStokCukup = false;
+                }
+                
+                $stokInfo[] = [
+                    'nama_barang' => $namaBarang,
+                    'jumlah_diminta' => $jumlahDiminta,
+                    'satuan' => $detail->satuan ?? '-',
+                    'stok_tersedia' => $stokTersedia,
+                    'status_stok' => $statusStok,
+                    'stok_cukup' => $stokCukup,
+                    'kekurangan' => max(0, $jumlahDiminta - $stokTersedia)
+                ];
+            }
+            
+            return response()->json([
+                'success' => true,
+                'has_barang' => true,
+                'all_stok_cukup' => $allStokCukup,
+                'ada_barang_habis' => $adaBarangHabis,
+                'stok_info' => $stokInfo,
+                'message' => $allStokCukup 
+                    ? 'Semua stok barang tersedia' 
+                    : ($adaBarangHabis ? 'Ada barang yang habis' : 'Ada barang yang stoknya kurang')
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengecek stok: ' . $e->getMessage()
             ], 500);
         }
     }
