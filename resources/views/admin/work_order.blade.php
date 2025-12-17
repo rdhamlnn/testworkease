@@ -488,7 +488,6 @@
                                 <th>No</th>
                                 <th>No Work-Order</th>
                                 <th>Divisi Pengaju</th>
-                                <th>Ditujukan</th>
                                 <th>Jenis WO</th>
                                 <th>Hari/Tanggal</th>
                                 <th>Unit/Code</th>
@@ -506,7 +505,6 @@
                                     <td>{{ $i + 1 }}</td>
                                     <td>{{ $wo->no_work_order }}</td>
                                     <td>{{ $wo->divisi_pengaju }}</td>
-                                    <td>{{ $wo->ditujukan }}</td>
                                     <td>
                                         @if(isset($wo->jenisWorkOrder) && $wo->jenisWorkOrder)
                                             <span class="badge badge-info">{{ $wo->jenisWorkOrder->nama_jenis_wo }}</span>

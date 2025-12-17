@@ -209,7 +209,6 @@
                                 <th>No</th>
                                 <th>No Work-Order</th>
                                 <th>Divisi Pengaju</th>
-                                <th>Ditujukan</th>
                                 <th>Hari/Tanggal</th>
                                 <th>Unit/Code</th>
                                 <th>Uraian</th>
@@ -226,7 +225,6 @@
                                     <td>{{ $i + 1 }}</td>
                                     <td>{{ $wo->no_work_order }}</td>
                                     <td>{{ $wo->divisi_pengaju }}</td>
-                                    <td>{{ $wo->ditujukan }}</td>
                                     <td>{{ \Carbon\Carbon::parse($wo->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
                                     <td>{{ is_object($wo->unit_code) ? $wo->unit_code->nama_unit : $wo->unit_code }}</td>
                                     <td>{{ Str::limit($wo->uraian, 30) }}</td>
