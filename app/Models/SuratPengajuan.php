@@ -26,6 +26,15 @@ class SuratPengajuan extends Model
         'id_verifikator',
         'id_akun',
         'id_unit',
+        'id_surat_pengajuan_parent',
+        'harga_barang',
+        'total_harga',
+        'catatan_penolakan',
+    ];
+
+    protected $casts = [
+        'harga_barang' => 'array',
+        'total_harga' => 'decimal:2',
     ];
 
     /**
@@ -83,5 +92,21 @@ class SuratPengajuan extends Model
     public function jenisWorkOrder()
     {
         return $this->belongsTo(JenisWorkOrder::class, 'id_jenis_wo');
+    }
+
+    /**
+     * Relasi ke work order parent (work order yang menjadi sumber/asal)
+     */
+    public function parent()
+    {
+        return $this->belongsTo(SuratPengajuan::class, 'id_surat_pengajuan_parent');
+    }
+
+    /**
+     * Relasi ke work order children (work order yang dibuat dari work order ini)
+     */
+    public function children()
+    {
+        return $this->hasMany(SuratPengajuan::class, 'id_surat_pengajuan_parent');
     }
 }

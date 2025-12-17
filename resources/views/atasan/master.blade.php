@@ -249,7 +249,29 @@
                             </a>
                         </li>
 
-                        <li class="menu-header">Permintaan</li>
+                        <li class="menu-header">Work Order</li>
+                        <li class="dropdown {{ request()->is('atasan/work-order-masuk*') || request()->is('atasan/riwayat-work-order*') ? 'active' : '' }}">
+                            <a href="#" class="nav-link has-dropdown" data-toggle="dropdown">
+                                <i class="fas fa-briefcase"></i> <span>Work Order</span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li class="{{ request()->is('atasan/work-order-masuk*') ? 'active' : '' }}">
+                                    <a class="nav-link" href="{{ route('atasan.work-order-masuk') }}">
+                                        <i class="fas fa-inbox"></i>
+                                        <span>Work Order Masuk</span>
+                                    </a>
+                                </li>
+                                <li class="{{ request()->is('atasan/riwayat-work-order*') ? 'active' : '' }}">
+                                    <a class="nav-link" href="{{ route('atasan.riwayat-work-order') }}">
+                                        <i class="fas fa-history"></i>
+                                        <span>Riwayat Work Order</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        
+                        {{-- Hidden menu Permintaan (kept for backward compatibility but not shown) --}}
+                        {{-- <li class="menu-header">Permintaan</li>
                         <li class="{{ request()->is('atasan/approval-permintaan*') ? 'active' : '' }}">
                             <a href="{{ url('/atasan/approval-permintaan') }}" class="nav-link">
                                 <i class="fas fa-check-circle"></i> <span>Daftar Permintaan</span>
@@ -259,7 +281,7 @@
                             <a href="{{ url('/atasan/riwayat-approval') }}" class="nav-link">
                                 <i class="fas fa-history"></i> <span>Riwayat Permintaan</span>
                             </a>
-                        </li>
+                        </li> --}}
                         <li class="menu-header"></li>
                     </ul>
                 </aside>

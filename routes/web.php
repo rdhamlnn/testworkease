@@ -289,6 +289,9 @@ Route::middleware(['role:kadiv'])->prefix('logistik')->name('logistik.')->group(
     Route::put('/work-order/{id}/reject', [LogistikController::class, 'rejectWorkOrder'])->name('work-order.reject');
     Route::post('/work-order/reject/{id}', [LogistikController::class, 'rejectWorkOrder'])->name('reject-work-order');
     Route::post('/proses-serahkan-barang-langsung/{id}', [LogistikController::class, 'prosesSerahkanBarangLangsung'])->name('proses-serahkan-barang-langsung');
+    
+    // Work Order Forward
+    Route::post('/work-order/{id}/forward-to-purchasing', [LogistikController::class, 'forwardWorkOrderToPurchasing'])->name('work-order.forward-to-purchasing');
 
     // 🔹 PERMINTAAN BARANG
     Route::get('/permintaan-barang', [LogistikController::class, 'permintaanBarang'])->name('permintaan-barang');
@@ -347,6 +350,10 @@ Route::middleware(['role:kadiv'])->prefix('purchasing')->name('purchasing.')->gr
     Route::post('/work-order/approve/{id}', [PurchasingController::class, 'approveWorkOrder'])->name('approve-work-order');
     Route::put('/work-order/{id}/reject', [PurchasingController::class, 'rejectWorkOrder'])->name('work-order.reject');
     Route::post('/work-order/reject/{id}', [PurchasingController::class, 'rejectWorkOrder'])->name('reject-work-order');
+    
+    // Work Order Harga & Forward
+    Route::put('/work-order/{id}/update-harga', [PurchasingController::class, 'updateHargaWorkOrder'])->name('work-order.update-harga');
+    Route::post('/work-order/{id}/forward-to-atasan', [PurchasingController::class, 'forwardWorkOrderToAtasan'])->name('work-order.forward-to-atasan');
 
     // 🔹 PERMINTAAN BARANG
     Route::get('/permintaan-barang', [PurchasingController::class, 'permintaanBarang'])->name('permintaan-barang');
@@ -380,6 +387,16 @@ Route::middleware(['role:atasan'])->prefix('atasan')->name('atasan.')->group(fun
     Route::post('/approval-permintaan/{id}/approve', [AtasanController::class, 'approvePermintaan'])->name('approval-permintaan.approve');
     Route::post('/approval-permintaan/{id}/reject', [AtasanController::class, 'rejectPermintaan'])->name('approval-permintaan.reject');
     Route::get('/riwayat-approval', [AtasanController::class, 'riwayatApproval'])->name('riwayat-approval');
+
+    // 🔹 WORK ORDER
+    Route::get('/work-order-masuk', [AtasanController::class, 'workOrderMasuk'])->name('work-order-masuk');
+    Route::get('/riwayat-work-order', [AtasanController::class, 'riwayatWorkOrder'])->name('riwayat-work-order');
+    Route::get('/work-order/cetak/{id}', [AtasanController::class, 'cetakpdf'])->name('work-order.cetak');
+    Route::get('/api/work-order/{id}', [AtasanController::class, 'showWorkOrder'])->name('api.work-order');
+    Route::put('/work-order/{id}/approve', [AtasanController::class, 'approveWorkOrder'])->name('work-order.approve');
+    Route::post('/work-order/approve/{id}', [AtasanController::class, 'approveWorkOrder'])->name('approve-work-order');
+    Route::put('/work-order/{id}/reject', [AtasanController::class, 'rejectWorkOrder'])->name('work-order.reject');
+    Route::post('/work-order/reject/{id}', [AtasanController::class, 'rejectWorkOrder'])->name('reject-work-order');
 
     // 🔹 PROFILE
     Route::get('/profile', [AtasanController::class, 'profile'])->name('profile');

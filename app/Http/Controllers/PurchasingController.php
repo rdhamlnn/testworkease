@@ -112,7 +112,7 @@ class PurchasingController extends Controller
         $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi') ?? 'Purchasing';
         
         // WO yang diterima oleh divisi user yang login (dari divisi lain)
-        $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])
+        $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])
             ->where('ditujukan', $userDivisiNama)
             ->where('divisi_pengaju', '!=', $userDivisiNama)
             ->where('id_verifikator', 1) // Hanya status Menunggu
@@ -128,12 +128,12 @@ class PurchasingController extends Controller
         $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi') ?? 'Purchasing';
         
         // WO yang dibuat dan diterima oleh divisi user yang login
-        $workOrdersDibuat = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])
+        $workOrdersDibuat = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])
             ->where('divisi_pengaju', $userDivisiNama)
             ->whereIn('id_verifikator', [2, 3]) // Disetujui atau Ditolak
             ->get();
         
-        $workOrdersDiterima = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])
+        $workOrdersDiterima = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])
             ->where('ditujukan', $userDivisiNama)
             ->where('divisi_pengaju', '!=', $userDivisiNama)
             ->whereIn('id_verifikator', [2, 3]) // Disetujui atau Ditolak
@@ -385,12 +385,13 @@ class PurchasingController extends Controller
      */
     public function showWorkOrder($id)
     {
-        $workOrder = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])->findOrFail($id);
+        $workOrder = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])->findOrFail($id);
 
         return response()->json([
             'id_surat_pengajuan' => $workOrder->id_surat_pengajuan,
             'no_surat_pengajuan' => $workOrder->no_surat_pengajuan,
             'no_work_order' => $workOrder->no_surat_pengajuan,
+            'no_wo_parent' => $workOrder->parent ? $workOrder->parent->no_surat_pengajuan : null,
             'divisi_pengaju' => $workOrder->divisi_pengaju,
             'ditujukan' => $workOrder->ditujukan,
             'id_jenis_wo' => $workOrder->id_jenis_wo,
@@ -403,6 +404,9 @@ class PurchasingController extends Controller
             'dokumentasi' => $workOrder->dokumentasi,
             'status' => $workOrder->verifikator ? $workOrder->verifikator->nama_status : ($workOrder->status ?? 'Menunggu'),
             'id_verifikator' => $workOrder->id_verifikator,
+            'harga_barang' => $workOrder->harga_barang,
+            'total_harga' => $workOrder->total_harga,
+            'catatan_penolakan' => $workOrder->catatan_penolakan,
         ]);
     }
 
@@ -838,6 +842,152 @@ class PurchasingController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menolak work order: ' . $e->getMessage(),
+                'redirect' => route('purchasing.daftar-work-order', ['from' => 'crud'])
+            ], 500);
+        }
+    }
+
+    /**
+     * Update harga work order.
+     */
+    public function updateHargaWorkOrder(Request $request, $id)
+    {
+        $request->validate([
+            'harga_barang' => 'required|array',
+            'harga_barang.*' => 'required|numeric|min:0',
+            'total_harga' => 'required|numeric|min:0',
+        ]);
+        
+        try {
+            $workOrder = SuratPengajuan::findOrFail($id);
+            $userDivisi = Session::get('user_divisi');
+            $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi');
+            
+            // Validasi: hanya bisa update jika work order ditujukan ke Purchasing dan sudah disetujui
+            if ($workOrder->ditujukan !== $userDivisiNama || $workOrder->id_verifikator != 2) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Harga hanya dapat diupdate untuk work order yang sudah disetujui dan ditujukan ke Purchasing.'
+                ], 403);
+            }
+            
+            $workOrder->update([
+                'harga_barang' => $request->harga_barang,
+                'total_harga' => $request->total_harga,
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Harga berhasil diperbarui!',
+                'redirect' => route('purchasing.daftar-work-order', ['from' => 'crud'])
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui harga: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Forward work order to Atasan (create new WO with parent relationship and harga).
+     */
+    public function forwardWorkOrderToAtasan(Request $request, $id)
+    {
+        try {
+            $parentWorkOrder = SuratPengajuan::with('jenisWorkOrder')->findOrFail($id);
+            $userDivisi = Session::get('user_divisi');
+            $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi');
+            
+            // Validasi: hanya bisa forward jika work order sudah disetujui dan ditujukan ke Purchasing
+            if ($parentWorkOrder->ditujukan !== $userDivisiNama) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki akses untuk memforward work order ini.'
+                ], 403);
+            }
+            
+            if ($parentWorkOrder->id_verifikator != 2) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Work order harus disetujui terlebih dahulu sebelum dapat diforward ke Atasan.'
+                ], 403);
+            }
+            
+            // Validasi: pastikan sudah ada harga
+            if (!$parentWorkOrder->total_harga || $parentWorkOrder->total_harga <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Silakan update harga barang terlebih dahulu sebelum mengirim ke Atasan.'
+                ], 403);
+            }
+            
+            // Cek apakah sudah ada child work order ke Atasan
+            $existingChild = SuratPengajuan::where('id_surat_pengajuan_parent', $id)
+                ->where('ditujukan', 'Atasan')
+                ->first();
+            
+            if ($existingChild) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Work order ini sudah pernah diforward ke Atasan.'
+                ], 403);
+            }
+            
+            // Get jenis WO Pembelian
+            $jenisPembelian = JenisWorkOrder::where('nama_jenis_wo', 'Pembelian')->first();
+            if (!$jenisPembelian) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Jenis Work Order "Pembelian" tidak ditemukan.'
+                ], 404);
+            }
+            
+            // Get Atasan divisi ID
+            $atasanDivisi = Divisi::where('nama_divisi', 'Atasan')->first();
+            if (!$atasanDivisi) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Divisi Atasan tidak ditemukan.'
+                ], 404);
+            }
+            
+            // Generate work order number untuk Atasan
+            $nextNoWO = $this->generateWorkOrderNumber('PUR');
+            
+            // Create new work order to Atasan
+            $newWorkOrder = SuratPengajuan::create([
+                'no_surat_pengajuan' => $nextNoWO,
+                'ditujukan' => 'Atasan',
+                'id_jenis_wo' => $jenisPembelian->id_jenis_wo,
+                'tanggal' => $parentWorkOrder->tanggal,
+                'divisi_pengaju' => $userDivisiNama,
+                'unit' => $parentWorkOrder->unit,
+                'uraian' => $parentWorkOrder->uraian . ' (Diteruskan dari ' . $parentWorkOrder->no_surat_pengajuan . ')',
+                'dokumentasi' => $parentWorkOrder->dokumentasi,
+                'status' => 'Menunggu',
+                'id_divisi' => $atasanDivisi->id_divisi,
+                'id_peran' => Session::get('user_peran'),
+                'id_verifikator' => 1, // Menunggu
+                'id_akun' => Session::get('user_id'),
+                'id_unit' => $parentWorkOrder->id_unit,
+                'id_surat_pengajuan_parent' => $id, // Link to parent
+                'harga_barang' => $parentWorkOrder->harga_barang, // Copy harga
+                'total_harga' => $parentWorkOrder->total_harga, // Copy total harga
+            ]);
+            
+            Session::flash('success', 'Work Order berhasil diforward ke Atasan!');
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Work Order berhasil diforward ke Atasan!',
+                'redirect' => route('purchasing.daftar-work-order', ['from' => 'crud'])
+            ]);
+        } catch (\Exception $e) {
+            Session::flash('error', 'Gagal memforward work order: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memforward work order: ' . $e->getMessage(),
                 'redirect' => route('purchasing.daftar-work-order', ['from' => 'crud'])
             ], 500);
         }

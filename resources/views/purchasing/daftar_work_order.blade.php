@@ -18,7 +18,7 @@
 
     .table {
         width: 100% !important;
-        min-width: 1000px !important;
+        min-width: 1200px !important;
         table-layout: auto;
         border-collapse: collapse !important;
     }
@@ -37,19 +37,19 @@
     }
 
     .card-body > .table-responsive {
-        min-width: 1000px !important;
+        min-width: 1200px !important;
     }
 
     .dataTables_wrapper {
         width: 100% !important;
-        min-width: 1000px !important;
+        min-width: 1200px !important;
         overflow-x: visible;
         display: block !important;
     }
 
     .dataTables_wrapper > .row:first-child,
     .dataTables_wrapper > .row:last-child {
-        min-width: 1000px !important;
+        min-width: 1200px !important;
         display: flex !important;
         flex-wrap: nowrap !important;
         justify-content: space-between !important;
@@ -144,10 +144,10 @@
                                         <th>No Work-Order</th>
                                         <th>Jenis WO</th>
                                         <th>Divisi Pengaju</th>
-                                        <th>Ditujukan</th>
                                         <th>Hari/Tanggal</th>
                                         <th>Unit/Code</th>
                                         <th>Uraian</th>
+                                        <th>Total Harga</th>
                                         <th>Status</th>
                                         <th>Aksi</th>
                                     </tr>
@@ -168,10 +168,10 @@
                                                 @endif
                                             </td>
                                             <td>{{ $wo->divisi_pengaju }}</td>
-                                            <td>{{ $wo->ditujukan }}</td>
                                             <td>{{ \Carbon\Carbon::parse($wo->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
                                             <td>{{ $wo->unit_code ?? $wo->unit }}</td>
                                             <td>{{ Str::limit($wo->uraian, 30) }}</td>
+                                            <td>Rp {{ number_format($wo->total_harga ?? 0, 0, ',', '.') }}</td>
                                             <td>
                                                 @if($status == 'Disetujui' || $status == 'Selesai')
                                                     <span class="badge badge-success">{{ $status }}</span>
@@ -230,7 +230,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="11" class="text-center text-muted">Belum ada data work order</td>
+                                            <td colspan="12" class="text-center text-muted">Belum ada data work order</td>
                                         </tr>
                                     @endforelse
                                 </tbody>

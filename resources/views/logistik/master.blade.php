@@ -454,12 +454,13 @@
                                         <span>Daftar Barang</span>
                                     </a>
                                 </li>
-                                <li class="{{ request()->is('logistik/permintaan-barang*') ? 'active' : '' }}">
+                                {{-- Hidden menu Permintaan Barang (kept for backward compatibility but not shown - use Work Order instead) --}}
+                                {{-- <li class="{{ request()->is('logistik/permintaan-barang*') ? 'active' : '' }}">
                                     <a class="nav-link" href="{{ url('/logistik/permintaan-barang') }}">
                                         <i class="fas fa-shopping-cart"></i>
                                         <span>Permintaan Barang</span>
                                     </a>
-                                </li>
+                                </li> --}}
                                 <li class="{{ request()->is('logistik/terima-barang*') ? 'active' : '' }}">
                                     <a class="nav-link" href="{{ url('/logistik/terima-barang') }}">
                                         <i class="fas fa-box-open"></i>

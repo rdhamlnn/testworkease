@@ -276,12 +276,13 @@
                             </ul>
                         </li>
 
-                        <li class="menu-header">Permintaan Barang</li>
+                        {{-- Hidden menu Permintaan Barang (kept for backward compatibility but not shown - use Work Order instead) --}}
+                        {{-- <li class="menu-header">Permintaan Barang</li>
                         <li class="{{ request()->is('purchasing/permintaan-barang*') ? 'active' : '' }}">
                             <a href="{{ url('/purchasing/permintaan-barang') }}" class="nav-link">
                                 <i class="fas fa-shopping-cart"></i> <span>Permintaan Barang</span>
                             </a>
-                        </li>
+                        </li> --}}
 
                         <li class="menu-header">Pembelian</li>
                         <li class="{{ request()->is('purchasing/beli-barang*') ? 'active' : '' }}">

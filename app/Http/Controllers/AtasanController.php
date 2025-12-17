@@ -8,7 +8,10 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Hash;
 use App\Models\PermintaanBarang;
 use App\Models\StatusWo;
+use App\Models\SuratPengajuan;
+use App\Models\Akun;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class AtasanController extends Controller
 {
@@ -160,6 +163,171 @@ class AtasanController extends Controller
     }
     
     /**
+     * Display work order masuk page (WO yang diterima dari Purchasing).
+     */
+    public function workOrderMasuk()
+    {
+        $userDivisi = Session::get('user_divisi');
+        $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi') ?? 'Atasan';
+        
+        // WO yang diterima oleh Atasan (dari Purchasing)
+        $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])
+            ->where('ditujukan', $userDivisiNama)
+            ->where('divisi_pengaju', '!=', $userDivisiNama)
+            ->where('id_verifikator', 1) // Hanya status Menunggu
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        return view('atasan.work_order_masuk', compact('workOrders'));
+    }
+
+    /**
+     * Display riwayat work order page.
+     */
+    public function riwayatWorkOrder()
+    {
+        $userDivisi = Session::get('user_divisi');
+        $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi') ?? 'Atasan';
+        
+        // WO yang dibuat dan diterima oleh Atasan
+        $workOrdersDibuat = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])
+            ->where('divisi_pengaju', $userDivisiNama)
+            ->whereIn('id_verifikator', [2, 3]) // Disetujui atau Ditolak
+            ->get();
+        
+        $workOrdersDiterima = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])
+            ->where('ditujukan', $userDivisiNama)
+            ->where('divisi_pengaju', '!=', $userDivisiNama)
+            ->whereIn('id_verifikator', [2, 3]) // Disetujui atau Ditolak
+            ->get();
+        
+        $workOrders = $workOrdersDibuat->merge($workOrdersDiterima)->sortByDesc('created_at');
+        
+        return view('atasan.riwayat_work_order', compact('workOrders'));
+    }
+
+    /**
+     * Show work order detail (API).
+     */
+    public function showWorkOrder($id)
+    {
+        $workOrder = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])->findOrFail($id);
+
+        return response()->json([
+            'id_surat_pengajuan' => $workOrder->id_surat_pengajuan,
+            'no_surat_pengajuan' => $workOrder->no_surat_pengajuan,
+            'no_work_order' => $workOrder->no_surat_pengajuan,
+            'no_wo_parent' => $workOrder->parent ? $workOrder->parent->no_surat_pengajuan : null,
+            'divisi_pengaju' => $workOrder->divisi_pengaju,
+            'ditujukan' => $workOrder->ditujukan,
+            'id_jenis_wo' => $workOrder->id_jenis_wo,
+            'jenis_wo' => $workOrder->jenisWorkOrder ? $workOrder->jenisWorkOrder->nama_jenis_wo : null,
+            'tanggal' => $workOrder->tanggal,
+            'unit' => $workOrder->unit,
+            'unit_code' => $workOrder->unit_code ?? $workOrder->unit,
+            'id_unit' => $workOrder->id_unit,
+            'uraian' => $workOrder->uraian,
+            'dokumentasi' => $workOrder->dokumentasi,
+            'status' => $workOrder->verifikator ? $workOrder->verifikator->nama_status : ($workOrder->status ?? 'Menunggu'),
+            'id_verifikator' => $workOrder->id_verifikator,
+            'harga_barang' => $workOrder->harga_barang,
+            'total_harga' => $workOrder->total_harga,
+            'catatan_penolakan' => $workOrder->catatan_penolakan,
+        ]);
+    }
+
+    /**
+     * Approve work order.
+     */
+    public function approveWorkOrder($id)
+    {
+        try {
+            $workOrder = SuratPengajuan::findOrFail($id);
+            $userDivisi = Session::get('user_divisi');
+            $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi');
+            
+            // Hanya divisi yang dituju yang bisa approve
+            if ($workOrder->ditujukan !== $userDivisiNama) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki akses untuk menyetujui work order ini.'
+                ], 403);
+            }
+            
+            $workOrder->update([
+                'id_verifikator' => 2, // 2 = Disetujui
+                'status' => 'Disetujui'
+            ]);
+            
+            // Set session message untuk notifikasi toast
+            Session::flash('success', 'Work Order berhasil disetujui!');
+            
+            // Return JSON untuk AJAX dengan redirect URL yang sudah include from=crud
+            $redirectUrl = route('atasan.work-order-masuk', ['from' => 'crud']);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Work Order berhasil disetujui!',
+                'redirect' => $redirectUrl
+            ]);
+        } catch (\Exception $e) {
+            Session::flash('error', 'Gagal menyetujui work order: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyetujui work order: ' . $e->getMessage(),
+                'redirect' => route('atasan.work-order-masuk', ['from' => 'crud'])
+            ], 500);
+        }
+    }
+    
+    /**
+     * Reject work order.
+     */
+    public function rejectWorkOrder(Request $request, $id)
+    {
+        try {
+            $workOrder = SuratPengajuan::findOrFail($id);
+            $userDivisi = Session::get('user_divisi');
+            $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi');
+            
+            // Hanya divisi yang dituju yang bisa reject
+            if ($workOrder->ditujukan !== $userDivisiNama) {
+                Session::flash('error', 'Anda tidak memiliki akses untuk menolak work order ini.');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki akses untuk menolak work order ini.',
+                    'redirect' => route('atasan.work-order-masuk', ['from' => 'crud'])
+                ], 403);
+            }
+            
+            $workOrder->update([
+                'id_verifikator' => 3, // 3 = Ditolak
+                'status' => 'Ditolak',
+                'catatan_penolakan' => $request->catatan_penolakan ?? null,
+            ]);
+            
+            // Set session message untuk notifikasi toast
+            Session::flash('success', 'Work Order berhasil ditolak!');
+            
+            // Return JSON untuk AJAX dengan redirect URL yang sudah include from=crud
+            $redirectUrl = route('atasan.work-order-masuk', ['from' => 'crud']);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Work Order berhasil ditolak!',
+                'redirect' => $redirectUrl
+            ]);
+        } catch (\Exception $e) {
+            Session::flash('error', 'Gagal menolak work order: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menolak work order: ' . $e->getMessage(),
+                'redirect' => route('atasan.work-order-masuk', ['from' => 'crud'])
+            ], 500);
+        }
+    }
+
+    /**
      * Display profile page.
      */
     public function profile()
@@ -245,5 +413,45 @@ class AtasanController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal mengubah password: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Cetak work order PDF.
+     */
+    public function cetakpdf($id)
+    {
+        $wo = SuratPengajuan::with([
+            'jenisWorkOrder',
+            'verifikator',
+            'akun.karyawan',
+            'akun.divisi',
+            'divisiPengaju',
+            'unit',
+            'parent'
+        ])->findOrFail($id);
+
+        // Akun pembuat WO
+        $dibuatOleh = $wo->akun;
+
+        // Akun divisi tujuan berdasarkan nama divisi di kolom 'ditujukan'
+        $diketahuiOleh = Akun::with(['karyawan', 'divisi'])
+            ->whereHas('divisi', function ($q) use ($wo) {
+                $q->where('nama_divisi', $wo->ditujukan);
+            })
+            ->first();
+
+        // Status badge
+        $wo->status_text = $wo->verifikator->nama_status ?? $wo->status ?? 'Menunggu';
+
+        $pdf = Pdf::loadView('admin.cetak_work_order_pdf', [
+            'wo' => $wo,
+            'dibuatOleh' => $dibuatOleh,
+            'diketahuiOleh' => $diketahuiOleh,
+        ])->setPaper('A4', 'portrait');
+
+        $cleanNo = str_replace(['/', '\\'], '-', $wo->no_surat_pengajuan);
+        $filename = "WorkOrder_{$cleanNo}.pdf";
+
+        return $pdf->stream($filename);
     }
 }

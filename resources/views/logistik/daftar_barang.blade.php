@@ -119,7 +119,24 @@
                                             <td>
                                                 {{ $db->nama_barang }}
                                             </td>
-                                            <td>{{ $db->stok ?? 0 }}</td>
+                                            <td>
+                                                @php
+                                                    $stok = $db->stok ?? 0;
+                                                @endphp
+                                                @if($stok == 0)
+                                                    <span class="badge badge-danger">
+                                                        <i class="fas fa-times-circle"></i> 0 (HABIS)
+                                                    </span>
+                                                @elseif($stok <= 10)
+                                                    <span class="badge badge-warning">
+                                                        <i class="fas fa-exclamation-triangle"></i> {{ number_format($stok, 0, ',', '.') }} (Rendah)
+                                                    </span>
+                                                @else
+                                                    <span class="badge badge-success">
+                                                        <i class="fas fa-check-circle"></i> {{ number_format($stok, 0, ',', '.') }}
+                                                    </span>
+                                                @endif
+                                            </td>
                                             <td>{{ $db->satuan ?? '-' }}</td>
                                             <td>
                                                 @if(!is_null($db->harga_barang))
@@ -419,7 +436,17 @@
                     const data = response.data;
                     $('#detailNamaBarang').text(data.nama_barang || '-');
                     $('#detailSatuan').text(data.satuan || '-');
-                    $('#detailStok').text(data.stok || 0);
+                    // Update stok dengan indikator visual
+                    var stok = data.stok || 0;
+                    var stokHtml = '';
+                    if (stok == 0) {
+                        stokHtml = '<span class="badge badge-danger"><i class="fas fa-times-circle"></i> 0 (HABIS)</span>';
+                    } else if (stok <= 10) {
+                        stokHtml = '<span class="badge badge-warning"><i class="fas fa-exclamation-triangle"></i> ' + stok.toLocaleString('id-ID') + ' (Rendah)</span>';
+                    } else {
+                        stokHtml = '<span class="badge badge-success"><i class="fas fa-check-circle"></i> ' + stok.toLocaleString('id-ID') + '</span>';
+                    }
+                    $('#detailStok').html(stokHtml);
                     
                     if (data.harga_barang) {
                         $('#detailHargaBarang').text('Rp ' + new Intl.NumberFormat('id-ID').format(data.harga_barang));

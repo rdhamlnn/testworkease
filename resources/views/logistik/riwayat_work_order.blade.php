@@ -324,7 +324,6 @@
                                         <th>No Work-Order</th>
                                         <th>Jenis WO</th>
                                         <th>Divisi Pengaju</th>
-                                        <th>Ditujukan</th>
                                         <th>Hari/Tanggal</th>
                                         <th>Unit/Code</th>
                                         <th>Uraian</th>
@@ -345,7 +344,6 @@
                                                 @endif
                                             </td>
                                             <td>{{ $wo->divisi_pengaju }}</td>
-                                            <td>{{ $wo->ditujukan }}</td>
                                             <td>{{ \Carbon\Carbon::parse($wo->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
                                             <td>{{ $wo->unit_code ?? $wo->unit }}</td>
                                             <td>{{ Str::limit($wo->uraian, 30) }}</td>

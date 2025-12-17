@@ -101,7 +101,7 @@ class LogistikController extends Controller
         $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi') ?? 'Logistik';
         
         // WO yang diterima oleh divisi user yang login (dari divisi lain)
-        $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])
+        $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])
             ->where('ditujukan', $userDivisiNama)
             ->where('divisi_pengaju', '!=', $userDivisiNama)
             ->where('id_verifikator', 1) // Hanya status Menunggu
@@ -117,12 +117,12 @@ class LogistikController extends Controller
         $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi') ?? 'Logistik';
         
         // WO yang dibuat dan diterima oleh divisi user yang login
-        $workOrdersDibuat = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])
+        $workOrdersDibuat = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])
             ->where('divisi_pengaju', $userDivisiNama)
             ->whereIn('id_verifikator', [2, 3]) // Disetujui atau Ditolak
             ->get();
         
-        $workOrdersDiterima = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])
+        $workOrdersDiterima = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])
             ->where('ditujukan', $userDivisiNama)
             ->where('divisi_pengaju', '!=', $userDivisiNama)
             ->whereIn('id_verifikator', [2, 3]) // Disetujui atau Ditolak
@@ -1031,7 +1031,40 @@ class LogistikController extends Controller
     public function prosesTerimaBarang($id)
     {
         try {
-            $permintaan = PermintaanBarang::findOrFail($id);
+            $permintaan = PermintaanBarang::with('daftarBarang')->findOrFail($id);
+            
+            // Tambah stok barang ke daftar_barang berdasarkan detail_barang_permintaan
+            if ($permintaan->daftarBarang && $permintaan->daftarBarang->count() > 0) {
+                foreach ($permintaan->daftarBarang as $detail) {
+                    if ($detail->id_daftar_barang_master) {
+                        $masterBarang = DaftarBarang::find($detail->id_daftar_barang_master);
+                        if ($masterBarang) {
+                            // Tambah stock
+                            $jumlahDiterima = $detail->jumlah ?? 0;
+                            $stokSekarang = $masterBarang->stok ?? 0;
+                            $stokBaru = $stokSekarang + $jumlahDiterima; // Tambah stok
+                            
+                            $masterBarang->update([
+                                'stok' => $stokBaru
+                            ]);
+                        }
+                    } else {
+                        // Jika tidak ada id_daftar_barang_master, cari berdasarkan nama_barang
+                        $masterBarang = DaftarBarang::where('nama_barang', $detail->nama_barang)->first();
+                        if ($masterBarang) {
+                            $jumlahDiterima = $detail->jumlah ?? 0;
+                            $stokSekarang = $masterBarang->stok ?? 0;
+                            $stokBaru = $stokSekarang + $jumlahDiterima; // Tambah stok
+                            
+                            $masterBarang->update([
+                                'stok' => $stokBaru
+                            ]);
+                        }
+                    }
+                }
+            }
+            
+            // Update status
             $permintaan->update([
                 'status' => 'Diterima Logistik',
                 'updated_at' => now(),
@@ -1044,12 +1077,12 @@ class LogistikController extends Controller
             }
             
             // Simpan success message di session untuk toast notification
-            Session::flash('success', 'Barang berhasil diterima!');
+            Session::flash('success', 'Barang berhasil diterima dan stok telah diupdate!');
             Session::flash('from_crud', true);
             
             return response()->json([
                 'success' => true,
-                'message' => 'Barang berhasil diterima!',
+                'message' => 'Barang berhasil diterima dan stok telah diupdate!',
                 'redirect' => route('logistik.terima-barang', ['from' => 'crud'])
             ]);
         } catch (\Exception $e) {
@@ -1133,7 +1166,7 @@ class LogistikController extends Controller
      */
     public function showWorkOrder($id)
     {
-        $workOrder = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])->findOrFail($id);
+        $workOrder = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])->findOrFail($id);
         
         // Ambil jenis_kebutuhan dan daftar_barang dari permintaan_barang jika ada
         $daftarBarang = null;
@@ -1173,6 +1206,7 @@ class LogistikController extends Controller
             'id_surat_pengajuan' => $workOrder->id_surat_pengajuan,
             'no_surat_pengajuan' => $workOrder->no_surat_pengajuan,
             'no_work_order' => $workOrder->no_surat_pengajuan,
+            'no_wo_parent' => $workOrder->parent ? $workOrder->parent->no_surat_pengajuan : null,
             'divisi_pengaju' => $workOrder->divisi_pengaju,
             'ditujukan' => $workOrder->ditujukan,
             'id_jenis_wo' => $workOrder->id_jenis_wo,
@@ -1187,6 +1221,9 @@ class LogistikController extends Controller
             'id_verifikator' => $workOrder->id_verifikator,
             'jenis_kebutuhan' => $jenisKebutuhan,
             'daftar_barang' => $daftarBarang,
+            'harga_barang' => $workOrder->harga_barang,
+            'total_harga' => $workOrder->total_harga,
+            'catatan_penolakan' => $workOrder->catatan_penolakan,
         ];
         
         return response()->json($data);
@@ -1334,6 +1371,91 @@ class LogistikController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menolak work order: ' . $e->getMessage(),
+                'redirect' => route('logistik.daftar-work-order', ['from' => 'crud'])
+            ], 500);
+        }
+    }
+
+    /**
+     * Forward work order to Purchasing (create new WO with parent relationship).
+     */
+    public function forwardWorkOrderToPurchasing(Request $request, $id)
+    {
+        try {
+            $parentWorkOrder = SuratPengajuan::with('jenisWorkOrder')->findOrFail($id);
+            $userDivisi = Session::get('user_divisi');
+            $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi');
+            
+            // Validasi: hanya bisa forward jika work order sudah disetujui dan ditujukan ke Logistik
+            if ($parentWorkOrder->ditujukan !== $userDivisiNama) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki akses untuk memforward work order ini.'
+                ], 403);
+            }
+            
+            if ($parentWorkOrder->id_verifikator != 2) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Work order harus disetujui terlebih dahulu sebelum dapat diforward ke Purchasing.'
+                ], 403);
+            }
+            
+            // Cek apakah sudah ada child work order ke Purchasing
+            $existingChild = SuratPengajuan::where('id_surat_pengajuan_parent', $id)
+                ->where('ditujukan', 'Purchasing')
+                ->first();
+            
+            if ($existingChild) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Work order ini sudah pernah diforward ke Purchasing.'
+                ], 403);
+            }
+            
+            // Get jenis WO Pembelian
+            $jenisPembelian = JenisWorkOrder::where('nama_jenis_wo', 'Pembelian')->first();
+            if (!$jenisPembelian) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Jenis Work Order "Pembelian" tidak ditemukan.'
+                ], 404);
+            }
+            
+            // Generate work order number untuk Purchasing
+            $nextNoWO = $this->generateWorkOrderNumber('LOG');
+            
+            // Create new work order to Purchasing
+            $newWorkOrder = SuratPengajuan::create([
+                'no_surat_pengajuan' => $nextNoWO,
+                'ditujukan' => 'Purchasing',
+                'id_jenis_wo' => $jenisPembelian->id_jenis_wo,
+                'tanggal' => $parentWorkOrder->tanggal,
+                'divisi_pengaju' => $userDivisiNama,
+                'unit' => $parentWorkOrder->unit,
+                'uraian' => $parentWorkOrder->uraian . ' (Diteruskan dari ' . $parentWorkOrder->no_surat_pengajuan . ')',
+                'dokumentasi' => $parentWorkOrder->dokumentasi,
+                'status' => 'Menunggu',
+                'id_divisi' => $userDivisi,
+                'id_peran' => Session::get('user_peran'),
+                'id_verifikator' => 1, // Menunggu
+                'id_akun' => Session::get('user_id'),
+                'id_unit' => $parentWorkOrder->id_unit,
+                'id_surat_pengajuan_parent' => $id, // Link to parent
+            ]);
+            
+            Session::flash('success', 'Work Order berhasil diforward ke Purchasing!');
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Work Order berhasil diforward ke Purchasing!',
+                'redirect' => route('logistik.daftar-work-order', ['from' => 'crud'])
+            ]);
+        } catch (\Exception $e) {
+            Session::flash('error', 'Gagal memforward work order: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memforward work order: ' . $e->getMessage(),
                 'redirect' => route('logistik.daftar-work-order', ['from' => 'crud'])
             ], 500);
         }
