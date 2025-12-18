@@ -286,10 +286,10 @@
                                 <td>{{ \Carbon\Carbon::parse($laporan->tanggal_selesai)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
                                 <td>{{ $laporan->tindakan_perbaikan }}</td>
                                 <td>
-                                    <div style="display: flex; gap: 5px;">
-                                        <button type="button" class="btn btn-info btn-sm btn-icon btn-view" 
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-info btn-sm btn-view" 
                                             data-id="{{ $laporan->id_laporan_harian_mekanik }}" data-toggle="modal" data-target="#viewLaporanModal" title="Lihat Detail">
-                                            <img src="https://cdn-icons-png.flaticon.com/128/709/709612.png" alt="view">
+                                            <i class="fas fa-eye"></i>
                                         </button>
                                     </div>
                                 </td>
@@ -449,10 +449,10 @@
                         formatDate(item.tanggal_mulai),
                         formatDate(item.tanggal_selesai),
                         (item.tindakan_perbaikan || '-'),
-                        '<div style="display: flex; gap: 5px;">' +
-                            '<button type="button" class="btn btn-info btn-sm btn-icon btn-view" ' +
+                        '<div class="d-flex gap-2">' +
+                            '<button type="button" class="btn btn-info btn-sm btn-view" ' +
                                 'data-id="' + item.id_laporan_harian_mekanik + '" data-toggle="modal" data-target="#viewLaporanModal">' +
-                                '<img src="https://cdn-icons-png.flaticon.com/128/709/709612.png" alt="view">' +
+                                '<i class="fas fa-eye"></i>' +
                             '</button>' +
                         '</div>'
                     ];

@@ -132,12 +132,12 @@
                                     </td>
                                     <td>
                                         <div style="display: flex; gap: 5px;">
-                                            <button type="button" class="btn btn-info btn-sm btn-icon btn-view" 
+                                            <button type="button" class="btn btn-info btn-sm btn-view" 
                                                 data-id="{{ $wo->id_surat_pengajuan }}" 
                                                 data-toggle="modal" 
                                                 data-target="#viewPengajuanModal"
                                                 title="Lihat Detail">
-                                                <img src="https://cdn-icons-png.flaticon.com/128/709/709612.png" alt="view">
+                                                <i class="fas fa-eye"></i>
                                             </button>
                                             @if($status == 'Menunggu')
                                                 <form action="{{ route('kadivproduksi.approve-work-order', $wo->id_surat_pengajuan) }}" method="POST" class="approve-form" style="display:inline;" 
@@ -262,9 +262,19 @@
 
 @section('styles')
 <style>
-    .btn-icon img {
-        width: 14px;
-        filter: brightness(0) invert(1);
+    /* Button Action - Simple & Clean dengan Font Awesome */
+    .btn-view {
+        min-width: 32px;
+        padding: 4px 8px;
+    }
+
+    .btn-view i {
+        font-size: 14px;
+    }
+
+    .btn-view:hover {
+        background-color: #138496 !important;
+        border-color: #117a8b !important;
     }
 
     .modal-header {

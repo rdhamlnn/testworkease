@@ -10,9 +10,33 @@
         vertical-align: middle;
     }
 
-    .btn-icon img {
-        width: 14px;
-        filter: brightness(0) invert(1);
+    /* Button Action - Simple & Clean dengan Font Awesome */
+    .btn-view,
+    .btn-edit,
+    .btn-delete {
+        min-width: 32px;
+        padding: 4px 8px;
+    }
+
+    .btn-view i,
+    .btn-edit i,
+    .btn-delete i {
+        font-size: 14px;
+    }
+
+    .btn-view:hover {
+        background-color: #138496 !important;
+        border-color: #117a8b !important;
+    }
+
+    .btn-edit:hover {
+        background-color: #e0a800 !important;
+        border-color: #d39e00 !important;
+    }
+
+    .btn-delete:hover {
+        background-color: #c82333 !important;
+        border-color: #bd2130 !important;
     }
 
     /* Modal Styling */
@@ -247,18 +271,17 @@
                                     <td>{{ $a->nama_divisi }}</td>
                                     <td>{{ $a->nama_peran }}</td>
                                     <td>
-                                        <div class="action-buttons">
-                                            <button type="button" class="btn btn-warning btn-sm btn-icon btn-edit" 
+                                        <div class="d-flex gap-2">
+                                            <button type="button" class="btn btn-warning btn-sm btn-edit" 
                                                 data-id="{{ $a->id_akun }}"
                                                 data-toggle="modal" data-target="#modalEditAkun" title="Edit">
-                                                <img src="https://cdn-icons-png.flaticon.com/128/2355/2355330.png"
-                                                    alt="edit">
+                                                <i class="fas fa-edit"></i>
                                             </button>
 
-                                            <button type="button" class="btn btn-danger btn-sm btn-icon btn-delete" 
+                                            <button type="button" class="btn btn-danger btn-sm btn-delete" 
                                                 data-url="{{ route('admin.hapus-akun', $a->id_akun) }}"
                                                 data-message="Yakin ingin menghapus akun ini?" title="Hapus">
-                                                <img src="https://cdn-icons-png.flaticon.com/128/484/484611.png" alt="hapus">
+                                                <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
                                     </td>

@@ -40,20 +40,34 @@
         margin-right: 0;
     }
 
-    /* Pastikan button action bisa diklik */
+    /* Button Action - Simple & Clean dengan Font Awesome */
     .btn-view,
     .btn-edit,
     .btn-delete {
-        cursor: pointer !important;
-        position: relative !important;
-        z-index: 10 !important;
-        pointer-events: auto !important;
+        min-width: 32px;
+        padding: 4px 8px;
     }
 
-    .btn-view img,
-    .btn-edit img,
-    .btn-delete img {
-        pointer-events: none !important;
+    .btn-view i,
+    .btn-edit i,
+    .btn-delete i {
+        font-size: 14px;
+    }
+
+    /* Hover effects */
+    .btn-view:hover {
+        background-color: #138496 !important;
+        border-color: #117a8b !important;
+    }
+
+    .btn-edit:hover {
+        background-color: #e0a800 !important;
+        border-color: #d39e00 !important;
+    }
+
+    .btn-delete:hover {
+        background-color: #c82333 !important;
+        border-color: #bd2130 !important;
     }
 
     /* Pastikan field ditujukan bisa diklik saat enabled */
@@ -283,7 +297,7 @@
         border-top-right-radius: 0.25rem;
         color: #495057;
         background-color: #f8f9fa;
-        transition: all 0.3s ease;
+        transition: background-color 0.3s ease, border-color 0.3s ease;
     }
     
     .nav-tabs-scrollable .nav-link:hover {
@@ -583,26 +597,24 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <div style="display: flex; gap: 5px; align-items: center;">
-                                            <button type="button" class="btn btn-info btn-sm btn-icon btn-view" 
-                                                data-id="{{ $wo->id_surat_pengajuan }}" title="Lihat Detail" style="cursor: pointer; position: relative; z-index: 10; pointer-events: auto;">
-                                                <img src="https://cdn-icons-png.flaticon.com/128/709/709612.png" alt="view" style="pointer-events: none;">
+                                        <div class="d-flex gap-2">
+                                            <button type="button" class="btn btn-info btn-sm btn-view" 
+                                                data-id="{{ $wo->id_surat_pengajuan }}" title="Lihat Detail">
+                                                <i class="fas fa-eye"></i>
                                             </button>
                                             @if($status == 'Menunggu')
-                                            <button type="button" class="btn btn-warning btn-sm btn-icon btn-edit" 
+                                            <button type="button" class="btn btn-warning btn-sm btn-edit" 
                                                 data-id="{{ $wo->id_surat_pengajuan }}" title="Edit"
                                                 data-locked="{{ $isLocked ? 'true' : 'false' }}"
-                                                data-lock-message="{{ $isLocked ? 'Work Order tidak dapat diedit karena status sudah '.$statusLower.'.' : '' }}"
-                                                style="cursor: pointer; position: relative; z-index: 10; pointer-events: auto;">
-                                                <img src="https://cdn-icons-png.flaticon.com/128/2355/2355330.png" alt="edit" style="pointer-events: none;">
+                                                data-lock-message="{{ $isLocked ? 'Work Order tidak dapat diedit karena status sudah '.$statusLower.'.' : '' }}">
+                                                <i class="fas fa-edit"></i>
                                             </button>
-                                            <button type="button" class="btn btn-danger btn-sm btn-icon btn-delete" 
+                                            <button type="button" class="btn btn-danger btn-sm btn-delete" 
                                                 data-url="{{ route('kadivqc.hapus-work-order', $wo->id_surat_pengajuan) }}"
                                                 data-message="Yakin ingin menghapus work order ini?" title="Hapus"
                                                 data-locked="{{ $isLocked ? 'true' : 'false' }}"
-                                                data-lock-message="{{ $isLocked ? 'Work Order tidak dapat dihapus karena status sudah '.$statusLower.'.' : '' }}"
-                                                style="cursor: pointer; position: relative; z-index: 10; pointer-events: auto;">
-                                                <img src="https://cdn-icons-png.flaticon.com/128/484/484611.png" alt="hapus" style="pointer-events: none;">
+                                                data-lock-message="{{ $isLocked ? 'Work Order tidak dapat dihapus karena status sudah '.$statusLower.'.' : '' }}">
+                                                <i class="fas fa-trash"></i>
                                             </button>
                                             @endif
                                         </div>
@@ -704,11 +716,15 @@
                                         <label for="ditujukan">Ditujukan <span class="text-danger">*</span></label>
                                         <select class="form-control" name="ditujukan" id="ditujukan" required disabled>
                                             <option value="">-- Pilih Jenis Work Order terlebih dahulu --</option>
-                                            @foreach($divisi as $d)
-                                                @if($d->nama_divisi !== 'Administrator' && $d->nama_divisi !== $divisiPengaju)
-                                                    <option value="{{ $d->nama_divisi }}">{{ $d->nama_divisi }}</option>
-                                                @endif
-                                            @endforeach
+                                            <!-- Options untuk Pembelian: QC → Logistik -->
+                                            <option value="Logistik" data-jenis-wo="pembelian" style="display: none;">Logistik</option>
+                                            <!-- Options untuk Perbaikan: QC → Mekanik -->
+                                            <option value="Mekanik" data-jenis-wo="perbaikan" style="display: none;">Mekanik</option>
+                                            <!-- Options untuk Permintaan: semua kecuali Atasan, Purchasing, Admin, dan QC sendiri -->
+                                            <option value="Produksi" data-jenis-wo="permintaan" style="display: none;">Produksi</option>
+                                            <option value="Plasma" data-jenis-wo="permintaan" style="display: none;">Plasma</option>
+                                            <option value="Mekanik" data-jenis-wo="permintaan" style="display: none;">Mekanik</option>
+                                            <option value="Logistik" data-jenis-wo="permintaan" style="display: none;">Logistik</option>
                                         </select>
                                     </div>
                                 </div>
@@ -859,12 +875,15 @@
                                         <label for="edit_ditujukan">Ditujukan <span class="text-danger">*</span></label>
                                         <select class="form-control" name="ditujukan" id="edit_ditujukan" required disabled>
                                             <option value="">-- Pilih Jenis Work Order terlebih dahulu --</option>
-                                            @foreach($divisi as $d)
-                                                @php($divisiPengaju = Auth::user()->divisi->nama_divisi ?? session('divisi') ?? 'Quality Control')
-                                                @if($d->nama_divisi !== 'Administrator' && $d->nama_divisi !== $divisiPengaju)
-                                                    <option value="{{ $d->nama_divisi }}">{{ $d->nama_divisi }}</option>
-                                                @endif
-                                            @endforeach
+                                            <!-- Options untuk Pembelian: QC → Logistik -->
+                                            <option value="Logistik" data-jenis-wo="pembelian" style="display: none;">Logistik</option>
+                                            <!-- Options untuk Perbaikan: QC → Mekanik -->
+                                            <option value="Mekanik" data-jenis-wo="perbaikan" style="display: none;">Mekanik</option>
+                                            <!-- Options untuk Permintaan: semua kecuali Atasan, Purchasing, Admin, dan QC sendiri -->
+                                            <option value="Produksi" data-jenis-wo="permintaan" style="display: none;">Produksi</option>
+                                            <option value="Plasma" data-jenis-wo="permintaan" style="display: none;">Plasma</option>
+                                            <option value="Mekanik" data-jenis-wo="permintaan" style="display: none;">Mekanik</option>
+                                            <option value="Logistik" data-jenis-wo="permintaan" style="display: none;">Logistik</option>
                                         </select>
                                     </div>
                                 </div>
@@ -917,23 +936,6 @@
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label for="edit_dokumentasi">Dokumentasi</label>
-                                        <div id="currentDokumentasiKadiv" class="mb-3" style="display: none;">
-                                            <div class="alert alert-light border p-3" style="background-color: #f8f9fa;">
-                                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                                    <div>
-                                                        <small class="text-muted d-block mb-1">File saat ini:</small>
-                                                        <span id="currentDokumentasiNameKadiv" class="font-weight-bold text-dark d-inline-block"></span>
-                                                    </div>
-                                                </div>
-                                                <hr class="my-2" style="border-color: #dee2e6;">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="delete_dokumentasi_kadiv" name="delete_dokumentasi" value="1">
-                                                    <label class="form-check-label text-danger font-weight-medium" for="delete_dokumentasi_kadiv" style="cursor: pointer;">
-                                                        <i class="fas fa-trash-alt mr-1"></i> Hapus dokumentasi saat ini
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
                                         <input type="file" class="form-control" id="edit_dokumentasi" name="dokumentasi" accept=".pdf,.jpg,.jpeg,.png" onchange="previewDokumentasiEditKadiv(this)">
                                         <small class="form-text text-muted">Format: JPG, PNG, PDF. Maks. 2MB</small>
                                         <div id="previewDokumentasiContainerKadiv" class="mt-2" style="display: none;">
@@ -1653,196 +1655,66 @@
         }
 
         // Filter divisi "Ditujukan" berdasarkan jenis work order
-        // Buat global agar bisa diakses dari luar document.ready
+        // Filter divisi "Ditujukan" berdasarkan jenis work order - SEDERHANA
         window.filterDivisiDitujukan = function() {
             const jenisWoSelect = $('#id_jenis_wo');
             const ditujukanSelect = $('#ditujukan');
             const selectedJenisWo = jenisWoSelect.find('option:selected').data('nama-jenis');
             
-            // Simpan semua option divisi terlebih dahulu
-            if (!ditujukanSelect.data('original-options')) {
-                ditujukanSelect.data('original-options', ditujukanSelect.html());
-            }
+            // Hide semua options dengan data-jenis-wo
+            ditujukanSelect.find('option[data-jenis-wo]').hide();
             
-            // Reset ke semua option
-            ditujukanSelect.html(ditujukanSelect.data('original-options'));
-            
-            // Jika tidak ada jenis WO yang dipilih, tampilkan semua
+            // Jika tidak ada jenis WO yang dipilih, disable dropdown
             if (!selectedJenisWo) {
+                ditujukanSelect.prop('disabled', true);
+                ditujukanSelect.val('');
+                ditujukanSelect.find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
                 return;
             }
             
-            // Dapatkan nama divisi user saat ini (Quality Control)
-            const currentUserDivisi = 'Quality Control';
+            // Enable dropdown dan show options sesuai jenis WO
+            ditujukanSelect.prop('disabled', false);
+            ditujukanSelect.find('option[data-jenis-wo="' + selectedJenisWo.toLowerCase() + '"]').show();
+            ditujukanSelect.find('option:first').text('-- Pilih Divisi --');
             
-            // Filter berdasarkan jenis work order
-            let allowedDivisi = [];
-            let excludedDivisi = [];
-            
-            if (selectedJenisWo.toLowerCase() === 'pembelian') {
-                // Pembelian: QC → hanya Logistik
-                allowedDivisi = ['Logistik'];
-            } else if (selectedJenisWo.toLowerCase() === 'perbaikan') {
-                // Perbaikan: semua (kecuali mekanik) → Mekanik
-                allowedDivisi = ['Mekanik'];
-            } else if (selectedJenisWo.toLowerCase() === 'permintaan') {
-                // Permintaan: semua bisa ke manapun kecuali atasan, purchasing, admin, dan divisi sendiri
-                excludedDivisi = ['Atasan', 'Purchasing', 'Administrator', 'Admin', currentUserDivisi];
-            }
-            
-            // Terapkan filter
-            if (allowedDivisi.length > 0) {
-                // Show only allowed divisi
-                ditujukanSelect.find('option').each(function() {
-                    const optionValue = $(this).val();
-                    const optionText = $(this).text().trim();
-                    
-                    if (optionValue === '') return; // Skip placeholder
-                    
-                    const isAllowed = allowedDivisi.some(divisi => 
-                        optionText.toLowerCase() === divisi.toLowerCase() || 
-                        optionValue.toLowerCase() === divisi.toLowerCase()
-                    );
-                    
-                    if (!isAllowed) {
-                        $(this).hide();
-                    } else {
-                        $(this).show();
-                    }
-                });
-                
-                // Reset pilihan jika yang dipilih tidak sesuai filter
-                const currentValue = ditujukanSelect.val();
-                if (currentValue) {
-                    const currentOption = ditujukanSelect.find('option:selected');
-                    if (currentOption.length && currentOption.is(':hidden')) {
-                        ditujukanSelect.val('');
-                    }
-                }
-            } else if (excludedDivisi.length > 0) {
-                // Hide excluded divisi
-                ditujukanSelect.find('option').each(function() {
-                    const optionValue = $(this).val();
-                    const optionText = $(this).text().trim();
-                    
-                    if (optionValue === '') return; // Skip placeholder
-                    
-                    const isExcluded = excludedDivisi.some(divisi => 
-                        optionText.toLowerCase() === divisi.toLowerCase() || 
-                        optionValue.toLowerCase() === divisi.toLowerCase()
-                    );
-                    
-                    if (isExcluded) {
-                        $(this).hide();
-                    } else {
-                        $(this).show();
-                    }
-                });
-                
-                // Reset pilihan jika yang dipilih tidak sesuai filter
-                const currentValue = ditujukanSelect.val();
-                if (currentValue) {
-                    const currentOption = ditujukanSelect.find('option:selected');
-                    if (currentOption.length && currentOption.is(':hidden')) {
-                        ditujukanSelect.val('');
-                    }
+            // Reset value jika yang dipilih tidak sesuai
+            const currentValue = ditujukanSelect.val();
+            if (currentValue) {
+                const currentOption = ditujukanSelect.find('option:selected');
+                if (currentOption.length && currentOption.is(':hidden')) {
+                    ditujukanSelect.val('');
                 }
             }
         }
         
-        // Filter divisi "Ditujukan" untuk form edit
+        // Filter divisi "Ditujukan" untuk form edit - SEDERHANA
         function filterDivisiDitujukanEdit() {
             const jenisWoSelect = $('#edit_id_jenis_wo');
             const ditujukanSelect = $('#edit_ditujukan');
             const selectedJenisWo = jenisWoSelect.find('option:selected').data('nama-jenis');
             
-            // Simpan semua option divisi terlebih dahulu
-            if (!ditujukanSelect.data('original-options')) {
-                ditujukanSelect.data('original-options', ditujukanSelect.html());
-            }
+            // Hide semua options dengan data-jenis-wo
+            ditujukanSelect.find('option[data-jenis-wo]').hide();
             
-            // Reset ke semua option
-            ditujukanSelect.html(ditujukanSelect.data('original-options'));
-            
-            // Jika tidak ada jenis WO yang dipilih, tampilkan semua
+            // Jika tidak ada jenis WO yang dipilih, disable dropdown
             if (!selectedJenisWo) {
+                ditujukanSelect.prop('disabled', true);
+                ditujukanSelect.val('');
+                ditujukanSelect.find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
                 return;
             }
             
-            // Dapatkan nama divisi user saat ini (Quality Control)
-            const currentUserDivisi = 'Quality Control';
+            // Enable dropdown dan show options sesuai jenis WO
+            ditujukanSelect.prop('disabled', false);
+            ditujukanSelect.find('option[data-jenis-wo="' + selectedJenisWo.toLowerCase() + '"]').show();
+            ditujukanSelect.find('option:first').text('-- Pilih Divisi --');
             
-            // Filter berdasarkan jenis work order
-            let allowedDivisi = [];
-            let excludedDivisi = [];
-            
-            if (selectedJenisWo.toLowerCase() === 'pembelian') {
-                // Pembelian: QC → hanya Logistik
-                allowedDivisi = ['Logistik'];
-            } else if (selectedJenisWo.toLowerCase() === 'perbaikan') {
-                // Perbaikan: semua (kecuali mekanik) → Mekanik
-                allowedDivisi = ['Mekanik'];
-            } else if (selectedJenisWo.toLowerCase() === 'permintaan') {
-                // Permintaan: semua bisa ke manapun kecuali atasan, purchasing, admin, dan divisi sendiri
-                excludedDivisi = ['Atasan', 'Purchasing', 'Administrator', 'Admin', currentUserDivisi];
-            }
-            
-            // Terapkan filter
-            if (allowedDivisi.length > 0) {
-                // Show only allowed divisi
-                ditujukanSelect.find('option').each(function() {
-                    const optionValue = $(this).val();
-                    const optionText = $(this).text().trim();
-                    
-                    if (optionValue === '') return; // Skip placeholder
-                    
-                    const isAllowed = allowedDivisi.some(divisi => 
-                        optionText.toLowerCase() === divisi.toLowerCase() || 
-                        optionValue.toLowerCase() === divisi.toLowerCase()
-                    );
-                    
-                    if (!isAllowed) {
-                        $(this).hide();
-                    } else {
-                        $(this).show();
-                    }
-                });
-                
-                // Reset pilihan jika yang dipilih tidak sesuai filter
-                const currentValue = ditujukanSelect.val();
-                if (currentValue) {
-                    const currentOption = ditujukanSelect.find('option:selected');
-                    if (currentOption.length && currentOption.is(':hidden')) {
-                        ditujukanSelect.val('');
-                    }
-                }
-            } else if (excludedDivisi.length > 0) {
-                // Hide excluded divisi
-                ditujukanSelect.find('option').each(function() {
-                    const optionValue = $(this).val();
-                    const optionText = $(this).text().trim();
-                    
-                    if (optionValue === '') return; // Skip placeholder
-                    
-                    const isExcluded = excludedDivisi.some(divisi => 
-                        optionText.toLowerCase() === divisi.toLowerCase() || 
-                        optionValue.toLowerCase() === divisi.toLowerCase()
-                    );
-                    
-                    if (isExcluded) {
-                        $(this).hide();
-                    } else {
-                        $(this).show();
-                    }
-                });
-                
-                // Reset pilihan jika yang dipilih tidak sesuai filter
-                const currentValue = ditujukanSelect.val();
-                if (currentValue) {
-                    const currentOption = ditujukanSelect.find('option:selected');
-                    if (currentOption.length && currentOption.is(':hidden')) {
-                        ditujukanSelect.val('');
-                    }
+            // Reset value jika yang dipilih tidak sesuai
+            const currentValue = ditujukanSelect.val();
+            if (currentValue) {
+                const currentOption = ditujukanSelect.find('option:selected');
+                if (currentOption.length && currentOption.is(':hidden')) {
+                    ditujukanSelect.val('');
                 }
             }
         }
@@ -2135,7 +2007,10 @@
                 $('#label_edit_unit').html('Nama Unit / Code <span class="text-danger">*</span>');
                 filterDivisiDitujukanEdit();
                 toggleUnitFieldEdit();
+                // Sembunyikan dokumentasi saat ini jika bukan edit mode
+                $('#previewDokumentasiContainerKadiv').hide();
             }
+            // Jangan reset dokumentasi jika sedang dalam proses edit
         });
 
         // Destroy Select2 saat modal ditutup
@@ -2147,7 +2022,6 @@
                 }
             });
             // Reset checkbox delete dokumentasi
-            $('#delete_dokumentasi_kadiv').prop('checked', false);
         });
 
         // Pastikan Select2 di-initialize setelah modal fully shown
@@ -2477,6 +2351,34 @@
         }
     });
 
+    // Event handler di luar document.ready untuk memastikan button view/edit selalu berfungsi
+    $(document).on('click', '.btn-view', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        var id = $(this).data('id');
+        if (id && typeof viewWorkOrder === 'function') {
+            viewWorkOrder(id);
+        }
+    });
+
+    $(document).on('click', '.btn-edit', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        
+        if (isLockedAction(this)) {
+            notifyLockedAction(this, 'Work Order tidak dapat diedit karena status sudah final.');
+            return false;
+        }
+
+        var id = $(this).data('id');
+        if (id && typeof editWorkOrder === 'function') {
+            editWorkOrder(id);
+        }
+        return false;
+    });
+
     // View work order
     function viewWorkOrder(id) {
         fetch(`/kadivqc/work-order/${id}`)
@@ -2597,7 +2499,11 @@
                 
                 $('#view_jenis_wo').text(data.jenis_wo || '-');
                 $('#view_uraian').text(data.uraian);
-                if (data.dokumentasi && data.dokumentasi !== '-') {
+                // Handle dokumentasi
+                if (data.dokumentasi && data.dokumentasi !== '-' && data.dokumentasi.trim() !== '') {
+                    // Gunakan dokumentasi_url jika ada, jika tidak gunakan path manual sebagai fallback
+                    const dokumentasiUrl = data.dokumentasi_url || ('/storage/' + data.dokumentasi);
+                    
                     // Cek apakah file adalah gambar
                     const fileExt = data.dokumentasi.split('.').pop().toLowerCase();
                     const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(fileExt);
@@ -2606,15 +2512,15 @@
                         // Tampilkan button lihat foto
                         $('#view_dokumentasi').html(
                             '<button type="button" class="btn btn-sm btn-outline-primary btn-view-dokumentasi-modal" ' +
-                            'data-foto="/storage/' + data.dokumentasi + '" ' +
+                            'data-foto="' + dokumentasiUrl + '" ' +
                             'data-nama="' + (data.no_surat_pengajuan || data.no_work_order || 'Work Order') + '">' +
                             '<i class="fas fa-image"></i> Lihat Foto' +
                             '</button>'
                         );
                     } else {
-                        // Untuk file non-gambar, tampilkan button download
+                        // Untuk file non-gambar (PDF, dll), tampilkan button download
                         $('#view_dokumentasi').html(
-                            '<a href="/storage/' + data.dokumentasi + '" target="_blank" class="btn btn-sm btn-outline-primary">' +
+                            '<a href="' + dokumentasiUrl + '" target="_blank" class="btn btn-sm btn-outline-primary">' +
                             '<i class="fas fa-file"></i> Lihat Dokumentasi' +
                             '</a>'
                         );
@@ -2848,30 +2754,29 @@
                 $('#edit_uraian').val(data.uraian);
                 
                 // Handle dokumentasi preview
-                if (data.dokumentasi && data.dokumentasi !== '-') {
+                if (data.dokumentasi && data.dokumentasi !== '-' && data.dokumentasi.trim() !== '') {
                     const fileExt = data.dokumentasi.split('.').pop().toLowerCase();
                     const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(fileExt);
                     const fileName = data.dokumentasi.split('/').pop();
                     
-                    // Tampilkan nama file saat ini
-                    $('#currentDokumentasiNameKadiv').text(fileName);
-                    $('#currentDokumentasiKadiv').show();
+                    // Gunakan dokumentasi_url jika ada, jika tidak gunakan path manual sebagai fallback
+                    const dokumentasiUrl = data.dokumentasi_url || '/storage/' + data.dokumentasi;
                     
                     // Jika gambar, tampilkan preview
                     if (isImage) {
-                        $('#previewDokumentasiKadiv').attr('src', '/storage/' + data.dokumentasi);
+                        $('#previewDokumentasiKadiv').attr('src', dokumentasiUrl);
                         $('#previewDokumentasiContainerKadiv').show();
                     } else {
                         $('#previewDokumentasiContainerKadiv').hide();
                     }
                 } else {
-                    $('#currentDokumentasiKadiv').hide();
                     $('#previewDokumentasiContainerKadiv').hide();
                 }
                 
                 // Set form action
                 $('#editWorkOrderForm').attr('action', `/kadivqc/work-order/${data.id_surat_pengajuan}`);
                 
+                // Tampilkan modal SETELAH dokumentasi di-set
                 $('#editWorkOrderModal').modal('show');
             })
             .catch(error => {
@@ -2925,8 +2830,6 @@
             const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(fileExt);
             
             // Sembunyikan file saat ini
-            $('#currentDokumentasiKadiv').hide();
-            
             // Jika gambar, tampilkan preview
             if (isImage) {
                 const reader = new FileReader();
@@ -2940,10 +2843,6 @@
             }
         } else {
             // Jika file dihapus, tampilkan kembali file saat ini
-            const currentFile = $('#currentDokumentasiNameKadiv').text();
-            if (currentFile) {
-                $('#currentDokumentasiKadiv').show();
-            }
             $('#previewDokumentasiContainerKadiv').hide();
         }
     }

@@ -125,9 +125,19 @@
         vertical-align: middle;
     }
 
-    .btn-icon img {
-        width: 14px;
-        filter: brightness(0) invert(1);
+    /* Button Action - Simple & Clean dengan Font Awesome */
+    .btn-view {
+        min-width: 32px;
+        padding: 4px 8px;
+    }
+
+    .btn-view i {
+        font-size: 14px;
+    }
+
+    .btn-view:hover {
+        background-color: #138496 !important;
+        border-color: #117a8b !important;
     }
 
     .modal-header {
@@ -289,10 +299,10 @@
                                 <td>{{ \Carbon\Carbon::parse($laporan->tanggal_selesai)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
                                 <td>{{ $laporan->tindakan_perbaikan }}</td>
                                 <td>
-                                    <button type="button" class="btn btn-info btn-sm btn-icon btn-view" 
+                                    <button type="button" class="btn btn-info btn-sm btn-view" 
                                             data-id="{{ $laporan->id_laporan_harian_mekanik }}" 
                                             data-toggle="modal" data-target="#viewLaporanModal" title="Lihat Detail">
-                                        <img src="https://cdn-icons-png.flaticon.com/128/709/709612.png" alt="view">
+                                        <i class="fas fa-eye"></i>
                                     </button>
                                 </td>
                             </tr>
@@ -448,10 +458,10 @@
                         formatDate(item.tanggal_mulai),
                         formatDate(item.tanggal_selesai),
                         (item.tindakan_perbaikan || '-'),
-                        '<button type="button" class="btn btn-info btn-sm btn-icon btn-view" ' +
+                        '<button type="button" class="btn btn-info btn-sm btn-view" ' +
                         'data-id="' + item.id_laporan_harian_mekanik + '" ' +
                         'data-toggle="modal" data-target="#viewLaporanModal">' +
-                        '<img src="https://cdn-icons-png.flaticon.com/128/709/709612.png" alt="view">' +
+                        '<i class="fas fa-eye"></i>' +
                         '</button>'
                     ];
                     table.row.add(row);

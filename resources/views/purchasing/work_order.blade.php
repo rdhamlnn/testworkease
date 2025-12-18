@@ -44,20 +44,34 @@
         margin-right: 0;
     }
 
-    /* Pastikan button action bisa diklik */
+    /* Button Action - Simple & Clean dengan Font Awesome */
     .btn-view,
     .btn-edit,
     .btn-delete {
-        cursor: pointer !important;
-        position: relative !important;
-        z-index: 10 !important;
-        pointer-events: auto !important;
+        min-width: 32px;
+        padding: 4px 8px;
     }
 
-    .btn-view img,
-    .btn-edit img,
-    .btn-delete img {
-        pointer-events: none !important;
+    .btn-view i,
+    .btn-edit i,
+    .btn-delete i {
+        font-size: 14px;
+    }
+
+    /* Hover effects */
+    .btn-view:hover {
+        background-color: #138496 !important;
+        border-color: #117a8b !important;
+    }
+
+    .btn-edit:hover {
+        background-color: #e0a800 !important;
+        border-color: #d39e00 !important;
+    }
+
+    .btn-delete:hover {
+        background-color: #c82333 !important;
+        border-color: #bd2130 !important;
     }
 
     /* Pastikan field ditujukan bisa diklik saat enabled */
@@ -247,7 +261,7 @@
         border-top-right-radius: 0.25rem;
         color: #495057;
         background-color: #f8f9fa;
-        transition: all 0.3s ease;
+        transition: background-color 0.3s ease, border-color 0.3s ease;
     }
     
     .nav-tabs-scrollable .nav-link:hover {
@@ -335,10 +349,6 @@
         white-space: nowrap !important;
     }
 
-    .btn-icon img {
-        width: 16px;
-        height: 16px;
-    }
 </style>
 @endsection
 
@@ -414,26 +424,26 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                <div style="display: flex; gap: 5px;">
-                                                    <button type="button" class="btn btn-info btn-sm btn-icon btn-view" data-id="{{ $wo->id_surat_pengajuan }}" title="Lihat Detail">
-                                                        <img src="https://cdn-icons-png.flaticon.com/128/709/709612.png" alt="view">
+                                                <div class="d-flex gap-2">
+                                                    <button type="button" class="btn btn-info btn-sm btn-view" data-id="{{ $wo->id_surat_pengajuan }}" title="Lihat Detail">
+                                                        <i class="fas fa-eye"></i>
                                                     </button>
                                                     @if($status == 'Menunggu')
                                                     <button type="button"
-                                                        class="btn btn-warning btn-sm btn-icon btn-edit"
+                                                        class="btn btn-warning btn-sm btn-edit"
                                                         data-id="{{ $wo->id_surat_pengajuan }}"
                                                         data-locked="{{ $isLocked ? 'true' : 'false' }}"
                                                         data-lock-message="{{ $isLocked ? 'Work Order tidak dapat diedit karena status sudah '.$statusLower.'.' : '' }}"
                                                         title="Edit">
-                                                        <img src="https://cdn-icons-png.flaticon.com/128/2355/2355330.png" alt="edit">
+                                                        <i class="fas fa-edit"></i>
                                                     </button>
-                                                    <button type="button" class="btn btn-danger btn-sm btn-icon btn-delete"
+                                                    <button type="button" class="btn btn-danger btn-sm btn-delete"
                                                         data-url="{{ route('purchasing.work-order.destroy', $wo->id_surat_pengajuan) }}"
                                                         data-message="Yakin ingin menghapus work order ini?"
                                                         data-locked="{{ $isLocked ? 'true' : 'false' }}"
                                                         data-lock-message="{{ $isLocked ? 'Work Order tidak dapat dihapus karena status sudah '.$statusLower.'.' : '' }}"
                                                         title="Hapus">
-                                                        <img src="https://cdn-icons-png.flaticon.com/128/484/484611.png" alt="hapus">
+                                                        <i class="fas fa-trash"></i>
                                                     </button>
                                                     @endif
                                                 </div>
@@ -758,23 +768,6 @@
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label>Dokumentasi</label>
-                                        <div id="currentDokumentasiPurchasing" class="mb-3" style="display: none;">
-                                            <div class="alert alert-light border p-3" style="background-color: #f8f9fa;">
-                                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                                    <div>
-                                                        <small class="text-muted d-block mb-1">File saat ini:</small>
-                                                        <span id="currentDokumentasiNamePurchasing" class="font-weight-bold text-dark d-inline-block"></span>
-                                                    </div>
-                                                </div>
-                                                <hr class="my-2" style="border-color: #dee2e6;">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="delete_dokumentasi_purchasing" name="delete_dokumentasi" value="1">
-                                                    <label class="form-check-label text-danger font-weight-medium" for="delete_dokumentasi_purchasing" style="cursor: pointer;">
-                                                        <i class="fas fa-trash-alt mr-1"></i> Hapus dokumentasi saat ini
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
                                         <input type="file" class="form-control" name="dokumentasi" id="editDokumentasiPurchasing" accept=".pdf,.jpg,.jpeg,.png" onchange="previewDokumentasiEditPurchasing(this)">
                                         <small class="form-text text-muted">Format: JPG, PNG, PDF. Maks. 2MB</small>
                                         <div id="previewDokumentasiContainerPurchasing" class="mt-2" style="display: none;">
@@ -1522,10 +1515,6 @@
                     const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(fileExt);
                     const fileName = data.dokumentasi.split('/').pop();
                     
-                    // Tampilkan nama file saat ini
-                    $('#currentDokumentasiNamePurchasing').text(fileName);
-                    $('#currentDokumentasiPurchasing').show();
-                    
                     // Jika gambar, tampilkan preview
                     if (isImage) {
                         $('#previewDokumentasiPurchasing').attr('src', '/storage/' + data.dokumentasi);
@@ -1534,7 +1523,6 @@
                         $('#previewDokumentasiContainerPurchasing').hide();
                     }
                 } else {
-                    $('#currentDokumentasiPurchasing').hide();
                     $('#previewDokumentasiContainerPurchasing').hide();
                 }
                 
@@ -1561,8 +1549,6 @@
             const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(fileExt);
             
             // Sembunyikan file saat ini
-            $('#currentDokumentasiPurchasing').hide();
-            
             // Jika gambar, tampilkan preview
             if (isImage) {
                 const reader = new FileReader();
@@ -1576,10 +1562,6 @@
             }
         } else {
             // Jika file dihapus, tampilkan kembali file saat ini
-            const currentFile = $('#currentDokumentasiNamePurchasing').text();
-            if (currentFile) {
-                $('#currentDokumentasiPurchasing').show();
-            }
             $('#previewDokumentasiContainerPurchasing').hide();
         }
     }
@@ -1603,7 +1585,6 @@
         // Setelah modal work order tertutup, buka modal dokumentasi
         // Reset checkbox delete dokumentasi saat modal edit ditutup
         $('#modalEditWorkOrderPurchasing').on('hidden.bs.modal', function() {
-            $('#delete_dokumentasi_purchasing').prop('checked', false);
         });
         
         $('#modalViewWorkOrderPurchasing').on('hidden.bs.modal', function() {

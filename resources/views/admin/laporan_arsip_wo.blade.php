@@ -79,9 +79,19 @@ use Illuminate\Support\Str;
         box-sizing: border-box !important;
     }
 
-    .btn-icon img {
-        width: 14px;
-        filter: brightness(0) invert(1);
+    /* Button Action - Simple & Clean dengan Font Awesome */
+    .btn-view {
+        min-width: 32px;
+        padding: 4px 8px;
+    }
+
+    .btn-view i {
+        font-size: 14px;
+    }
+
+    .btn-view:hover {
+        background-color: #138496 !important;
+        border-color: #117a8b !important;
     }
 
     .badge-success {
@@ -163,9 +173,19 @@ use Illuminate\Support\Str;
         vertical-align: middle;
     }
 
-    .btn-icon img {
-        width: 14px;
-        filter: brightness(0) invert(1);
+    /* Button Action - Simple & Clean dengan Font Awesome */
+    .btn-view {
+        min-width: 32px;
+        padding: 4px 8px;
+    }
+
+    .btn-view i {
+        font-size: 14px;
+    }
+
+    .btn-view:hover {
+        background-color: #138496 !important;
+        border-color: #117a8b !important;
     }
 
     .modal-header {
@@ -322,14 +342,14 @@ use Illuminate\Support\Str;
                                     @endif
                                 </td>
                                 <td>
-                                    <div style="display: flex; gap: 5px;">
-                                        <button type="button" class="btn btn-info btn-sm btn-icon btn-view" 
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-info btn-sm btn-view" 
                                                 data-id="{{ $wo->id_surat_pengajuan }}" 
                                                 data-toggle="modal" data-target="#viewWorkOrderModal" title="Lihat Detail">
-                                            <img src="https://cdn-icons-png.flaticon.com/128/709/709612.png" alt="view">
+                                            <i class="fas fa-eye"></i>
                                         </button>
-                                        <button class="btn btn-success btn-sm btn-icon" title="Print" onclick="printLaporan({{ $wo->id }})">
-                                            <img src="https://cdn-icons-png.flaticon.com/128/337/337946.png" alt="print">
+                                        <button class="btn btn-success btn-sm" title="Print" onclick="printLaporan({{ $wo->id }})">
+                                            <i class="fas fa-print"></i>
                                         </button>
                                     </div>
                                 </td>
@@ -475,14 +495,14 @@ use Illuminate\Support\Str;
                         (item.unit ? item.unit.kode_unit : '-'),
                         truncateText(item.uraian, 30),
                         statusBadge,
-                        '<div style="display: flex; gap: 5px;">' +
-                            '<button type="button" class="btn btn-info btn-sm btn-icon btn-view" ' +
+                        '<div class="d-flex gap-2">' +
+                            '<button type="button" class="btn btn-info btn-sm btn-view" ' +
                             'data-id="' + item.id_surat_pengajuan + '" ' +
                             'data-toggle="modal" data-target="#viewWorkOrderModal">' +
-                            '<img src="https://cdn-icons-png.flaticon.com/128/709/709612.png" alt="view">' +
+                            '<i class="fas fa-eye"></i>' +
                             '</button>' +
-                            '<button class="btn btn-success btn-sm btn-icon" title="Print" onclick="printLaporan(' + item.id + ')">' +
-                                '<img src="https://cdn-icons-png.flaticon.com/128/337/337946.png" alt="print">' +
+                            '<button class="btn btn-success btn-sm" title="Print" onclick="printLaporan(' + item.id + ')">' +
+                                '<i class="fas fa-print"></i>' +
                             '</button>' +
                         '</div>'
                     ];

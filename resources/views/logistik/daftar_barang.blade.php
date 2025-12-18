@@ -146,21 +146,21 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                <div style="display: flex; gap: 5px;">
-                                                    <button type="button" class="btn btn-info btn-sm btn-icon btn-view" data-id="{{ $db->id_daftar_barang }}" title="Lihat Detail">
-                                                        <img src="https://cdn-icons-png.flaticon.com/128/709/709612.png" alt="view">
+                                                <div class="d-flex gap-2">
+                                                    <button type="button" class="btn btn-info btn-sm btn-view" data-id="{{ $db->id_daftar_barang }}" title="Lihat Detail">
+                                                        <i class="fas fa-eye"></i>
                                                     </button>
                                                     <button type="button"
-                                                        class="btn btn-warning btn-sm btn-icon btn-edit"
+                                                        class="btn btn-warning btn-sm btn-edit"
                                                         data-id="{{ $db->id_daftar_barang }}"
                                                         title="Edit">
-                                                        <img src="https://cdn-icons-png.flaticon.com/128/2355/2355330.png" alt="edit">
+                                                        <i class="fas fa-edit"></i>
                                                     </button>
-                                                    <button type="button" class="btn btn-danger btn-sm btn-icon btn-delete"
+                                                    <button type="button" class="btn btn-danger btn-sm btn-delete"
                                                         data-url="{{ route('logistik.daftar-barang.destroy', $db->id_daftar_barang) }}"
                                                         data-message="Yakin ingin menghapus barang &quot;{{ $db->nama_barang }}&quot;?"
                                                         title="Hapus">
-                                                        <img src="https://cdn-icons-png.flaticon.com/128/484/484611.png" alt="hapus">
+                                                        <i class="fas fa-trash"></i>
                                                     </button>
                                                 </div>
                                             </td>

@@ -291,19 +291,19 @@
                                 <td>{{ \Carbon\Carbon::parse($laporan->tanggal_selesai)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
                                 <td>{{ $laporan->tindakan_perbaikan }}</td>
                                 <td>
-                                    <div style="display: flex; gap: 5px;">
-                                        <button type="button" class="btn btn-info btn-sm btn-icon btn-view" 
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-info btn-sm btn-view" 
                                             data-id="{{ $laporan->id_laporan_harian_mekanik }}" data-toggle="modal" data-target="#viewLaporanModal" title="Lihat Detail">
-                                            <img src="https://cdn-icons-png.flaticon.com/128/709/709612.png" alt="view">
+                                            <i class="fas fa-eye"></i>
                                         </button>
-                                        <button type="button" class="btn btn-warning btn-sm btn-icon btn-edit" 
+                                        <button type="button" class="btn btn-warning btn-sm btn-edit" 
                                             data-id="{{ $laporan->id_laporan_harian_mekanik }}" data-toggle="modal" data-target="#editLaporanModal" title="Edit">
-                                            <img src="https://cdn-icons-png.flaticon.com/128/2355/2355330.png" alt="edit">
+                                            <i class="fas fa-edit"></i>
                                         </button>
-                                        <button type="button" class="btn btn-danger btn-sm btn-icon btn-delete" 
+                                        <button type="button" class="btn btn-danger btn-sm btn-delete" 
                                             data-url="{{ route('kadivmekanik.laporan-harian-mekanik.destroy', $laporan->id_laporan_harian_mekanik) }}"
                                             data-message="Yakin ingin menghapus laporan ini?" title="Hapus">
-                                            <img src="https://cdn-icons-png.flaticon.com/128/484/484611.png" alt="hapus">
+                                            <i class="fas fa-trash"></i>
                                         </button>
                                     </div>
                                 </td>
@@ -501,20 +501,20 @@
                         formatDate(item.tanggal_mulai),
                         formatDate(item.tanggal_selesai),
                         (item.tindakan_perbaikan || '-'),
-                        '<div style="display: flex; gap: 5px;">' +
-                            '<button type="button" class="btn btn-info btn-sm btn-icon btn-view" ' +
+                        '<div class="d-flex gap-2">' +
+                            '<button type="button" class="btn btn-info btn-sm btn-view" ' +
                                 'data-id="' + item.id_laporan_harian_mekanik + '" data-toggle="modal" data-target="#viewLaporanModal">' +
-                                '<img src="https://cdn-icons-png.flaticon.com/128/709/709612.png" alt="view">' +
+                                '<i class="fas fa-eye"></i>' +
                             '</button>' +
-                            '<button type="button" class="btn btn-warning btn-sm btn-icon btn-edit" ' +
+                            '<button type="button" class="btn btn-warning btn-sm btn-edit" ' +
                                 'data-id="' + item.id_laporan_harian_mekanik + '" data-toggle="modal" data-target="#editLaporanModal">' +
-                                '<img src="https://cdn-icons-png.flaticon.com/128/2355/2355330.png" alt="edit">' +
+                                '<i class="fas fa-edit"></i>' +
                             '</button>' +
                             (item.id_laporan_harian_mekanik ? 
-                                '<button type="button" class="btn btn-danger btn-sm btn-icon btn-delete" ' +
+                                '<button type="button" class="btn btn-danger btn-sm btn-delete" ' +
                                     'data-url="/kadivmekanik/laporan-harian-mekanik/' + item.id_laporan_harian_mekanik + '" ' +
                                     'data-message="Yakin ingin menghapus laporan ini?">' +
-                                    '<img src="https://cdn-icons-png.flaticon.com/128/484/484611.png" alt="hapus">' +
+                                    '<i class="fas fa-trash"></i>' +
                                 '</button>' 
                             : '') +
                         '</div>'

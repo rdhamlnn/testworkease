@@ -261,9 +261,9 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                <button type="button" class="btn btn-info btn-sm btn-icon btn-view" 
+                                                <button type="button" class="btn btn-info btn-sm btn-view" 
                                                     data-id="{{ $wo->id_surat_pengajuan }}" data-toggle="modal" data-target="#viewWorkOrderModal" title="Lihat Detail">
-                                                    <img src="https://cdn-icons-png.flaticon.com/128/709/709612.png" alt="view">
+                                                    <i class="fas fa-eye"></i>
                                                 </button>
                                             </td>
                                         </tr>

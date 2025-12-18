@@ -240,15 +240,15 @@
                                     <td>{{ $k->no_hp }}</td>
                                     <td>
                                         <div class="action-buttons">
-                                            <button type="button" class="btn btn-warning btn-sm btn-icon btn-edit"
+                                            <button type="button" class="btn btn-warning btn-sm btn-edit"
                                                 data-id="{{ $k->id_karyawan }}"
                                                 data-toggle="modal" data-target="#modalEditKaryawan" title="Edit">
-                                                <img src="https://cdn-icons-png.flaticon.com/128/2355/2355330.png" alt="edit" style="width:14px; filter: brightness(0) invert(1);">
+                                                <i class="fas fa-edit"></i>
                                             </button>
-                                            <button type="button" class="btn btn-danger btn-sm btn-icon btn-delete" 
+                                            <button type="button" class="btn btn-danger btn-sm btn-delete" 
                                                 data-url="{{ route('admin.hapus-karyawan', $k->id_karyawan) }}"
                                                 data-message="Yakin ingin menghapus karyawan ini?" title="Hapus">
-                                                <img src="https://cdn-icons-png.flaticon.com/128/484/484611.png" alt="hapus" style="width:14px; filter: brightness(0) invert(1);">
+                                                <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
                                     </td>

@@ -145,11 +145,19 @@
         flex-shrink: 0;
     }
 
-    .btn-icon img {
-        width: 16px;
-        height: 16px;
-        display: block;
-        flex-shrink: 0;
+    /* Button Action - Simple & Clean dengan Font Awesome */
+    .btn-view {
+        min-width: 32px;
+        padding: 4px 8px;
+    }
+
+    .btn-view i {
+        font-size: 14px;
+    }
+
+    .btn-view:hover {
+        background-color: #138496 !important;
+        border-color: #117a8b !important;
     }
 
     .btn-icon i {
@@ -525,10 +533,10 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <div class="action-buttons d-flex">
-                                            <button type="button" class="btn btn-info btn-sm btn-icon btn-view" 
+                                        <div class="action-buttons d-flex gap-2">
+                                            <button type="button" class="btn btn-info btn-sm btn-view" 
                                                 data-id="{{ $wo->id }}" data-toggle="modal" data-target="#modalViewWorkOrder" title="Lihat Detail">
-                                                <img src="https://cdn-icons-png.flaticon.com/128/709/709612.png" alt="view">
+                                                <i class="fas fa-eye"></i>
                                             </button>
                                             <a href="{{ route('admin.work-order.cetak', $wo->id) }}" 
                                                target="_blank" 

@@ -7,7 +7,7 @@
     .table-responsive {
         display: block !important;
         width: 100%;
-        overflow-x: visible !important;
+        overflow-x: auto !important;
         -webkit-overflow-scrolling: touch;
     }
 
@@ -27,7 +27,6 @@
 
     .card-body {
         overflow-x: auto !important;
-        position: relative;
         -webkit-overflow-scrolling: touch;
     }
 
@@ -111,9 +110,19 @@
         padding: 4px 8px !important;
     }
 
-    #serahkanBarangTable .btn-icon {
-        font-size: 12px !important;
-        padding: 4px 8px !important;
+    /* Button Action - Simple & Clean dengan Font Awesome */
+    .btn-view {
+        min-width: 32px;
+        padding: 4px 8px;
+    }
+
+    .btn-view i {
+        font-size: 14px;
+    }
+
+    .btn-view:hover {
+        background-color: #138496 !important;
+        border-color: #117a8b !important;
     }
 </style>
 @endsection
@@ -191,8 +200,8 @@
                                                             @endif
                                                         </td>
                                                         <td rowspan="{{ $barangCount }}">
-                                                            <div style="display: flex; gap: 5px;">
-                                                                <button type="button" class="btn btn-info btn-sm btn-icon btn-view" 
+                                                            <div class="d-flex gap-2">
+                                                                <button type="button" class="btn btn-info btn-sm btn-view" 
                                                                     data-id="{{ $pb->id_permintaan_barang }}"
                                                                     data-no-permintaan="{{ htmlspecialchars($pb->no_permintaan_barang, ENT_QUOTES, 'UTF-8') }}"
                                                                     data-no-wo="{{ htmlspecialchars($pb->suratPengajuan->no_surat_pengajuan ?? '-', ENT_QUOTES, 'UTF-8') }}"
@@ -211,7 +220,7 @@
                                                                     data-button-text="Ya, Serahkan"
                                                                     data-button-class="btn-primary">
                                                                     @csrf
-                                                                    <button type="submit" class="btn btn-primary btn-sm btn-icon" title="Serahkan ke Divisi">
+                                                                    <button type="submit" class="btn btn-primary btn-sm" title="Serahkan ke Divisi">
                                                                         <i class="fas fa-hand-holding"></i>
                                                                     </button>
                                                                 </form>
@@ -242,8 +251,8 @@
                                                     @endif
                                                 </td>
                                                 <td>
-                                                    <div style="display: flex; gap: 5px;">
-                                                        <button type="button" class="btn btn-info btn-sm btn-icon btn-view" 
+                                                    <div class="d-flex gap-2">
+                                                        <button type="button" class="btn btn-info btn-sm btn-view" 
                                                             data-id="{{ $pb->id_permintaan_barang }}"
                                                             data-no-permintaan="{{ htmlspecialchars($pb->no_permintaan_barang, ENT_QUOTES, 'UTF-8') }}"
                                                             data-no-wo="{{ htmlspecialchars($pb->suratPengajuan->no_surat_pengajuan ?? '-', ENT_QUOTES, 'UTF-8') }}"
@@ -262,7 +271,7 @@
                                                             data-button-text="Ya, Serahkan"
                                                             data-button-class="btn-primary">
                                                             @csrf
-                                                            <button type="submit" class="btn btn-primary btn-sm btn-icon" title="Serahkan ke Divisi">
+                                                            <button type="submit" class="btn btn-primary btn-sm" title="Serahkan ke Divisi">
                                                                 <i class="fas fa-hand-holding"></i>
                                                             </button>
                                                         </form>

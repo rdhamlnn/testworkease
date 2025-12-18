@@ -288,10 +288,10 @@
                                 <td>Rp {{ number_format($laporan->total_harga, 0, ',', '.') }}</td>
                                 <td>{{ $laporan->keterangan ?: '-' }}</td>
                                 <td>
-                                    <div style="display: flex; gap: 5px;">
-                                        <button type="button" class="btn btn-info btn-sm btn-icon btn-view" 
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-info btn-sm btn-view" 
                                             data-id="{{ $laporan->id_laporan_pemakaian_barang }}" data-toggle="modal" data-target="#viewLaporanModal" title="Lihat Detail">
-                                            <img src="https://cdn-icons-png.flaticon.com/128/709/709612.png" alt="view">
+                                            <i class="fas fa-eye"></i>
                                         </button>
                                     </div>
                                 </td>
@@ -470,10 +470,10 @@
                         'Rp ' + formatNumber(item.harga_satuan),
                         'Rp ' + formatNumber(item.total_harga),
                         (item.keterangan || '-'),
-                        '<div style="display: flex; gap: 5px;">' +
-                            '<button type="button" class="btn btn-info btn-sm btn-icon btn-view" ' +
+                        '<div class="d-flex gap-2">' +
+                            '<button type="button" class="btn btn-info btn-sm btn-view" ' +
                                 'data-id="' + item.id_laporan_pemakaian_barang + '" data-toggle="modal" data-target="#viewLaporanModal">' +
-                                '<img src="https://cdn-icons-png.flaticon.com/128/709/709612.png" alt="view">' +
+                                '<i class="fas fa-eye"></i>' +
                             '</button>' +
                         '</div>'
                     ];

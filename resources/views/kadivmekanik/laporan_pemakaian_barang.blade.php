@@ -297,19 +297,19 @@
                                 <td class="currency">Rp {{ number_format($barang->total_harga, 0, ',', '.') }}</td>
                                 <td>{{ $barang->keterangan ?: '-' }}</td>
                                 <td>
-                                    <div style="display: flex; gap: 5px;">
-                                        <button type="button" class="btn btn-info btn-sm btn-icon btn-view" 
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-info btn-sm btn-view" 
                                             data-id="{{ $barang->id_laporan_pemakaian_barang }}" data-toggle="modal" data-target="#viewBarangModal" title="Lihat Detail">
-                                            <img src="https://cdn-icons-png.flaticon.com/128/709/709612.png" alt="view">
+                                            <i class="fas fa-eye"></i>
                                         </button>
-                                        <button type="button" class="btn btn-warning btn-sm btn-icon btn-edit" 
+                                        <button type="button" class="btn btn-warning btn-sm btn-edit" 
                                             data-id="{{ $barang->id_laporan_pemakaian_barang }}" data-toggle="modal" data-target="#editBarangModal" title="Edit">
-                                            <img src="https://cdn-icons-png.flaticon.com/128/2355/2355330.png" alt="edit">
+                                            <i class="fas fa-edit"></i>
                                         </button>
-                                        <button type="button" class="btn btn-danger btn-sm btn-icon btn-delete" 
+                                        <button type="button" class="btn btn-danger btn-sm btn-delete" 
                                             data-url="{{ route('kadivmekanik.laporan-pemakaian-barang.destroy', $barang->id_laporan_pemakaian_barang) }}"
                                             data-message="Yakin ingin menghapus laporan ini?" title="Hapus">
-                                            <img src="https://cdn-icons-png.flaticon.com/128/484/484611.png" alt="hapus">
+                                            <i class="fas fa-trash"></i>
                                         </button>
                                     </div>
                                 </td>
@@ -494,20 +494,20 @@
                         'Rp ' + formatNumber(item.harga_satuan),
                         'Rp ' + formatNumber(item.total_harga),
                         (item.keterangan || '-'),
-                        '<div style="display: flex; gap: 5px;">' +
-                            '<button type="button" class="btn btn-info btn-sm btn-icon btn-view" ' +
+                        '<div class="d-flex gap-2">' +
+                            '<button type="button" class="btn btn-info btn-sm btn-view" ' +
                                 'data-id="' + item.id_laporan_pemakaian_barang + '" data-toggle="modal" data-target="#viewBarangModal">' +
-                                '<img src="https://cdn-icons-png.flaticon.com/128/709/709612.png" alt="view">' +
+                                '<i class="fas fa-eye"></i>' +
                             '</button>' +
-                            '<button type="button" class="btn btn-warning btn-sm btn-icon btn-edit" ' +
+                            '<button type="button" class="btn btn-warning btn-sm btn-edit" ' +
                                 'data-id="' + item.id_laporan_pemakaian_barang + '" data-toggle="modal" data-target="#editBarangModal">' +
-                                '<img src="https://cdn-icons-png.flaticon.com/128/2355/2355330.png" alt="edit">' +
+                                '<i class="fas fa-edit"></i>' +
                             '</button>' +
                             (item.id_laporan_pemakaian_barang ? 
-                                '<button type="button" class="btn btn-danger btn-sm btn-icon btn-delete" ' +
+                                '<button type="button" class="btn btn-danger btn-sm btn-delete" ' +
                                     'data-url="/kadivmekanik/laporan-pemakaian-barang/' + item.id_laporan_pemakaian_barang + '" ' +
                                     'data-message="Yakin ingin menghapus laporan ini?">' +
-                                    '<img src="https://cdn-icons-png.flaticon.com/128/484/484611.png" alt="hapus">' +
+                                    '<i class="fas fa-trash"></i>' +
                                 '</button>' 
                             : '') +
                         '</div>'

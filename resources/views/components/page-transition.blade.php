@@ -36,7 +36,7 @@
 </script>
 @endif
 
-<div id="page-transition-overlay" style="display: {{ $initialDisplay }}; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.95); z-index: 99999; justify-content: center; align-items: center; flex-direction: column; opacity: {{ $initialOpacity }}; transition: opacity 0.2s ease-in; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);">
+<div id="page-transition-overlay" style="display: {{ $initialDisplay }}; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.98); z-index: 99999; justify-content: center; align-items: center; flex-direction: column; opacity: {{ $initialOpacity }}; transition: opacity 0.2s ease-in;">
     <div id="transition-logo" style="text-align: center; animation: logoPulse 1.5s ease-in-out infinite;">
         <img src="{{ asset('assets/img/KCE-removebg.png') }}" alt="KCE Logo" style="max-width: 200px; height: auto; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));">
     </div>
@@ -55,9 +55,8 @@
 
 <style>
 @keyframes logoPulse {
-    0% { transform: scale(1); opacity: 0.8; }
-    50% { transform: scale(1.05); opacity: 1; }
-    100% { transform: scale(1); opacity: 0.8; }
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
 }
 
 @keyframes dot1 {
@@ -88,18 +87,12 @@
 }
 
 #page-transition-overlay {
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
     will-change: opacity;
     pointer-events: auto;
 }
 
-#transition-logo img {
-    transition: all 0.3s ease;
-}
-
-#transition-logo:hover img {
-    transform: scale(1.1);
+#transition-logo {
+    will-change: opacity;
 }
 </style>
 
@@ -155,18 +148,23 @@ function showPageTransition(message = 'Memuat halaman...') {
             });
         }
         
-        // Animate progress bar
+        // Animate progress bar dengan requestAnimationFrame (lebih smooth dan ringan)
         if (progressFill) {
             let progress = 0;
-            const progressInterval = setInterval(() => {
-                progress += 20 + Math.random() * 10;
-                if (progress > 100) progress = 100;
+            const startTime = performance.now();
+            const duration = 1200; // 1.2 detik
+            
+            function animateProgress(currentTime) {
+                const elapsed = currentTime - startTime;
+                progress = Math.min((elapsed / duration) * 100, 100);
                 progressFill.style.width = progress + '%';
                 
-                if (progress >= 100) {
-                    clearInterval(progressInterval);
+                if (progress < 100) {
+                    requestAnimationFrame(animateProgress);
                 }
-            }, 90);
+            }
+            
+            requestAnimationFrame(animateProgress);
         }
         
         // Reset showing flag after animation completes
