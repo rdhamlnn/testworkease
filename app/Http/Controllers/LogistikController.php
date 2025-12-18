@@ -299,9 +299,18 @@ class LogistikController extends Controller
         }
 
         try {
+            // Handle file upload if new file is provided or delete if requested
             $dokumentasiPath = $workOrder->dokumentasi;
-
-            if ($request->hasFile('dokumentasi')) {
+            
+            // Check if user wants to delete dokumentasi
+            if ($request->has('delete_dokumentasi') && $request->delete_dokumentasi == '1') {
+                // Delete old file if exists
+                if ($dokumentasiPath && Storage::disk('public')->exists($dokumentasiPath)) {
+                    Storage::disk('public')->delete($dokumentasiPath);
+                }
+                $dokumentasiPath = null;
+            } elseif ($request->hasFile('dokumentasi')) {
+                // Delete old file if exists
                 if ($dokumentasiPath && Storage::disk('public')->exists($dokumentasiPath)) {
                     Storage::disk('public')->delete($dokumentasiPath);
                 }

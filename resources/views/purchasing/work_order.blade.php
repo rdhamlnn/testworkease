@@ -758,8 +758,22 @@
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label>Dokumentasi</label>
-                                        <div id="currentDokumentasiPurchasing" class="mb-2" style="display: none;">
-                                            <small class="text-muted d-block">File saat ini: <span id="currentDokumentasiNamePurchasing" class="font-weight-bold"></span></small>
+                                        <div id="currentDokumentasiPurchasing" class="mb-3" style="display: none;">
+                                            <div class="alert alert-light border p-3" style="background-color: #f8f9fa;">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <div>
+                                                        <small class="text-muted d-block mb-1">File saat ini:</small>
+                                                        <span id="currentDokumentasiNamePurchasing" class="font-weight-bold text-dark d-inline-block"></span>
+                                                    </div>
+                                                </div>
+                                                <hr class="my-2" style="border-color: #dee2e6;">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="delete_dokumentasi_purchasing" name="delete_dokumentasi" value="1">
+                                                    <label class="form-check-label text-danger font-weight-medium" for="delete_dokumentasi_purchasing" style="cursor: pointer;">
+                                                        <i class="fas fa-trash-alt mr-1"></i> Hapus dokumentasi saat ini
+                                                    </label>
+                                                </div>
+                                            </div>
                                         </div>
                                         <input type="file" class="form-control" name="dokumentasi" id="editDokumentasiPurchasing" accept=".pdf,.jpg,.jpeg,.png" onchange="previewDokumentasiEditPurchasing(this)">
                                         <small class="form-text text-muted">Format: JPG, PNG, PDF. Maks. 2MB</small>
@@ -1587,6 +1601,11 @@
         $('#modalViewWorkOrderPurchasing').modal('hide');
         
         // Setelah modal work order tertutup, buka modal dokumentasi
+        // Reset checkbox delete dokumentasi saat modal edit ditutup
+        $('#modalEditWorkOrderPurchasing').on('hidden.bs.modal', function() {
+            $('#delete_dokumentasi_purchasing').prop('checked', false);
+        });
+        
         $('#modalViewWorkOrderPurchasing').on('hidden.bs.modal', function() {
             $('#modalViewDokumentasiPurchasing').modal('show');
             // Hapus event listener setelah digunakan

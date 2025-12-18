@@ -427,8 +427,18 @@ class KadivProduksiController extends Controller
                     ->with('error', 'Work Order tidak dapat diedit karena sudah disetujui atau ditolak.');
             }
 
+            // Handle file upload if new file is provided or delete if requested
             $dokumentasiPath = $workOrder->dokumentasi;
-            if ($request->hasFile('dokumentasi')) {
+            
+            // Check if user wants to delete dokumentasi
+            if ($request->has('delete_dokumentasi') && $request->delete_dokumentasi == '1') {
+                // Delete old file if exists
+                if ($workOrder->dokumentasi && Storage::disk('public')->exists($workOrder->dokumentasi)) {
+                    Storage::disk('public')->delete($workOrder->dokumentasi);
+                }
+                $dokumentasiPath = null;
+            } elseif ($request->hasFile('dokumentasi')) {
+                // Delete old file if exists
                 if ($workOrder->dokumentasi && Storage::disk('public')->exists($workOrder->dokumentasi)) {
                     Storage::disk('public')->delete($workOrder->dokumentasi);
                 }

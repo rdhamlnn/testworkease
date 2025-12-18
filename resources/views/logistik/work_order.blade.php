@@ -955,8 +955,22 @@
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label>Dokumentasi</label>
-                                        <div id="currentDokumentasiLogistik" class="mb-2" style="display: none;">
-                                            <small class="text-muted d-block">File saat ini: <span id="currentDokumentasiNameLogistik" class="font-weight-bold"></span></small>
+                                        <div id="currentDokumentasiLogistik" class="mb-3" style="display: none;">
+                                            <div class="alert alert-light border p-3" style="background-color: #f8f9fa;">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <div>
+                                                        <small class="text-muted d-block mb-1">File saat ini:</small>
+                                                        <span id="currentDokumentasiNameLogistik" class="font-weight-bold text-dark d-inline-block"></span>
+                                                    </div>
+                                                </div>
+                                                <hr class="my-2" style="border-color: #dee2e6;">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="delete_dokumentasi_logistik" name="delete_dokumentasi" value="1">
+                                                    <label class="form-check-label text-danger font-weight-medium" for="delete_dokumentasi_logistik" style="cursor: pointer;">
+                                                        <i class="fas fa-trash-alt mr-1"></i> Hapus dokumentasi saat ini
+                                                    </label>
+                                                </div>
+                                            </div>
                                         </div>
                                         <input type="file" class="form-control" name="dokumentasi" id="editDokumentasiLogistik" accept=".pdf,.jpg,.jpeg,.png" onchange="previewDokumentasiEdit(this)">
                                         <small class="form-text text-muted">Format: JPG, PNG, PDF. Maks. 2MB</small>
@@ -1922,6 +1936,8 @@
                     $(this).select2('destroy');
                 }
             });
+            // Reset checkbox delete dokumentasi
+            $('#delete_dokumentasi_logistik').prop('checked', false);
             
             // Destroy Select2 untuk id_jenis_wo
             if ($('#id_jenis_wo').hasClass('select2-hidden-accessible')) {
