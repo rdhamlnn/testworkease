@@ -1184,7 +1184,10 @@
             
             // Enable field Ditujukan jika Jenis Work Order sudah dipilih
             if (selectedValue && selectedValue !== '') {
-                ditujukanSelect.prop('disabled', false);
+                ditujukanSelect.prop('disabled', false).css({
+                    'pointer-events': 'auto',
+                    'cursor': 'pointer'
+                });
                 ditujukanSelect.find('option:first').text('-- Pilih Divisi --');
             } else {
                 ditujukanSelect.prop('disabled', true);
@@ -1192,8 +1195,13 @@
                 ditujukanSelect.find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
             }
             
-            filterDivisiDitujukanEdit();
-            toggleBarangSectionEdit();
+            // Hapus filterDivisiDitujukanEdit karena bisa error jika dipanggil dari luar scope
+            if (typeof toggleUnitFieldEdit === 'function') {
+                toggleUnitFieldEdit();
+            }
+            if (typeof toggleBarangSectionEdit === 'function') {
+                toggleBarangSectionEdit();
+            }
             toggleUnitFieldEdit();
         });
         
@@ -1450,6 +1458,9 @@
 
     // Edit work order
     function editWorkOrderPurchasing(id) {
+        // Set flag untuk skip reset di show.bs.modal
+        window.isEditingWorkOrderPurchasing = true;
+        
         // Ambil data dari server
         const WORK_ORDER_API_URL_PUR = "{{ route('purchasing.api.work-order', ['id' => '__ID__']) }}";
         const UPDATE_WORK_ORDER_URL_PUR = "{{ route('purchasing.work-order.update', ['id' => '__ID__']) }}";
@@ -1469,15 +1480,19 @@
                 
                 // Enable field Ditujukan setelah Jenis Work Order dipilih
                 if (data.id_jenis_wo) {
-                    $('#editDitujukanPurchasing').prop('disabled', false);
+                    $('#editDitujukanPurchasing').prop('disabled', false).css({
+                        'pointer-events': 'auto',
+                        'cursor': 'pointer'
+                    });
                     $('#editDitujukanPurchasing').find('option:first').text('-- Pilih Divisi --');
                 }
                 
-                // Toggle field ditujukan dan unit berdasarkan jenis work order
-                filterDivisiDitujukanEdit();
-                toggleUnitFieldEdit();
+                // Toggle field unit berdasarkan jenis work order
+                if (typeof toggleUnitFieldEdit === 'function') {
+                    toggleUnitFieldEdit();
+                }
                 
-                // Set nilai ditujukan setelah filter dijalankan
+                // Set nilai ditujukan langsung (tanpa filter untuk menghindari error)
                 $('#editDitujukanPurchasing').val(data.ditujukan);
                 $('#editUnitPurchasing').val(data.unit);
                 $('#editUraianPurchasing').val(data.uraian);
@@ -1514,6 +1529,13 @@
             .catch(error => {
                 console.error('Error:', error);
                 alert('Gagal mengambil data work order');
+                window.isEditingWorkOrderPurchasing = false; // Reset flag jika error
+            })
+            .finally(() => {
+                // Reset flag setelah modal shown (delay untuk memastikan modal sudah fully rendered)
+                setTimeout(() => {
+                    window.isEditingWorkOrderPurchasing = false;
+                }, 500);
             });
     }
 

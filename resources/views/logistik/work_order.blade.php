@@ -1895,17 +1895,23 @@
         });
         
         // Reset field ditujukan dan unit saat modal edit dibuka
-        $('#modalEditWorkOrderLogistik').on('show.bs.modal', function() {
-            $('#editJenisWoLogistik').val('');
-            $('#editDitujukanLogistik').val('').prop('disabled', true);
-            $('#editDitujukanLogistik').find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
-            $('#editUnitLogistik').val('').show().attr('required', 'required').attr('name', 'unit');
-            $('#edit_unit_pembelian_container').hide();
-            clearUnitSelects(true);
-            // Kembalikan label ke default
-            $('#label_edit_unit').html('Nama Unit / Code <span class="text-danger">*</span>');
-            filterDivisiDitujukanEdit();
-            toggleUnitFieldEdit();
+        $('#modalEditWorkOrderLogistik').on('show.bs.modal', function(e) {
+            // Cek apakah sedang dalam proses edit (editWorkOrderLogistik sedang populate)
+            const isEditing = window.isEditingWorkOrderLogistik === true;
+            
+            if (!isEditing) {
+                // Reset hanya jika bukan edit mode
+                $('#editJenisWoLogistik').val('');
+                $('#editDitujukanLogistik').val('').prop('disabled', true);
+                $('#editDitujukanLogistik').find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
+                $('#editUnitLogistik').val('').show().attr('required', 'required').attr('name', 'unit');
+                $('#edit_unit_pembelian_container').hide();
+                clearUnitSelects(true);
+                // Kembalikan label ke default
+                $('#label_edit_unit').html('Nama Unit / Code <span class="text-danger">*</span>');
+                filterDivisiDitujukanEdit();
+                toggleUnitFieldEdit();
+            }
         });
 
         // Destroy Select2 saat modal ditutup
@@ -2814,6 +2820,9 @@
     function editWorkOrderLogistik(id) {
         console.log('editWorkOrderLogistik dipanggil dengan ID:', id);
         
+        // Set flag untuk skip reset di show.bs.modal
+        window.isEditingWorkOrderLogistik = true;
+        
         // Ambil data dari server
         const WORK_ORDER_API_URL_LOG = "{{ route('logistik.api.work-order', ['id' => '__ID__']) }}";
         const UPDATE_WORK_ORDER_URL_LOG = "{{ route('logistik.work-order.update', ['id' => '__ID__']) }}";
@@ -2856,7 +2865,10 @@
                     }
                     
                     // Enable field Ditujukan setelah Jenis Work Order dipilih
-                    $('#editDitujukanLogistik').prop('disabled', false);
+                    $('#editDitujukanLogistik').prop('disabled', false).css({
+                        'pointer-events': 'auto',
+                        'cursor': 'pointer'
+                    });
                     $('#editDitujukanLogistik').find('option:first').text('-- Pilih Divisi --');
                 }
                 
@@ -3024,6 +3036,11 @@
                 
                 $('#modalEditWorkOrderLogistik').modal('show');
                 
+                // Reset flag setelah modal shown (delay untuk memastikan modal sudah fully rendered)
+                setTimeout(() => {
+                    window.isEditingWorkOrderLogistik = false;
+                }, 500);
+                
                 // Re-initialize Select2 dan set value setelah modal fully shown
                 $('#modalEditWorkOrderLogistik').one('shown.bs.modal', function() {
                     // Pastikan Select2 untuk jenis work order sudah di-initialize
@@ -3176,6 +3193,8 @@
                     stack: error.stack,
                     name: error.name
                 });
+                
+                window.isEditingWorkOrderLogistik = false; // Reset flag jika error
                 
                 let errorMessage = 'Gagal mengambil data work order';
                 if (error.message) {

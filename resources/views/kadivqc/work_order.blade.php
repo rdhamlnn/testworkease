@@ -1858,17 +1858,23 @@
         });
         
         // Reset field ditujukan dan unit saat modal edit dibuka
-        $('#editWorkOrderModal').on('show.bs.modal', function() {
-            $('#edit_id_jenis_wo').val('');
-            $('#edit_ditujukan').val('').prop('disabled', true);
-            $('#edit_ditujukan').find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
-            $('#edit_unit').val('').show().attr('required', 'required').attr('name', 'unit');
-            $('#edit_unit_pembelian_container').hide();
-            clearUnitSelects(true);
-            // Kembalikan label ke default
-            $('#label_edit_unit').html('Nama Unit / Code <span class="text-danger">*</span>');
-            filterDivisiDitujukanEdit();
-            toggleUnitFieldEdit();
+        $('#editWorkOrderModal').on('show.bs.modal', function(e) {
+            // Cek apakah sedang dalam proses edit (editWorkOrder sedang populate)
+            const isEditing = window.isEditingWorkOrder === true;
+            
+            if (!isEditing) {
+                // Reset hanya jika bukan edit mode
+                $('#edit_id_jenis_wo').val('');
+                $('#edit_ditujukan').val('').prop('disabled', true);
+                $('#edit_ditujukan').find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
+                $('#edit_unit').val('').show().attr('required', 'required').attr('name', 'unit');
+                $('#edit_unit_pembelian_container').hide();
+                clearUnitSelects(true);
+                // Kembalikan label ke default
+                $('#label_edit_unit').html('Nama Unit / Code <span class="text-danger">*</span>');
+                filterDivisiDitujukanEdit();
+                toggleUnitFieldEdit();
+            }
         });
 
         // Destroy Select2 saat modal ditutup
@@ -2336,6 +2342,9 @@
 
     // Edit work order
     function editWorkOrder(id) {
+        // Set flag untuk skip reset di show.bs.modal
+        window.isEditingWorkOrder = true;
+        
         // Ambil data dari server
         fetch(`/kadivqc/work-order/${id}`)
             .then(response => {
@@ -2506,6 +2515,13 @@
             .catch(error => {
                 console.error('Error:', error);
                 alert('Gagal mengambil data work order');
+                window.isEditingWorkOrder = false; // Reset flag jika error
+            })
+            .finally(() => {
+                // Reset flag setelah modal shown (delay untuk memastikan modal sudah fully rendered)
+                setTimeout(() => {
+                    window.isEditingWorkOrder = false;
+                }, 500);
             });
     }
 

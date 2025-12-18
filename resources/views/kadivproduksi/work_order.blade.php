@@ -1829,17 +1829,23 @@
         });
         
         // Reset field unit saat modal edit dibuka
-        $('#editWorkOrderModal').on('show.bs.modal', function() {
-            $('#edit_id_jenis_wo').val('');
-            $('#edit_ditujukan').val('').prop('disabled', true);
-            $('#edit_ditujukan').find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
-            $('#edit_unit').val('').show().attr('required', 'required').attr('name', 'unit');
-            $('#edit_unit_pembelian_container').hide();
-            clearUnitSelects(true);
-            // Kembalikan label ke default
-            $('#label_edit_unit').html('Nama Unit / Code <span class="text-danger">*</span>');
-            filterDivisiDitujukanEdit();
-            toggleUnitFieldEdit();
+        $('#editWorkOrderModal').on('show.bs.modal', function(e) {
+            // Cek apakah sedang dalam proses edit (editWorkOrder sedang populate)
+            const isEditing = window.isEditingWorkOrder === true;
+            
+            if (!isEditing) {
+                // Reset hanya jika bukan edit mode
+                $('#edit_id_jenis_wo').val('');
+                $('#edit_ditujukan').val('').prop('disabled', true);
+                $('#edit_ditujukan').find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
+                $('#edit_unit').val('').show().attr('required', 'required').attr('name', 'unit');
+                $('#edit_unit_pembelian_container').hide();
+                clearUnitSelects(true);
+                // Kembalikan label ke default
+                $('#label_edit_unit').html('Nama Unit / Code <span class="text-danger">*</span>');
+                filterDivisiDitujukanEdit();
+                toggleUnitFieldEdit();
+            }
         });
         
         // Autofocus pada field Jenis Work Order saat modal edit fully shown
@@ -2319,6 +2325,9 @@
 
     // Edit work order
     function editWorkOrder(id) {
+        // Set flag untuk skip reset di show.bs.modal
+        window.isEditingWorkOrder = true;
+        
         // Ambil data dari server
         fetch(`/kadivproduksi/work-order/${id}`)
             .then(response => {
@@ -2332,7 +2341,7 @@
                 $('#edit_no_work_order').val(data.no_work_order);
                 $('#edit_tanggal').val(data.tanggal);
                 $('#edit_divisi_pengaju').val(data.divisi_pengaju);
-                $('#edit_id_jenis_wo').val(data.id_jenis_wo);
+                $('#edit_id_jenis_wo').val(data.id_jenis_wo).trigger('change');
                 
                 // Enable field Ditujukan setelah Jenis Work Order dipilih
                 if (data.id_jenis_wo) {
@@ -2489,6 +2498,13 @@
             .catch(error => {
                 console.error('Error:', error);
                 alert('Gagal mengambil data work order');
+                window.isEditingWorkOrder = false; // Reset flag jika error
+            })
+            .finally(() => {
+                // Reset flag setelah modal shown (delay untuk memastikan modal sudah fully rendered)
+                setTimeout(() => {
+                    window.isEditingWorkOrder = false;
+                }, 500);
             });
     }
 
