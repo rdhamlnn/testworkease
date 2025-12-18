@@ -1052,6 +1052,186 @@
         }
     }
 
+    // ============================================
+    // FUNGSI HELPER GLOBAL - DI LUAR document.ready
+    // ============================================
+    // Fungsi-fungsi ini harus di global scope agar bisa diakses dari editWorkOrder
+    
+    // Clear semua select2 dinamis
+    // Pastikan tersedia di window object untuk akses global
+    window.clearUnitSelects = function(isEdit = false) {
+        try {
+            const containerId = isEdit ? 'edit_unit_pembelian_container' : 'unit_pembelian_container';
+            const container = $('#' + containerId);
+            
+            if (container.length === 0) return; // Safety check
+            
+            // Destroy semua Select2
+            container.find('.select2-unit-dynamic').each(function() {
+                if ($(this).hasClass('select2-hidden-accessible')) {
+                    $(this).select2('destroy');
+                }
+            });
+            
+            // Clear container
+            container.empty();
+        } catch (error) {
+            console.error('Error in clearUnitSelects:', error);
+        }
+    };
+    
+    // Alias untuk kompatibilitas
+    var clearUnitSelects = window.clearUnitSelects;
+    
+    // Template HTML untuk select2 dinamis
+    window.getUnitSelectTemplate = function(index, isEdit = false) {
+        try {
+            const btnClass = isEdit ? 'btn-tambah-barang-edit' : 'btn-tambah-barang';
+            const btnHapusClass = isEdit ? 'btn-hapus-barang-edit' : 'btn-hapus-barang';
+            const $template = $('#template_barang_options');
+            const optionsHtml = $template.length > 0 ? $template.html() : '';
+            const qtyBtnClass = isEdit ? 'btn-qty-minus-edit' : 'btn-qty-minus';
+            const qtyPlusBtnClass = isEdit ? 'btn-qty-plus-edit' : 'btn-qty-plus';
+            const qtyInputClass = isEdit ? 'qty-input-edit' : 'qty-input';
+            
+            return `
+                <div class="unit-select-wrapper mb-2" data-index="${index}">
+                    <div class="input-group" style="display: flex; align-items: center;">
+                        <select class="form-control select2-unit-dynamic" name="unit[]" data-index="${index}" style="flex: 1;">
+                            <option value="">-- Pilih Barang --</option>
+                            ${optionsHtml}
+                        </select>
+                        <div class="qty-control-wrapper" style="display: none;">
+                            <button type="button" class="btn-qty ${qtyBtnClass}" data-index="${index}" title="Kurangi Qty">
+                                <span style="font-size: 18px;">−</span>
+                            </button>
+                            <div class="qty-display">
+                                <span class="${qtyInputClass}" data-index="${index}">1</span>
+                            </div>
+                            <button type="button" class="btn-qty ${qtyPlusBtnClass}" data-index="${index}" title="Tambah Qty">
+                                <span style="font-size: 18px;">+</span>
+                            </button>
+                        </div>
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-success btn-sm ${btnClass}" title="Tambah Barang" style="display: none;">
+                                <i class="fas fa-plus"></i> Tambah
+                            </button>
+                            <button type="button" class="btn btn-danger btn-sm ${btnHapusClass}" title="Hapus" style="display: none;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } catch (error) {
+            console.error('Error in getUnitSelectTemplate:', error);
+            return '';
+        }
+    };
+    var getUnitSelectTemplate = window.getUnitSelectTemplate;
+    
+    // Inisialisasi Select2 untuk select2 dinamis
+    window.initSelect2Dynamic = function(selector) {
+        try {
+            if ($(selector).hasClass('select2-hidden-accessible')) {
+                $(selector).select2('destroy');
+            }
+            
+            let dropdownParent = $(selector).closest('.modal');
+            if (dropdownParent.length === 0) {
+                dropdownParent = $(document.body);
+            }
+            
+            const savedValue = $(selector).val();
+            
+            $(selector).select2({
+                theme: 'bootstrap4',
+                placeholder: 'Pilih Barang...',
+                allowClear: true,
+                width: '100%',
+                dropdownParent: dropdownParent,
+                language: {
+                    noResults: function() { return "Tidak ada hasil"; },
+                    searching: function() { return "Mencari..."; }
+                }
+            });
+            
+            $(selector).off('change.select2-dynamic').on('change.select2-dynamic', function() {
+                const $wrapper = $(this).closest('.unit-select-wrapper');
+                const isEdit = $wrapper.closest('#edit_unit_pembelian_container').length > 0;
+                if (typeof window.updateHapusButtonVisibility === 'function') {
+                    window.updateHapusButtonVisibility(isEdit);
+                }
+                
+                const $qtyControl = $wrapper.find('.qty-control-wrapper');
+                if ($(this).val() && $(this).val() !== '') {
+                    $qtyControl.show();
+                } else {
+                    $qtyControl.hide();
+                    $wrapper.find('.qty-input, .qty-input-edit').text('1');
+                }
+            });
+            
+            if (savedValue) {
+                $(selector).val(savedValue).trigger('change.select2-dynamic');
+            }
+        } catch (error) {
+            console.error('Error in initSelect2Dynamic:', error);
+        }
+    };
+    var initSelect2Dynamic = window.initSelect2Dynamic;
+    
+    // Toggle field unit untuk form edit
+    window.toggleUnitFieldEdit = function() {
+        try {
+            const jenisWoSelect = $('#edit_id_jenis_wo');
+            const selectedJenisWo = jenisWoSelect.find('option:selected').data('nama-jenis');
+            const unitInput = $('#edit_unit');
+            const unitContainer = $('#edit_unit_pembelian_container');
+            const unitLabel = $('#label_edit_unit');
+            
+            if (selectedJenisWo && (selectedJenisWo.toLowerCase() === 'pembelian' || selectedJenisWo.toLowerCase() === 'perbaikan')) {
+                unitInput.hide().removeAttr('required').removeAttr('name');
+                unitContainer.show();
+                
+                if (selectedJenisWo.toLowerCase() === 'pembelian') {
+                    unitLabel.html('Daftar barang <span class="text-danger">*</span>');
+                } else {
+                    unitLabel.html('Daftar barang <small class="text-muted">(Opsional)</small>');
+                }
+                
+                if (unitContainer.find('.unit-select-wrapper').length === 0) {
+                    unitContainer.html(getUnitSelectTemplate(0, true));
+                    const firstSelect = unitContainer.find('.select2-unit-dynamic[data-index="0"]');
+                    initSelect2Dynamic(firstSelect);
+                } else {
+                    unitContainer.find('.select2-unit-dynamic').each(function() {
+                        initSelect2Dynamic($(this));
+                    });
+                }
+            } else {
+                unitInput.show().attr('required', 'required').attr('name', 'unit');
+                unitContainer.hide();
+                clearUnitSelects(true);
+                unitLabel.html('Nama Unit / Code <span class="text-danger">*</span>');
+            }
+        } catch (error) {
+            console.error('Error in toggleUnitFieldEdit:', error);
+        }
+    };
+    var toggleUnitFieldEdit = window.toggleUnitFieldEdit;
+    
+    // Toggle section barang untuk form edit
+    window.toggleBarangSectionEdit = function() {
+        try {
+            $('#edit-barang-section').hide();
+            $('#edit-daftar-barang-container').empty();
+        } catch (error) {
+            console.error('Error in toggleBarangSectionEdit:', error);
+        }
+    };
+    var toggleBarangSectionEdit = window.toggleBarangSectionEdit;
+
     // Initialize DataTable
     $(document).ready(function() {
         $('#workOrderTable').DataTable({
@@ -1230,8 +1410,8 @@
             }
         }
         
-        // Template HTML untuk select2 dinamis
-        function getUnitSelectTemplate(index, isEdit = false) {
+        // getUnitSelectTemplate sudah didefinisikan di global scope di atas
+        function getUnitSelectTemplateLocal(index, isEdit = false) {
             const btnClass = isEdit ? 'btn-tambah-barang-edit' : 'btn-tambah-barang';
             const btnHapusClass = isEdit ? 'btn-hapus-barang-edit' : 'btn-hapus-barang';
             
@@ -1274,8 +1454,8 @@
             `;
         }
         
-        // Inisialisasi Select2 untuk select2 dinamis (single select)
-        function initSelect2Dynamic(selector) {
+        // initSelect2Dynamic sudah didefinisikan di global scope di atas
+        function initSelect2DynamicLocal(selector) {
             if ($(selector).hasClass('select2-hidden-accessible')) {
                 $(selector).select2('destroy');
             }
@@ -1396,21 +1576,7 @@
             });
         }
         
-        // Clear semua select2 dinamis
-        function clearUnitSelects(isEdit = false) {
-            const containerId = isEdit ? 'edit_unit_pembelian_container' : 'unit_pembelian_container';
-            const container = $('#' + containerId);
-            
-            // Destroy semua Select2
-            container.find('.select2-unit-dynamic').each(function() {
-                if ($(this).hasClass('select2-hidden-accessible')) {
-                    $(this).select2('destroy');
-                }
-            });
-            
-            // Clear container
-            container.empty();
-        }
+        // clearUnitSelects sudah didefinisikan di global scope di atas
         
         // Toggle field unit berdasarkan jenis work order
         // Buat global agar bisa diakses dari luar document.ready
@@ -1451,7 +1617,8 @@
         };
         
         // Toggle field unit untuk form edit
-        function toggleUnitFieldEdit() {
+        // toggleUnitFieldEdit sudah didefinisikan di global scope di atas
+        function toggleUnitFieldEditLocal() {
             const jenisWoSelect = $('#edit_id_jenis_wo');
             const selectedJenisWo = jenisWoSelect.find('option:selected').data('nama-jenis');
             const unitInput = $('#edit_unit');
@@ -2268,7 +2435,8 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Gagal mengambil data work order');
+                const errorMessage = error.message || 'Gagal mengambil data work order';
+                alert('Gagal mengambil data work order: ' + errorMessage);
             });
     }
 
@@ -2302,8 +2470,14 @@
                 }
                 
                 // Toggle field unit berdasarkan jenis work order
-                if (typeof toggleUnitFieldEdit === 'function') {
-                    toggleUnitFieldEdit();
+                try {
+                    if (typeof toggleUnitFieldEdit === 'function') {
+                        toggleUnitFieldEdit();
+                    } else if (typeof window.toggleUnitFieldEdit === 'function') {
+                        window.toggleUnitFieldEdit();
+                    }
+                } catch (error) {
+                    console.error('Error in toggleUnitFieldEdit:', error);
                 }
                 
                 // Set nilai ditujukan langsung (tanpa filter untuk menghindari error)
@@ -2354,50 +2528,106 @@
                     }
                     
                     // Clear container terlebih dahulu
-                    clearUnitSelects(true);
+                    try {
+                        if (typeof window.clearUnitSelects === 'function') {
+                            window.clearUnitSelects(true);
+                        } else if (typeof clearUnitSelects === 'function') {
+                            clearUnitSelects(true);
+                        }
+                    } catch (error) {
+                        console.error('Error clearing unit selects:', error);
+                    }
                     const container = $('#edit_unit_pembelian_container');
                     
                     // Buat select2 untuk setiap nilai
-                    if (unitValues.length > 0) {
-                        unitValues.forEach(function(value, index) {
-                            if (index === 0) {
-                                // Select pertama
-                                container.html(getUnitSelectTemplate(0, true));
-                            } else {
-                                // Select tambahan
-                                container.append(getUnitSelectTemplate(index, true));
-                            }
-                            
-                            // Set nilai dan initialize Select2
-                            setTimeout(function() {
-                                const $select = container.find('.select2-unit-dynamic[data-index="' + index + '"]');
-                                const $wrapper = $select.closest('.unit-select-wrapper');
-                                initSelect2Dynamic($select);
-                                $select.val(value).trigger('change');
-                                
-                                // Set qty
-                                const qty = unitQtys[index] || 1;
-                                $wrapper.find('.qty-input-edit[data-index="' + index + '"]').text(qty);
-                                $wrapper.find('.qty-control-wrapper').show();
-                                
-                                // Tampilkan button Tambah jika ada nilai
-                                if (value) {
-                                    $select.closest('.unit-select-wrapper').find('.btn-tambah-barang-edit').show();
+                    try {
+                        if (unitValues.length > 0) {
+                            unitValues.forEach(function(value, index) {
+                                try {
+                                    const template = typeof getUnitSelectTemplate === 'function' 
+                                        ? getUnitSelectTemplate(index, true) 
+                                        : '';
+                                    if (!template) {
+                                        console.error('getUnitSelectTemplate tidak tersedia');
+                                        return;
+                                    }
+                                    
+                                    if (index === 0) {
+                                        container.html(template);
+                                    } else {
+                                        container.append(template);
+                                    }
+                                    
+                                    // Set nilai dan initialize Select2
+                                    setTimeout(function() {
+                                        try {
+                                            const $select = container.find('.select2-unit-dynamic[data-index="' + index + '"]');
+                                            const $wrapper = $select.closest('.unit-select-wrapper');
+                                            
+                                            if (typeof initSelect2Dynamic === 'function') {
+                                                initSelect2Dynamic($select);
+                                            } else if (typeof window.initSelect2Dynamic === 'function') {
+                                                window.initSelect2Dynamic($select);
+                                            } else {
+                                                console.error('initSelect2Dynamic tidak tersedia');
+                                                return;
+                                            }
+                                            
+                                            $select.val(value).trigger('change');
+                                            
+                                            // Set qty
+                                            const qty = unitQtys[index] || 1;
+                                            $wrapper.find('.qty-input-edit[data-index="' + index + '"]').text(qty);
+                                            $wrapper.find('.qty-control-wrapper').show();
+                                            
+                                            // Tampilkan button Tambah jika ada nilai
+                                            if (value) {
+                                                $select.closest('.unit-select-wrapper').find('.btn-tambah-barang-edit').show();
+                                            }
+                                        } catch (error) {
+                                            console.error('Error initializing select2:', error);
+                                        }
+                                    }, 50 * (index + 1));
+                                } catch (error) {
+                                    console.error('Error creating select template:', error);
                                 }
-                            }, 50 * (index + 1));
-                        });
-                        
-                        // Update visibility button hapus setelah semua select dibuat
-                        setTimeout(function() {
-                            updateHapusButtonVisibility(true);
-                        }, 100 * unitValues.length);
-                    } else {
-                        // Jika tidak ada nilai, buat select kosong
-                        container.html(getUnitSelectTemplate(0, true));
-                        setTimeout(function() {
-                            const firstSelect = container.find('.select2-unit-dynamic[data-index="0"]');
-                            initSelect2Dynamic(firstSelect);
-                        }, 100);
+                            });
+                            
+                            // Update visibility button hapus setelah semua select dibuat
+                            setTimeout(function() {
+                                try {
+                                    if (typeof updateHapusButtonVisibility === 'function') {
+                                        updateHapusButtonVisibility(true);
+                                    } else if (typeof window.updateHapusButtonVisibility === 'function') {
+                                        window.updateHapusButtonVisibility(true);
+                                    }
+                                } catch (error) {
+                                    console.error('Error updating button visibility:', error);
+                                }
+                            }, 100 * unitValues.length);
+                        } else {
+                            // Jika tidak ada nilai, buat select kosong
+                            const template = typeof getUnitSelectTemplate === 'function' 
+                                ? getUnitSelectTemplate(0, true) 
+                                : '';
+                            if (template) {
+                                container.html(template);
+                                setTimeout(function() {
+                                    try {
+                                        const firstSelect = container.find('.select2-unit-dynamic[data-index="0"]');
+                                        if (typeof initSelect2Dynamic === 'function') {
+                                            initSelect2Dynamic(firstSelect);
+                                        } else if (typeof window.initSelect2Dynamic === 'function') {
+                                            window.initSelect2Dynamic(firstSelect);
+                                        }
+                                    } catch (error) {
+                                        console.error('Error initializing first select:', error);
+                                    }
+                                }, 100);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error creating unit selects:', error);
                     }
                 } else {
                     // Jika bukan pembelian, gunakan nilai pertama jika array
@@ -2444,7 +2674,8 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Gagal mengambil data work order: ' + error.message);
+                const errorMessage = error.message || 'Gagal mengambil data work order';
+                alert('Gagal mengambil data work order: ' + errorMessage);
                 window.isEditingWorkOrder = false; // Reset flag jika error
             })
             .finally(() => {
