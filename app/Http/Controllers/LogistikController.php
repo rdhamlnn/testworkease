@@ -21,18 +21,30 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class LogistikController extends Controller
 {
+    use \App\Traits\WorkOrderActions, \App\Traits\UserProfileActions;
+
+    /**
+     * Get the view name for profile.
+     */
+    protected function getProfileView()
+    {
+        return 'logistik.profile';
+    }
+
     /**
      * Display the dashboard page.
      */
     public function dashboard()
     {
         $userId = Session::get('user_id');
+        $userDivisi = Session::get('user_divisi');
+        $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi') ?? 'Logistik';
         
         // Statistik
         $totalWODicek = SuratPengajuan::count();
         $totalPermintaan = PermintaanBarang::count();
-        $barangMasuk = PermintaanBarang::where('status', 'Diterima Logistik')->count();
-        $barangKeluar = PermintaanBarang::where('status', 'Diserahkan ke Divisi')->count();
+        $barangMasuk = PermintaanBarang::forStatus('Diterima Logistik')->count();
+        $barangKeluar = PermintaanBarang::forStatus('Diserahkan ke Divisi')->count();
         
         // Chart data
         $monthlyWOTrend = SuratPengajuan::select(
@@ -53,58 +65,48 @@ class LogistikController extends Controller
             ->toArray();
         
         // Recent activities
-        $recentActivities = SuratPengajuan::join('akun', 'surat_pengajuan.id_akun', '=', 'akun.id_akun')
-            ->join('karyawan', 'akun.id_karyawan', '=', 'karyawan.id_karyawan')
-            ->select('surat_pengajuan.*', 'karyawan.nama_lengkap')
-            ->orderBy('surat_pengajuan.created_at', 'desc')
+        $recentActivities = SuratPengajuan::with('akun.karyawan')
+            ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
         
         return view('logistik.dashboard', compact(
-            'totalWODicek',
-            'totalPermintaan',
-            'barangMasuk',
-            'barangKeluar',
-            'monthlyWOTrend',
-            'statusPermintaan',
-            'recentActivities'
+            'totalWODicek', 'totalPermintaan', 'barangMasuk', 'barangKeluar',
+            'monthlyWOTrend', 'statusPermintaan', 'recentActivities'
         ));
     }
+
     
     /**
      * Display work order masuk page.
      */
     public function workOrder()
     {
-        $divisiId = Session::get('user_divisi');
-        $divisiPengaju = Divisi::where('id_divisi', $divisiId)->value('nama_divisi') ?? 'Logistik';
+        $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Logistik';
+        
+        $workOrders = SuratPengajuan::with(['unit', 'jenisWorkOrder', 'verifikator'])
+            ->fromDivisi($userDivisiNama)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
         $divisi = Divisi::where('nama_divisi', '!=', 'Administrator')->get();
-        $divisiTujuan = Divisi::where('id_divisi', '!=', $divisiId)->orderBy('nama_divisi')->get();
+        $divisiTujuan = Divisi::where('nama_divisi', '!=', 'Administrator')->orderBy('nama_divisi')->get();
         $unit = Unit::orderBy('nama_unit')->get();
         $jenisWorkOrder = JenisWorkOrder::all();
         $daftarBarang = DaftarBarang::all();
         $nextNoWO = $this->generateWorkOrderNumber('LOG');
-        $workOrders = SuratPengajuan::with(['unit', 'jenisWorkOrder', 'verifikator'])
-            ->where('divisi_pengaju', $divisiPengaju)
-            ->orderBy('created_at', 'desc')
-            ->get();
 
-        return view('logistik.work_order', compact('divisiPengaju', 'divisi', 'divisiTujuan', 'unit', 'jenisWorkOrder', 'daftarBarang', 'nextNoWO', 'workOrders'));
+        return view('logistik.work_order', compact('userDivisiNama', 'divisi', 'divisiTujuan', 'unit', 'jenisWorkOrder', 'daftarBarang', 'nextNoWO', 'workOrders'));
     }
 
-    /**
-     * Display daftar pengajuan work order page (WO yang diterima dari divisi lain).
-     */
     public function daftarWorkOrder()
     {
-        $userDivisi = Session::get('user_divisi');
-        $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi') ?? 'Logistik';
+        $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Logistik';
         
-        // WO yang diterima oleh divisi user yang login (dari divisi lain)
         $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])
-            ->where('ditujukan', $userDivisiNama)
+            ->toDivisi($userDivisiNama)
             ->where('divisi_pengaju', '!=', $userDivisiNama)
-            ->where('id_verifikator', 1) // Hanya status Menunggu
+            ->byVerifikator(1)
             ->orderBy('created_at', 'desc')
             ->get();
         
@@ -113,25 +115,17 @@ class LogistikController extends Controller
 
     public function riwayatWorkOrder()
     {
-        $userDivisi = Session::get('user_divisi');
-        $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi') ?? 'Logistik';
+        $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Logistik';
         
-        // WO yang dibuat dan diterima oleh divisi user yang login
-        $workOrdersDibuat = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])
-            ->where('divisi_pengaju', $userDivisiNama)
-            ->whereIn('id_verifikator', [2, 3]) // Disetujui atau Ditolak
+        $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])
+            ->dibuatAtauDiterima($userDivisiNama)
+            ->byVerifikator([2, 3])
+            ->orderBy('created_at', 'desc')
             ->get();
-        
-        $workOrdersDiterima = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])
-            ->where('ditujukan', $userDivisiNama)
-            ->where('divisi_pengaju', '!=', $userDivisiNama)
-            ->whereIn('id_verifikator', [2, 3]) // Disetujui atau Ditolak
-            ->get();
-        
-        $workOrders = $workOrdersDibuat->merge($workOrdersDiterima)->sortByDesc('created_at');
         
         return view('logistik.riwayat_work_order', compact('workOrders'));
     }
+
 
     /**
      * Store new work order submission.
@@ -139,104 +133,44 @@ class LogistikController extends Controller
     public function storeWorkOrder(Request $request)
     {
         $request->validate([
-            'no_surat_pengajuan' => 'required|string|max:255',
-            'ditujukan' => 'required|string|max:255',
             'id_jenis_wo' => 'required|exists:jenis_work_order,id_jenis_wo',
             'tanggal' => 'required|date',
-            'unit' => 'required|string|max:255',
+            'unit' => 'required|string',
             'uraian' => 'required|string',
             'dokumentasi' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
         try {
-            // Get unit ID
-            $unitId = 1; // Default
-            $selectedUnit = Unit::where('nama_unit', $request->unit)->first();
-            if ($selectedUnit) {
-                $unitId = $selectedUnit->id_unit;
-            }
+            $unitId = Unit::where('nama_unit', $request->unit)->value('id_unit') ?: 1;
+            $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Logistik';
 
-            $divisiId = Session::get('user_divisi');
-            $divisiNama = DB::table('divisi')->where('id_divisi', $divisiId)->value('nama_divisi') ?? 'Logistik';
-
-            $dokumentasiPath = null;
-            if ($request->hasFile('dokumentasi')) {
-                $dokumentasiPath = $request->file('dokumentasi')->store('work-orders', 'public');
-            }
+            $dokumentasiPath = $request->hasFile('dokumentasi') ? $this->handleUpload($request->file('dokumentasi'), 'work-orders') : null;
 
             $workOrder = SuratPengajuan::create([
-                'no_surat_pengajuan' => $request->no_surat_pengajuan,
+                'no_surat_pengajuan' => $this->generateWorkOrderNumber('LOG'),
                 'ditujukan' => $request->ditujukan,
                 'id_jenis_wo' => $request->id_jenis_wo,
                 'tanggal' => $request->tanggal,
-                'divisi_pengaju' => $divisiNama,
+                'divisi_pengaju' => $userDivisiNama,
                 'unit' => $request->unit,
                 'uraian' => $request->uraian,
                 'dokumentasi' => $dokumentasiPath,
                 'status' => 'Menunggu',
-                'id_divisi' => $divisiId,
+                'id_divisi' => Session::get('user_divisi'),
                 'id_peran' => Session::get('user_peran'),
                 'id_verifikator' => 1,
                 'id_akun' => Session::get('user_id'),
                 'id_unit' => $unitId,
             ]);
 
-            // Jika ada barang yang diisi, buat PermintaanBarang otomatis
-            if ($request->has('barang') && is_array($request->barang) && count($request->barang) > 0) {
-                $barangItems = array_filter($request->barang, function($item) {
-                    return !empty($item['nama_barang']) && !empty($item['jumlah']);
-                });
-                
-                if (count($barangItems) > 0) {
-                    // Hitung total estimasi harga
-                    $totalHarga = 0;
-                    foreach ($barangItems as $item) {
-                        $totalHarga += ($item['estimasi_harga'] ?? 0) * ($item['jumlah'] ?? 0);
-                    }
-                    
-                    // Generate nomor permintaan
-                    $noPermintaan = $this->generateNoPermintaan();
-                    
-                    // Buat PermintaanBarang
-                    $permintaan = PermintaanBarang::create([
-                        'no_permintaan_barang' => $noPermintaan,
-                        'id_surat_pengajuan' => $workOrder->id_surat_pengajuan,
-                        'tanggal_permintaan' => $request->tanggal,
-                        'status' => 'Menunggu Logistik',
-                        'total_estimasi_harga' => $totalHarga,
-                        'id_akun' => Session::get('user_id', 1),
-                    ]);
-                    
-                    // Simpan detail barang
-                    foreach ($barangItems as $item) {
-                        // Cari atau buat master stok barang
-                        $master = DaftarBarang::firstOrCreate(
-                            [
-                                'nama_barang' => $item['nama_barang'],
-                                'satuan' => $item['satuan'] ?? null,
-                            ],
-                            [
-                                'stok' => 0,
-                            ]
-                        );
-                        
-                        DetailBarangPermintaan::create([
-                            'id_permintaan_barang' => $permintaan->id_permintaan_barang,
-                            'id_daftar_barang_master' => $master->id_daftar_barang,
-                            'nama_barang' => $item['nama_barang'],
-                            'jumlah' => (int)($item['jumlah'] ?? 0),
-                            'satuan' => $item['satuan'] ?? null,
-                            'estimasi_harga' => isset($item['estimasi_harga']) ? (float)$item['estimasi_harga'] : null,
-                        ]);
-                    }
-                }
-            }
+            $this->processPermintaanBarangFromRequest($request, $workOrder);
 
             return redirect()->route('logistik.work-order', ['from' => 'crud'])->with('success', 'Data berhasil ditambahkan');
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal membuat work order: ' . $e->getMessage())->withInput();
+            return back()->with('error', 'Gagal: ' . $e->getMessage())->withInput();
         }
     }
+
 
     /**
      * Search units for autocomplete.
@@ -267,55 +201,28 @@ class LogistikController extends Controller
     public function updateWorkOrder(Request $request, $id)
     {
         $request->validate([
-            'ditujukan' => 'required|string|max:255',
             'id_jenis_wo' => 'required|exists:jenis_work_order,id_jenis_wo',
             'tanggal' => 'required|date',
-            'unit' => 'required|string|max:255',
+            'unit' => 'required|string',
             'uraian' => 'required|string',
             'dokumentasi' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
-        $divisiId = Session::get('user_divisi');
-        $divisiNama = DB::table('divisi')->where('id_divisi', $divisiId)->value('nama_divisi') ?? 'Logistik';
-
-        $workOrder = SuratPengajuan::findOrFail($id);
-        if ($workOrder->divisi_pengaju !== $divisiNama) {
-            abort(403, 'Anda tidak memiliki akses untuk mengubah data ini.');
-        }
-
-        // Get unit ID
-        $unitId = 1; // Default
-        $selectedUnit = Unit::where('nama_unit', $request->unit)->first();
-        if ($selectedUnit) {
-            $unitId = $selectedUnit->id_unit;
-        }
-        
-        // Validasi: tidak bisa edit jika sudah disetujui atau ditolak
-        if (in_array($workOrder->id_verifikator, [2, 3])) {
-            $statusText = $workOrder->id_verifikator == 2 ? 'disetujui' : 'ditolak';
-            Session::flash('error', "Work Order tidak dapat diedit karena sudah {$statusText}.");
-            return redirect()->route('logistik.work-order', ['from' => 'crud'])
-                ->with('error', "Work Order tidak dapat diedit karena sudah {$statusText}.");
-        }
-
         try {
-            // Handle file upload if new file is provided or delete if requested
+            $workOrder = SuratPengajuan::findOrFail($id);
+            if (in_array($workOrder->id_verifikator, [2, 3])) {
+                return redirect()->back()->with('error', 'Work Order sudah diproses.');
+            }
+
             $dokumentasiPath = $workOrder->dokumentasi;
-            
-            // Check if user wants to delete dokumentasi
             if ($request->has('delete_dokumentasi') && $request->delete_dokumentasi == '1') {
-                // Delete old file if exists
-                if ($dokumentasiPath && Storage::disk('public')->exists($dokumentasiPath)) {
-                    Storage::disk('public')->delete($dokumentasiPath);
-                }
+                $this->deleteFile($workOrder->dokumentasi);
                 $dokumentasiPath = null;
             } elseif ($request->hasFile('dokumentasi')) {
-                // Delete old file if exists
-                if ($dokumentasiPath && Storage::disk('public')->exists($dokumentasiPath)) {
-                    Storage::disk('public')->delete($dokumentasiPath);
-                }
-                $dokumentasiPath = $request->file('dokumentasi')->store('work-orders', 'public');
+                $dokumentasiPath = $this->handleUpload($request->file('dokumentasi'), 'work-orders', $workOrder->dokumentasi);
             }
+
+            $unitId = Unit::where('nama_unit', $request->unit)->value('id_unit') ?: 1;
 
             $workOrder->update([
                 'ditujukan' => $request->ditujukan,
@@ -329,60 +236,63 @@ class LogistikController extends Controller
 
             return redirect()->route('logistik.work-order', ['from' => 'crud'])->with('success', 'Work Order berhasil diperbarui.');
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal memperbarui Work Order: ' . $e->getMessage())->withInput();
+            return back()->with('error', 'Gagal: ' . $e->getMessage())->withInput();
         }
     }
+
 
     /**
      * Hapus work order milik logistik.
      */
     public function destroyWorkOrder($id)
     {
-        $divisiId = Session::get('user_divisi');
-        $divisiNama = Divisi::where('id_divisi', $divisiId)->value('nama_divisi') ?? 'Logistik';
+        return $this->hapusWorkOrder($id);
+    }
 
-        try {
-            $workOrder = SuratPengajuan::findOrFail($id);
-            if ($workOrder->divisi_pengaju !== $divisiNama) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Anda tidak memiliki akses untuk menghapus data ini.'
-                ], 403);
-            }
+    /**
+     * Private helper to process barang items from request.
+     */
+    private function processPermintaanBarangFromRequest(Request $request, $workOrder)
+    {
+        if ($request->has('barang') && is_array($request->barang) && count($request->barang) > 0) {
+            $barangItems = array_filter($request->barang, function($item) {
+                return !empty($item['nama_barang']) && !empty($item['jumlah']);
+            });
             
-            // Validasi: tidak bisa hapus jika sudah disetujui atau ditolak
-            if (in_array($workOrder->id_verifikator, [2, 3])) {
-                $statusText = $workOrder->id_verifikator == 2 ? 'disetujui' : 'ditolak';
-                Session::flash('error', "Work Order tidak dapat dihapus karena sudah {$statusText}.");
-                return response()->json([
-                    'success' => false,
-                    'message' => "Work Order tidak dapat dihapus karena sudah {$statusText}.",
-                    'redirect' => route('logistik.work-order', ['from' => 'crud'])
-                ], 403);
+            if (count($barangItems) > 0) {
+                $totalHarga = 0;
+                foreach ($barangItems as $item) {
+                    $totalHarga += ($item['estimasi_harga'] ?? 0) * ($item['jumlah'] ?? 0);
+                }
+                
+                $permintaan = PermintaanBarang::create([
+                    'no_permintaan_barang' => $this->generateNoPermintaan('LOG'),
+                    'id_surat_pengajuan' => $workOrder->id_surat_pengajuan,
+                    'tanggal_permintaan' => $request->tanggal,
+                    'status' => 'Menunggu Logistik',
+                    'total_estimasi_harga' => $totalHarga,
+                    'id_akun' => Session::get('user_id', 1),
+                ]);
+                
+                foreach ($barangItems as $item) {
+                    $master = DaftarBarang::firstOrCreate(
+                        ['nama_barang' => $item['nama_barang'], 'satuan' => $item['satuan'] ?? null],
+                        ['stok' => 0]
+                    );
+                    
+                    DetailBarangPermintaan::create([
+                        'id_permintaan_barang' => $permintaan->id_permintaan_barang,
+                        'id_daftar_barang_master' => $master->id_daftar_barang,
+                        'nama_barang' => $item['nama_barang'],
+                        'jumlah' => (int)($item['jumlah'] ?? 0),
+                        'satuan' => $item['satuan'] ?? null,
+                        'estimasi_harga' => isset($item['estimasi_harga']) ? (float)$item['estimasi_harga'] : null,
+                    ]);
+                }
             }
-
-            if ($workOrder->dokumentasi && Storage::disk('public')->exists($workOrder->dokumentasi)) {
-                Storage::disk('public')->delete($workOrder->dokumentasi);
-            }
-
-            $workOrder->delete();
-
-            // Simpan success message di session sebelum return JSON
-            session()->flash('success', 'Data berhasil dihapus');
-            session()->flash('from_crud', true);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Data berhasil dihapus',
-                'redirect' => route('logistik.work-order')
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menghapus data: ' . $e->getMessage()
-            ], 500);
         }
     }
+
     
     /**
      * Display permintaan barang page.
@@ -1034,56 +944,7 @@ class LogistikController extends Controller
         }
     }
     
-    /**
-     * Generate nomor permintaan barang.
-     */
-    private function generateNoPermintaan()
-    {
-        $year = Carbon::now()->year;
-        $month = Carbon::now()->month;
-        
-        // Lock table untuk menghindari race condition
-        $lastPermintaan = PermintaanBarang::whereYear('created_at', $year)
-            ->whereMonth('created_at', $month)
-            ->lockForUpdate() // Lock untuk update
-            ->orderBy('created_at', 'desc')
-            ->first();
-        
-        if ($lastPermintaan) {
-            $lastNumber = explode('/', $lastPermintaan->no_permintaan_barang)[0];
-            $sequence = str_pad((int)$lastNumber + 1, 3, '0', STR_PAD_LEFT);
-        } else {
-            $sequence = '001';
-        }
-        
-        // Loop untuk memastikan nomor benar-benar unik
-        $maxAttempts = 50;
-        $attempt = 0;
-        
-        while ($attempt < $maxAttempts) {
-            $noPermintaan = "{$sequence}/LOG/KCE/{$year}";
-            
-            // Cek apakah nomor sudah ada dengan lock
-            $existing = PermintaanBarang::where('no_permintaan_barang', $noPermintaan)
-                ->lockForUpdate()
-                ->first();
-            
-            if (!$existing) {
-                // Nomor unik ditemukan
-                return $noPermintaan;
-            }
-            
-            // Jika sudah ada, increment sequence
-            $lastNumber = explode('/', $existing->no_permintaan_barang)[0];
-            $sequence = str_pad((int)$lastNumber + 1, 3, '0', STR_PAD_LEFT);
-            $attempt++;
-        }
-        
-        // Jika masih gagal setelah banyak percobaan, gunakan timestamp untuk memastikan unik
-        $timestamp = time();
-        $sequence = str_pad((int)$sequence, 3, '0', STR_PAD_LEFT);
-        return "{$sequence}/LOG/KCE/{$year}-" . substr($timestamp, -4);
-    }
+
     
     /**
      * Proses terima barang.
@@ -1221,220 +1082,7 @@ class LogistikController extends Controller
         }
     }
     
-    /**
-     * Show work order (API).
-     */
-    public function showWorkOrder($id)
-    {
-        $workOrder = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])->findOrFail($id);
-        
-        // Ambil jenis_kebutuhan dan daftar_barang dari permintaan_barang jika ada
-        $daftarBarang = null;
-        $jenisKebutuhan = 'jasa'; // Default value
-        
-        // Cek apakah ada permintaan barang terkait
-        $permintaanBarang = PermintaanBarang::where('id_surat_pengajuan', $id)->first();
-        if ($permintaanBarang) {
-            $jenisKebutuhan = 'barang';
-            
-            // Ambil daftar barang dari detail
-            $detailBarang = DetailBarangPermintaan::where('id_permintaan_barang', $permintaanBarang->id_permintaan_barang)
-                ->get()
-                ->map(function($item) {
-                    return [
-                        'nama_barang' => $item->nama_barang,
-                        'qty' => $item->jumlah,
-                        'quantity' => $item->jumlah,
-                        'satuan' => $item->satuan
-                    ];
-                })
-                ->toArray();
-            
-            if (count($detailBarang) > 0) {
-                $daftarBarang = json_encode($detailBarang);
-            }
-        } else {
-            // Jika tidak ada permintaan barang, cek jenis work order
-            if ($workOrder->jenisWorkOrder && strtolower($workOrder->jenisWorkOrder->nama_jenis_wo) === 'pembelian') {
-                $jenisKebutuhan = 'barang';
-            } else {
-                $jenisKebutuhan = 'jasa';
-            }
-        }
-        
-        $data = [
-            'id_surat_pengajuan' => $workOrder->id_surat_pengajuan,
-            'no_surat_pengajuan' => $workOrder->no_surat_pengajuan,
-            'no_work_order' => $workOrder->no_surat_pengajuan,
-            'no_wo_parent' => $workOrder->parent ? $workOrder->parent->no_surat_pengajuan : null,
-            'divisi_pengaju' => $workOrder->divisi_pengaju,
-            'ditujukan' => $workOrder->ditujukan,
-            'id_jenis_wo' => $workOrder->id_jenis_wo,
-            'jenis_wo' => $workOrder->jenisWorkOrder ? $workOrder->jenisWorkOrder->nama_jenis_wo : null,
-            'tanggal' => $workOrder->tanggal,
-            'unit' => $workOrder->unit,
-            'unit_code' => $workOrder->unit_code ?? $workOrder->unit,
-            'id_unit' => $workOrder->id_unit,
-            'uraian' => $workOrder->uraian,
-            'dokumentasi' => $workOrder->dokumentasi,
-            'status' => $workOrder->verifikator ? $workOrder->verifikator->nama_status : ($workOrder->status ?? 'Menunggu'),
-            'id_verifikator' => $workOrder->id_verifikator,
-            'jenis_kebutuhan' => $jenisKebutuhan,
-            'daftar_barang' => $daftarBarang,
-            'harga_barang' => $workOrder->harga_barang,
-            'total_harga' => $workOrder->total_harga,
-            'catatan_penolakan' => $workOrder->catatan_penolakan,
-        ];
-        
-        return response()->json($data);
-    }
 
-    /**
-     * Get all daftar barang stock (API).
-     */
-    public function getAllDaftarBarangStock()
-    {
-        try {
-            $daftarBarang = DaftarBarang::select('id_daftar_barang', 'nama_barang', 'stok', 'satuan')
-                ->orderBy('nama_barang', 'asc')
-                ->get();
-            
-            return response()->json([
-                'success' => true,
-                'data' => $daftarBarang
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengambil data stock: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Render work order list page with shared configuration.
-     */
-    private function renderWorkOrderList(string $type = 'masuk', string $view = 'logistik.work_order_list', string $pageTitle = 'Work Order Masuk')
-    {
-        $divisiId = Session::get('user_divisi');
-        $divisiNama = Divisi::where('id_divisi', $divisiId)->value('nama_divisi') ?? 'Logistik';
-
-        if ($type === 'riwayat') {
-            $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])
-                ->where(function ($query) use ($divisiNama) {
-                    $query->where('ditujukan', $divisiNama)
-                        ->orWhere('divisi_pengaju', $divisiNama);
-                })
-                ->whereIn('id_verifikator', [2, 3]) // Status Disetujui (2) dan Ditolak (3)
-                ->orderBy('created_at', 'desc')
-                ->get();
-        } else {
-            $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])
-                ->where('ditujukan', $divisiNama)
-                ->where('divisi_pengaju', '!=', $divisiNama)
-                ->where('id_verifikator', 1) // Hanya status Menunggu (1)
-                ->orderBy('created_at', 'desc')
-                ->get();
-        }
-
-        return view($view, [
-            'workOrders' => $workOrders,
-            'pageTitle' => $pageTitle,
-            'breadcrumbLabel' => $pageTitle,
-            'workOrderApiUrl' => route('logistik.api.work-order', ['id' => '__ID__']),
-            'allowCreatePermintaan' => $type === 'masuk',
-        ]);
-    }
-
-    /**
-     * Approve work order.
-     */
-    public function approveWorkOrder($id)
-    {
-        try {
-            $workOrder = SuratPengajuan::findOrFail($id);
-            $userDivisi = Session::get('user_divisi');
-            $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi');
-            
-            // Hanya divisi yang dituju yang bisa approve
-            if ($workOrder->ditujukan !== $userDivisiNama) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Anda tidak memiliki akses untuk menyetujui work order ini.'
-                ], 403);
-            }
-            
-            $workOrder->update([
-                'id_verifikator' => 2, // 2 = Disetujui
-                'status' => 'Disetujui'
-            ]);
-            
-            // Set session message untuk notifikasi toast
-            Session::flash('success', 'Work Order berhasil disetujui!');
-            
-            // Return JSON untuk AJAX dengan redirect URL yang sudah include from=crud
-            $redirectUrl = route('logistik.daftar-work-order', ['from' => 'crud']);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Work Order berhasil disetujui!',
-                'redirect' => $redirectUrl
-            ]);
-        } catch (\Exception $e) {
-            Session::flash('error', 'Gagal menyetujui work order: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menyetujui work order: ' . $e->getMessage(),
-                'redirect' => route('logistik.daftar-work-order', ['from' => 'crud'])
-            ], 500);
-        }
-    }
-    
-    /**
-     * Reject work order.
-     */
-    public function rejectWorkOrder($id)
-    {
-        try {
-            $workOrder = SuratPengajuan::findOrFail($id);
-            $userDivisi = Session::get('user_divisi');
-            $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi');
-            
-            // Hanya divisi yang dituju yang bisa reject
-            if ($workOrder->ditujukan !== $userDivisiNama) {
-                Session::flash('error', 'Anda tidak memiliki akses untuk menolak work order ini.');
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Anda tidak memiliki akses untuk menolak work order ini.',
-                    'redirect' => route('logistik.daftar-work-order', ['from' => 'crud'])
-                ], 403);
-            }
-            
-            $workOrder->update([
-                'id_verifikator' => 3, // 3 = Ditolak
-                'status' => 'Ditolak'
-            ]);
-            
-            // Set session message untuk notifikasi toast
-            Session::flash('success', 'Work Order berhasil ditolak!');
-            
-            // Return JSON untuk AJAX dengan redirect URL yang sudah include from=crud
-            $redirectUrl = route('logistik.daftar-work-order', ['from' => 'crud']);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Work Order berhasil ditolak!',
-                'redirect' => $redirectUrl
-            ]);
-        } catch (\Exception $e) {
-            Session::flash('error', 'Gagal menolak work order: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menolak work order: ' . $e->getMessage(),
-                'redirect' => route('logistik.daftar-work-order', ['from' => 'crud'])
-            ], 500);
-        }
-    }
 
     /**
      * Forward work order to Purchasing (create new WO with parent relationship).
@@ -1571,112 +1219,7 @@ class LogistikController extends Controller
         return $pdf->stream($filename);
     }
 
-    private function generateWorkOrderNumber(string $prefix = 'LOG')
-    {
-        $year = date('Y');
-        $month = date('m');
 
-        $lastWorkOrder = SuratPengajuan::whereYear('created_at', $year)
-            ->whereMonth('created_at', $month)
-            ->where('no_surat_pengajuan', 'like', "%/{$prefix}/%")
-            ->orderBy('created_at', 'desc')
-            ->first();
+    
 
-        if ($lastWorkOrder) {
-            $lastNumber = explode('/', $lastWorkOrder->no_surat_pengajuan)[0];
-            $sequence = str_pad((int)$lastNumber + 1, 3, '0', STR_PAD_LEFT);
-        } else {
-            $sequence = '001';
-        }
-
-        return "{$sequence}/{$prefix}/KCE/{$year}";
-    }
-    
-    /**
-     * Display profile page.
-     */
-    public function profile()
-    {
-        $userId = Session::get('user_id');
-        
-        $user = DB::table('akun')
-            ->join('karyawan', 'akun.id_karyawan', '=', 'karyawan.id_karyawan')
-            ->join('divisi', 'akun.id_divisi', '=', 'divisi.id_divisi')
-            ->where('akun.id_akun', $userId)
-            ->select('akun.*', 'karyawan.*', 'divisi.nama_divisi')
-            ->first();
-        
-        return view('logistik.profile', compact('user'));
-    }
-    
-    /**
-     * Update profile.
-     */
-    public function updateProfile(Request $request)
-    {
-        $request->validate([
-            'nama_lengkap' => 'required|string|max:255',
-            'no_hp' => 'required|string|max:20',
-            'alamat' => 'required|string|max:255',
-            'jabatan' => 'required|string|max:255',
-        ]);
-        
-        try {
-            $userId = Session::get('user_id');
-            $karyawanId = Session::get('user_karyawan');
-            
-            DB::table('karyawan')
-                ->where('id_karyawan', $karyawanId)
-                ->update([
-                    'nama_lengkap' => $request->nama_lengkap,
-                    'no_hp' => $request->no_hp,
-                    'alamat' => $request->alamat,
-                    'jabatan' => $request->jabatan,
-                    'updated_at' => now(),
-                ]);
-            
-            session([
-                'nama_lengkap' => $request->nama_lengkap,
-                'no_hp' => $request->no_hp,
-                'alamat' => $request->alamat,
-                'jabatan' => $request->jabatan,
-                'updated_at' => now()
-            ]);
-            session()->save();
-            
-            return redirect()->route('logistik.profile', ['from' => 'crud'])->with('success', 'Data berhasil diperbarui');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Gagal memperbarui profile: ' . $e->getMessage());
-        }
-    }
-    
-    /**
-     * Change password.
-     */
-    public function changePassword(Request $request)
-    {
-        $request->validate([
-            'current_password' => 'required',
-            'new_password' => 'required|min:6|confirmed',
-        ]);
-        
-        try {
-            $user = DB::table('akun')->where('id_akun', Session::get('user_id'))->first();
-            
-            if (!Hash::check($request->current_password, $user->password)) {
-                return back()->with('error', 'Password lama tidak sesuai!');
-            }
-            
-            DB::table('akun')
-                ->where('id_akun', Session::get('user_id'))
-                ->update([
-                    'password' => Hash::make($request->new_password),
-                    'updated_at' => now(),
-                ]);
-            
-            return redirect()->route('logistik.profile', ['from' => 'crud'])->with('success', 'Password berhasil diubah!');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Gagal mengubah password: ' . $e->getMessage());
-        }
-    }
 }

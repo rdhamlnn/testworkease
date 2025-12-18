@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Eloquent\Model;
 
 class Akun extends Model
@@ -17,6 +19,10 @@ class Akun extends Model
         'id_divisi',
         'id_peran',
         'is_active'
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     public function karyawan()
@@ -42,6 +48,52 @@ class Akun extends Model
     public function laporanPemakaianBarang()
     {
         return $this->hasMany(LaporanPemakaianBarang::class, 'id_akun');
+    }
+
+    /**
+     * Upsert an account record.
+     *
+     * @param string $email
+     * @param string $password Plain password (will be hashed)
+     * @param int $karyawanId
+     * @param int $divisiId
+     * @param int $peranId
+     * @return void
+     */
+    public static function upsertAkun(string $email, string $password, int $karyawanId, int $divisiId, int $peranId): void
+    {
+        // Ensure peranId is valid
+        if (!$peranId) {
+            return;
+        }
+        $exists = DB::table('akun')->where('email', $email)->exists();
+        $data = [
+            'id_karyawan' => $karyawanId,
+            'id_divisi'   => $divisiId,
+            'id_peran'    => $peranId,
+            'password'    => Hash::make($password),
+            'updated_at'  => now(),
+        ];
+        if ($exists) {
+            DB::table('akun')->where('email', $email)->update($data);
+        } else {
+            // Check for legacy email formats and update if found
+            $emailName = explode('@', $email)[0];
+            $legacy = [
+                $emailName . '@kce.com',
+                'kadiv' . $emailName . '@kce.com',
+            ];
+
+            foreach ($legacy as $old) {
+                $oldRecord = DB::table('akun')->where('email', $old)->first();
+                if ($oldRecord) {
+                    DB::table('akun')->where('email', $old)->update(array_merge(['email' => $email], $data));
+                    return;
+                }
+            }
+            // Insert new record
+            DB::table('akun')->insert(array_merge(['email' => $email, 'created_at' => now()], $data));
+        }
     }
 
     public function suratPengajuan()

@@ -4,6 +4,12 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use App\Models\SuratPengajuan;
+use App\Models\Akun;
+use App\Models\Divisi;
+use App\Models\Peran;
+use App\Models\Unit;
+use App\Models\JenisWorkOrder;
 
 class SuratPengajuanSeeder extends Seeder
 {
@@ -294,17 +300,9 @@ class SuratPengajuanSeeder extends Seeder
             ],
         ];
 
-        $resolveAccountId = function (?int $divisiId) use ($akunByDivisi, $defaultAkunId) {
-            if (!$divisiId) {
-                return $defaultAkunId;
-            }
-
+        $resolveAccountId = function (int $divisiId) use ($akunByDivisi, $defaultAkunId) {
             $accounts = $akunByDivisi->get($divisiId);
-            if ($accounts && $accounts->isNotEmpty()) {
-                return $accounts->first()->id_akun;
-            }
-
-            return $defaultAkunId;
+            return ($accounts && $accounts->isNotEmpty()) ? $accounts->first()->id_akun : $defaultAkunId;
         };
 
         foreach ($entries as $entry) {
@@ -312,12 +310,11 @@ class SuratPengajuanSeeder extends Seeder
             $peranId = $peranMap->get($entry['peran'] ?? 'Kadiv') ?? $defaultPeranId;
             $unitId = $unitMap->get($entry['unit_name']) ?? $defaultUnitId;
             $idAkun = $resolveAccountId($divisiPengajuId);
-            $status = $entry['status'] ?? 'Menunggu';
-            $idVerifikator = $statusVerifikator[$status] ?? $statusVerifikator['Menunggu'];
             $idJenisWO = $jenisWOMap->get($entry['jenis_wo'] ?? 'Permintaan') ?? $defaultJenisWOId;
-            $statusDibaca = $entry['status_dibaca'] ?? false;
+            $status = $entry['status'] ?? 'Menunggu';
+            $idVerifikator = $statusVerifikator[$status] ?? 1;
 
-            DB::table('surat_pengajuan')->updateOrInsert(
+            SuratPengajuan::updateOrCreate(
                 ['no_surat_pengajuan' => $entry['no_surat_pengajuan']],
                 [
                     'ditujukan' => $entry['ditujukan'],
@@ -333,7 +330,7 @@ class SuratPengajuanSeeder extends Seeder
                     'id_akun' => $idAkun,
                     'id_unit' => $unitId,
                     'id_jenis_wo' => $idJenisWO,
-                    'status_dibaca' => $statusDibaca,
+                    'status_dibaca' => $entry['status_dibaca'] ?? false,
                     'created_at' => $entry['tanggal'],
                     'updated_at' => $entry['tanggal'],
                 ]

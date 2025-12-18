@@ -19,6 +19,24 @@ use Carbon\Carbon;
 
 class PurchasingController extends Controller
 {
+    use \App\Traits\WorkOrderActions, \App\Traits\UserProfileActions;
+
+    /**
+     * Get the view name for profile.
+     */
+    protected function getProfileView()
+    {
+        return 'purchasing.profile';
+    }
+
+    /**
+     * Helper to get status ID by name.
+     */
+    private function getStatusId(string $statusName)
+    {
+        return StatusWo::where('nama_status', $statusName)->value('id_status_wo');
+    }
+
     /**
      * Display the dashboard page.
      */
@@ -27,10 +45,10 @@ class PurchasingController extends Controller
         $userId = Session::get('user_id');
         
         // Ambil id status dari master status_wo
-        $statusMenungguPurchasingId = StatusWo::where('nama_status', 'Menunggu Purchasing')->value('id_status_wo');
-        $statusMenungguApprovalId = StatusWo::where('nama_status', 'Menunggu Approval Atasan')->value('id_status_wo');
-        $statusDibeliId = StatusWo::where('nama_status', 'Dibeli Purchasing')->value('id_status_wo');
-        $statusDikirimId = StatusWo::where('nama_status', 'Dikirim Purchasing')->value('id_status_wo');
+        $statusMenungguPurchasingId = $this->getStatusId('Menunggu Purchasing');
+        $statusMenungguApprovalId = $this->getStatusId('Menunggu Approval Atasan');
+        $statusDibeliId = $this->getStatusId('Dibeli Purchasing');
+        $statusDikirimId = $this->getStatusId('Dikirim Purchasing');
 
         // Statistik
         $totalPermintaan = PermintaanBarang::where('id_status_wo', $statusMenungguPurchasingId)->count();
@@ -70,55 +88,47 @@ class PurchasingController extends Controller
             ->toArray();
         
         // Recent activities
-        $recentActivities = PermintaanBarang::with(['suratPengajuan', 'akun'])
+        $recentActivities = PermintaanBarang::with(['suratPengajuan', 'akun.karyawan'])
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
         
         return view('purchasing.dashboard', compact(
-            'totalPermintaan',
-            'menungguApproval',
-            'dibeli',
-            'dikirim',
-            'monthlyPermintaanTrend',
-            'statusPembelian',
-            'recentActivities'
+            'totalPermintaan', 'menungguApproval', 'dibeli', 'dikirim',
+            'monthlyPermintaanTrend', 'statusPembelian', 'recentActivities'
         ));
     }
+
 
     /**
      * Display work order masuk page.
      */
     public function workOrder()
     {
-        $divisiId = Session::get('user_divisi');
-        $divisiPengaju = Divisi::where('id_divisi', $divisiId)->value('nama_divisi') ?? 'Purchasing';
-        $divisiTujuan = Divisi::where('id_divisi', '!=', $divisiId)->orderBy('nama_divisi')->get();
+        $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Purchasing';
+        
+        $workOrders = SuratPengajuan::with(['unit', 'jenisWorkOrder', 'verifikator'])
+            ->fromDivisi($userDivisiNama)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        $divisiTujuan = Divisi::where('nama_divisi', '!=', 'Administrator')->orderBy('nama_divisi')->get();
         $unit = Unit::orderBy('nama_unit')->get();
         $jenisWorkOrder = JenisWorkOrder::all();
         $nextNoWO = $this->generateWorkOrderNumber('PUR');
         $daftarBarang = DaftarBarang::orderBy('nama_barang')->get();
-        $workOrders = SuratPengajuan::with(['unit', 'jenisWorkOrder', 'verifikator'])
-            ->where('divisi_pengaju', $divisiPengaju)
-            ->orderBy('created_at', 'desc')
-            ->get();
 
-        return view('purchasing.work_order', compact('divisiPengaju', 'divisiTujuan', 'unit', 'jenisWorkOrder', 'nextNoWO', 'workOrders', 'daftarBarang'));
+        return view('purchasing.work_order', compact('userDivisiNama', 'divisiTujuan', 'unit', 'jenisWorkOrder', 'nextNoWO', 'workOrders', 'daftarBarang'));
     }
 
-    /**
-     * Display daftar pengajuan work order page (WO yang diterima dari divisi lain).
-     */
     public function daftarWorkOrder()
     {
-        $userDivisi = Session::get('user_divisi');
-        $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi') ?? 'Purchasing';
+        $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Purchasing';
         
-        // WO yang diterima oleh divisi user yang login (dari divisi lain)
         $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])
-            ->where('ditujukan', $userDivisiNama)
+            ->toDivisi($userDivisiNama)
             ->where('divisi_pengaju', '!=', $userDivisiNama)
-            ->where('id_verifikator', 1) // Hanya status Menunggu
+            ->byVerifikator(1)
             ->orderBy('created_at', 'desc')
             ->get();
         
@@ -127,25 +137,17 @@ class PurchasingController extends Controller
 
     public function riwayatWorkOrder()
     {
-        $userDivisi = Session::get('user_divisi');
-        $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi') ?? 'Purchasing';
+        $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Purchasing';
         
-        // WO yang dibuat dan diterima oleh divisi user yang login
-        $workOrdersDibuat = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])
-            ->where('divisi_pengaju', $userDivisiNama)
-            ->whereIn('id_verifikator', [2, 3]) // Disetujui atau Ditolak
+        $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])
+            ->dibuatAtauDiterima($userDivisiNama)
+            ->byVerifikator([2, 3])
+            ->orderBy('created_at', 'desc')
             ->get();
-        
-        $workOrdersDiterima = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])
-            ->where('ditujukan', $userDivisiNama)
-            ->where('divisi_pengaju', '!=', $userDivisiNama)
-            ->whereIn('id_verifikator', [2, 3]) // Disetujui atau Ditolak
-            ->get();
-        
-        $workOrders = $workOrdersDibuat->merge($workOrdersDiterima)->sortByDesc('created_at');
         
         return view('purchasing.riwayat_work_order', compact('workOrders'));
     }
+
 
     /**
      * Store new work order submission.
@@ -153,104 +155,44 @@ class PurchasingController extends Controller
     public function storeWorkOrder(Request $request)
     {
         $request->validate([
-            'no_surat_pengajuan' => 'required|string|max:255',
-            'ditujukan' => 'required|string|max:255',
             'id_jenis_wo' => 'required|exists:jenis_work_order,id_jenis_wo',
             'tanggal' => 'required|date',
-            'unit' => 'required|string|max:255',
+            'unit' => 'required|string',
             'uraian' => 'required|string',
             'dokumentasi' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
         try {
-            // Get unit ID
-            $unitId = 1; // Default
-            $selectedUnit = Unit::where('nama_unit', $request->unit)->first();
-            if ($selectedUnit) {
-                $unitId = $selectedUnit->id_unit;
-            }
+            $unitId = Unit::where('nama_unit', $request->unit)->value('id_unit') ?: 1;
+            $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Purchasing';
 
-            $divisiId = Session::get('user_divisi');
-            $divisiNama = DB::table('divisi')->where('id_divisi', $divisiId)->value('nama_divisi') ?? 'Purchasing';
-
-            $dokumentasiPath = null;
-            if ($request->hasFile('dokumentasi')) {
-                $dokumentasiPath = $request->file('dokumentasi')->store('work-orders', 'public');
-            }
+            $dokumentasiPath = $request->hasFile('dokumentasi') ? $this->handleUpload($request->file('dokumentasi'), 'work-orders') : null;
 
             $workOrder = SuratPengajuan::create([
-                'no_surat_pengajuan' => $request->no_surat_pengajuan,
+                'no_surat_pengajuan' => $this->generateWorkOrderNumber('PUR'),
                 'ditujukan' => $request->ditujukan,
                 'id_jenis_wo' => $request->id_jenis_wo,
                 'tanggal' => $request->tanggal,
-                'divisi_pengaju' => $divisiNama,
+                'divisi_pengaju' => $userDivisiNama,
                 'unit' => $request->unit,
                 'uraian' => $request->uraian,
                 'dokumentasi' => $dokumentasiPath,
                 'status' => 'Menunggu',
-                'id_divisi' => $divisiId,
+                'id_divisi' => Session::get('user_divisi'),
                 'id_peran' => Session::get('user_peran'),
                 'id_verifikator' => 1,
                 'id_akun' => Session::get('user_id'),
                 'id_unit' => $unitId,
             ]);
 
-            // Jika ada barang yang diisi, buat PermintaanBarang otomatis
-            if ($request->has('barang') && is_array($request->barang) && count($request->barang) > 0) {
-                $barangItems = array_filter($request->barang, function($item) {
-                    return !empty($item['nama_barang']) && !empty($item['jumlah']);
-                });
-                
-                if (count($barangItems) > 0) {
-                    // Hitung total estimasi harga
-                    $totalHarga = 0;
-                    foreach ($barangItems as $item) {
-                        $totalHarga += ($item['estimasi_harga'] ?? 0) * ($item['jumlah'] ?? 0);
-                    }
-                    
-                    // Generate nomor permintaan
-                    $noPermintaan = $this->generateNoPermintaan();
-                    
-                    // Buat PermintaanBarang
-                    $permintaan = PermintaanBarang::create([
-                        'no_permintaan_barang' => $noPermintaan,
-                        'id_surat_pengajuan' => $workOrder->id_surat_pengajuan,
-                        'tanggal_permintaan' => $request->tanggal,
-                        'status' => 'Menunggu Logistik',
-                        'total_estimasi_harga' => $totalHarga,
-                        'id_akun' => Session::get('user_id', 1),
-                    ]);
-                    
-                    // Simpan detail barang
-                    foreach ($barangItems as $item) {
-                        // Cari atau buat master stok barang
-                        $master = DaftarBarang::firstOrCreate(
-                            [
-                                'nama_barang' => $item['nama_barang'],
-                                'satuan' => $item['satuan'] ?? null,
-                            ],
-                            [
-                                'stok' => 0,
-                            ]
-                        );
-                        
-                        DetailBarangPermintaan::create([
-                            'id_permintaan_barang' => $permintaan->id_permintaan_barang,
-                            'id_daftar_barang_master' => $master->id_daftar_barang,
-                            'nama_barang' => $item['nama_barang'],
-                            'jumlah' => (int)($item['jumlah'] ?? 0),
-                            'satuan' => $item['satuan'] ?? null,
-                            'estimasi_harga' => isset($item['estimasi_harga']) ? (float)$item['estimasi_harga'] : null,
-                        ]);
-                    }
-                }
-            }
+            $this->processPermintaanBarangFromRequest($request, $workOrder);
 
             return redirect()->route('purchasing.work-order', ['from' => 'crud'])->with('success', 'Data berhasil ditambahkan');
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal membuat work order: ' . $e->getMessage())->withInput();
+            return back()->with('error', 'Gagal: ' . $e->getMessage())->withInput();
         }
     }
+
 
     /**
      * Search units for autocomplete.
@@ -281,55 +223,28 @@ class PurchasingController extends Controller
     public function updateWorkOrder(Request $request, $id)
     {
         $request->validate([
-            'ditujukan' => 'required|string|max:255',
             'id_jenis_wo' => 'required|exists:jenis_work_order,id_jenis_wo',
             'tanggal' => 'required|date',
-            'unit' => 'required|string|max:255',
+            'unit' => 'required|string',
             'uraian' => 'required|string',
             'dokumentasi' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
-        $divisiId = Session::get('user_divisi');
-        $divisiNama = DB::table('divisi')->where('id_divisi', $divisiId)->value('nama_divisi') ?? 'Purchasing';
-
-        $workOrder = SuratPengajuan::findOrFail($id);
-        if ($workOrder->divisi_pengaju !== $divisiNama) {
-            abort(403, 'Anda tidak memiliki akses untuk mengubah data ini.');
-        }
-
-        // Get unit ID
-        $unitId = 1; // Default
-        $selectedUnit = Unit::where('nama_unit', $request->unit)->first();
-        if ($selectedUnit) {
-            $unitId = $selectedUnit->id_unit;
-        }
-        
-        // Validasi: tidak bisa edit jika sudah disetujui atau ditolak
-        if (in_array($workOrder->id_verifikator, [2, 3])) {
-            $statusText = $workOrder->id_verifikator == 2 ? 'disetujui' : 'ditolak';
-            Session::flash('error', "Work Order tidak dapat diedit karena sudah {$statusText}.");
-            return redirect()->route('purchasing.work-order', ['from' => 'crud'])
-                ->with('error', "Work Order tidak dapat diedit karena sudah {$statusText}.");
-        }
-
         try {
-            // Handle file upload if new file is provided or delete if requested
+            $workOrder = SuratPengajuan::findOrFail($id);
+            if (in_array($workOrder->id_verifikator, [2, 3])) {
+                return redirect()->back()->with('error', 'Work Order sudah diproses.');
+            }
+
             $dokumentasiPath = $workOrder->dokumentasi;
-            
-            // Check if user wants to delete dokumentasi
             if ($request->has('delete_dokumentasi') && $request->delete_dokumentasi == '1') {
-                // Delete old file if exists
-                if ($dokumentasiPath && Storage::disk('public')->exists($dokumentasiPath)) {
-                    Storage::disk('public')->delete($dokumentasiPath);
-                }
+                $this->deleteFile($workOrder->dokumentasi);
                 $dokumentasiPath = null;
             } elseif ($request->hasFile('dokumentasi')) {
-                // Delete old file if exists
-                if ($dokumentasiPath && Storage::disk('public')->exists($dokumentasiPath)) {
-                    Storage::disk('public')->delete($dokumentasiPath);
-                }
-                $dokumentasiPath = $request->file('dokumentasi')->store('work-orders', 'public');
+                $dokumentasiPath = $this->handleUpload($request->file('dokumentasi'), 'work-orders', $workOrder->dokumentasi);
             }
+
+            $unitId = Unit::where('nama_unit', $request->unit)->value('id_unit') ?: 1;
 
             $workOrder->update([
                 'ditujukan' => $request->ditujukan,
@@ -343,60 +258,63 @@ class PurchasingController extends Controller
 
             return redirect()->route('purchasing.work-order', ['from' => 'crud'])->with('success', 'Work Order berhasil diperbarui.');
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal memperbarui Work Order: ' . $e->getMessage())->withInput();
+            return back()->with('error', 'Gagal: ' . $e->getMessage())->withInput();
         }
     }
+
 
     /**
      * Hapus work order Purchasing.
      */
     public function destroyWorkOrder($id)
     {
-        $divisiId = Session::get('user_divisi');
-        $divisiNama = Divisi::where('id_divisi', $divisiId)->value('nama_divisi') ?? 'Purchasing';
+        return $this->hapusWorkOrder($id);
+    }
 
-        try {
-            $workOrder = SuratPengajuan::findOrFail($id);
-            if ($workOrder->divisi_pengaju !== $divisiNama) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Anda tidak memiliki akses untuk menghapus data ini.'
-                ], 403);
-            }
+    /**
+     * Private helper to process barang items from request.
+     */
+    private function processPermintaanBarangFromRequest(Request $request, $workOrder)
+    {
+        if ($request->has('barang') && is_array($request->barang) && count($request->barang) > 0) {
+            $barangItems = array_filter($request->barang, function($item) {
+                return !empty($item['nama_barang']) && !empty($item['jumlah']);
+            });
             
-            // Validasi: tidak bisa hapus jika sudah disetujui atau ditolak
-            if (in_array($workOrder->id_verifikator, [2, 3])) {
-                $statusText = $workOrder->id_verifikator == 2 ? 'disetujui' : 'ditolak';
-                Session::flash('error', "Work Order tidak dapat dihapus karena sudah {$statusText}.");
-                return response()->json([
-                    'success' => false,
-                    'message' => "Work Order tidak dapat dihapus karena sudah {$statusText}.",
-                    'redirect' => route('purchasing.work-order', ['from' => 'crud'])
-                ], 403);
+            if (count($barangItems) > 0) {
+                $totalHarga = 0;
+                foreach ($barangItems as $item) {
+                    $totalHarga += ($item['estimasi_harga'] ?? 0) * ($item['jumlah'] ?? 0);
+                }
+                
+                $permintaan = PermintaanBarang::create([
+                    'no_permintaan_barang' => $this->generateNoPermintaan('LOG'),
+                    'id_surat_pengajuan' => $workOrder->id_surat_pengajuan,
+                    'tanggal_permintaan' => $request->tanggal,
+                    'status' => 'Menunggu Logistik',
+                    'total_estimasi_harga' => $totalHarga,
+                    'id_akun' => Session::get('user_id', 1),
+                ]);
+                
+                foreach ($barangItems as $item) {
+                    $master = DaftarBarang::firstOrCreate(
+                        ['nama_barang' => $item['nama_barang'], 'satuan' => $item['satuan'] ?? null],
+                        ['stok' => 0]
+                    );
+                    
+                    DetailBarangPermintaan::create([
+                        'id_permintaan_barang' => $permintaan->id_permintaan_barang,
+                        'id_daftar_barang_master' => $master->id_daftar_barang,
+                        'nama_barang' => $item['nama_barang'],
+                        'jumlah' => (int)($item['jumlah'] ?? 0),
+                        'satuan' => $item['satuan'] ?? null,
+                        'estimasi_harga' => isset($item['estimasi_harga']) ? (float)$item['estimasi_harga'] : null,
+                    ]);
+                }
             }
-
-            if ($workOrder->dokumentasi && Storage::disk('public')->exists($workOrder->dokumentasi)) {
-                Storage::disk('public')->delete($workOrder->dokumentasi);
-            }
-
-            $workOrder->delete();
-
-            // Simpan success message di session sebelum return JSON
-            session()->flash('success', 'Data berhasil dihapus');
-            session()->flash('from_crud', true);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Data berhasil dihapus',
-                'redirect' => route('purchasing.work-order')
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menghapus data: ' . $e->getMessage()
-            ], 500);
         }
     }
+
     
     /**
      * Display permintaan barang page.
@@ -443,35 +361,7 @@ class PurchasingController extends Controller
         return view('purchasing.kirim_barang', compact('permintaanBarang'));
     }
 
-    /**
-     * Show work order detail (API).
-     */
-    public function showWorkOrder($id)
-    {
-        $workOrder = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])->findOrFail($id);
 
-        return response()->json([
-            'id_surat_pengajuan' => $workOrder->id_surat_pengajuan,
-            'no_surat_pengajuan' => $workOrder->no_surat_pengajuan,
-            'no_work_order' => $workOrder->no_surat_pengajuan,
-            'no_wo_parent' => $workOrder->parent ? $workOrder->parent->no_surat_pengajuan : null,
-            'divisi_pengaju' => $workOrder->divisi_pengaju,
-            'ditujukan' => $workOrder->ditujukan,
-            'id_jenis_wo' => $workOrder->id_jenis_wo,
-            'jenis_wo' => $workOrder->jenisWorkOrder ? $workOrder->jenisWorkOrder->nama_jenis_wo : null,
-            'tanggal' => $workOrder->tanggal,
-            'unit' => $workOrder->unit,
-            'unit_code' => $workOrder->unit_code ?? $workOrder->unit,
-            'id_unit' => $workOrder->id_unit,
-            'uraian' => $workOrder->uraian,
-            'dokumentasi' => $workOrder->dokumentasi,
-            'status' => $workOrder->verifikator ? $workOrder->verifikator->nama_status : ($workOrder->status ?? 'Menunggu'),
-            'id_verifikator' => $workOrder->id_verifikator,
-            'harga_barang' => $workOrder->harga_barang,
-            'total_harga' => $workOrder->total_harga,
-            'catatan_penolakan' => $workOrder->catatan_penolakan,
-        ]);
-    }
 
     /**
      * Show permintaan barang detail (API).
@@ -693,93 +583,7 @@ class PurchasingController extends Controller
         }
     }
     
-    /**
-     * Display profile page.
-     */
-    public function profile()
-    {
-        $userId = Session::get('user_id');
-        
-        $user = DB::table('akun')
-            ->join('karyawan', 'akun.id_karyawan', '=', 'karyawan.id_karyawan')
-            ->join('divisi', 'akun.id_divisi', '=', 'divisi.id_divisi')
-            ->where('akun.id_akun', $userId)
-            ->select('akun.*', 'karyawan.*', 'divisi.nama_divisi')
-            ->first();
-        
-        return view('purchasing.profile', compact('user'));
-    }
-    
-    /**
-     * Update profile.
-     */
-    public function updateProfile(Request $request)
-    {
-        $request->validate([
-            'nama_lengkap' => 'required|string|max:255',
-            'no_hp' => 'required|string|max:20',
-            'alamat' => 'required|string|max:255',
-            'jabatan' => 'required|string|max:255',
-        ]);
-        
-        try {
-            $userId = Session::get('user_id');
-            $karyawanId = Session::get('user_karyawan');
-            
-            DB::table('karyawan')
-                ->where('id_karyawan', $karyawanId)
-                ->update([
-                    'nama_lengkap' => $request->nama_lengkap,
-                    'no_hp' => $request->no_hp,
-                    'alamat' => $request->alamat,
-                    'jabatan' => $request->jabatan,
-                    'updated_at' => now(),
-                ]);
-            
-            session([
-                'nama_lengkap' => $request->nama_lengkap,
-                'no_hp' => $request->no_hp,
-                'alamat' => $request->alamat,
-                'jabatan' => $request->jabatan,
-                'updated_at' => now()
-            ]);
-            session()->save();
-            
-            return redirect()->route('purchasing.profile', ['from' => 'crud'])->with('success', 'Data berhasil diperbarui');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Gagal memperbarui profile: ' . $e->getMessage());
-        }
-    }
-    
-    /**
-     * Change password.
-     */
-    public function changePassword(Request $request)
-    {
-        $request->validate([
-            'current_password' => 'required',
-            'new_password' => 'required|min:6|confirmed',
-        ]);
-        
-        try {
-            $user = DB::table('akun')->where('id_akun', Session::get('user_id'))->first();
-            
-            if (!Hash::check($request->current_password, $user->password)) {
-                return back()->with('error', 'Password lama tidak sesuai!');
-            }
-            
-            DB::table('akun')
-                ->where('id_akun', Session::get('user_id'))
-                ->update([
-                    'password' => Hash::make($request->new_password),
-                    'updated_at' => now(),
-                ]);
-            
-            return redirect()->route('purchasing.profile', ['from' => 'crud'])->with('success', 'Password berhasil diubah!');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Gagal mengubah password: ' . $e->getMessage());
-        }
-    }
+
 
     /**
      * Render work order list for purchasing.

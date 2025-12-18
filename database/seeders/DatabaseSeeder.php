@@ -20,14 +20,8 @@ class DatabaseSeeder extends Seeder
             UnitSeeder::class,
             StatusVerifikatorSeeder::class,
             JenisWorkOrderSeeder::class,
-            
-            // Seeders yang membutuhkan data dari seeder sebelumnya
             KaryawanSeeder::class,
-            
-            // Seeders yang membutuhkan data karyawan, divisi, dan peran
             AkunSeeder::class,
-            
-            // Seeders untuk data tambahan
             SuratPengajuanSeeder::class,
             LaporanHarianMekanikSeeder::class,
             LaporanPemakaianBarangSeeder::class,

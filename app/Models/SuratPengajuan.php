@@ -33,9 +33,49 @@ class SuratPengajuan extends Model
     ];
 
     protected $casts = [
+        'tanggal' => 'date',
+        'status_dibaca' => 'boolean',
         'harga_barang' => 'array',
         'total_harga' => 'decimal:2',
     ];
+
+    /**
+     * Scope untuk memfilter berdasarkan divisi pengaju.
+     */
+    public function scopeFromDivisi($query, $namaDivisi)
+    {
+        return $query->where('divisi_pengaju', $namaDivisi);
+    }
+
+    /**
+     * Scope untuk memfilter berdasarkan divisi tujuan.
+     */
+    public function scopeToDivisi($query, $namaDivisi)
+    {
+        return $query->where('ditujukan', $namaDivisi);
+    }
+
+    /**
+     * Scope untuk memfilter berdasarkan ID verifikator.
+     */
+    public function scopeByVerifikator($query, $idVerifikator)
+    {
+        if (is_array($idVerifikator)) {
+            return $query->whereIn('id_verifikator', $idVerifikator);
+        }
+        return $query->where('id_verifikator', $idVerifikator);
+    }
+
+    /**
+     * Scope untuk WO yang dibuat ATAU diterima oleh suatu divisi.
+     */
+    public function scopeDibuatAtauDiterima($query, $divisiNama)
+    {
+        return $query->where(function($q) use ($divisiNama) {
+            $q->where('divisi_pengaju', $divisiNama)
+              ->orWhere('ditujukan', $divisiNama);
+        });
+    }
 
     /**
      * Relasi ke divisi tujuan berdasarkan id_divisi

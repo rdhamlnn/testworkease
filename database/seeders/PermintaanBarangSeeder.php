@@ -4,6 +4,9 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use App\Models\PermintaanBarang;
+use App\Models\SuratPengajuan;
+use App\Models\Akun;
 
 class PermintaanBarangSeeder extends Seeder
 {
@@ -36,8 +39,8 @@ class PermintaanBarangSeeder extends Seeder
         $purchasingId = $purchasing->id_akun ?? DB::table('akun')->where('email', 'purchasing@kce.com')->value('id_akun') ?? 1;
         $atasanId = $atasan->id_akun ?? DB::table('akun')->where('email', 'atasan@kce.com')->value('id_akun') ?? 1;
 
-        // Seed contoh permintaan barang - 001 (header saja)
-        DB::table('permintaan_barang')->updateOrInsert(
+        // Seed contoh permintaan barang - 001
+        PermintaanBarang::updateOrCreate(
             ['no_permintaan_barang' => '001/LOG/KCE/' . now()->year],
             [
                 'id_surat_pengajuan' => $suratAdmId,
@@ -47,8 +50,6 @@ class PermintaanBarangSeeder extends Seeder
                 'total_estimasi_harga' => 600000,
                 'catatan_logistik' => 'Urgent untuk perbaikan kebocoran',
                 'id_logistik' => $logistikId,
-                'id_purchasing' => null,
-                'id_atasan' => null,
                 'id_akun' => $logistikId,
                 'created_at' => now()->subDays(3),
                 'updated_at' => now()->subDays(3),
@@ -56,7 +57,7 @@ class PermintaanBarangSeeder extends Seeder
         );
 
         // Seed contoh permintaan barang - 002
-        DB::table('permintaan_barang')->updateOrInsert(
+        PermintaanBarang::updateOrCreate(
             ['no_permintaan_barang' => '002/LOG/KCE/' . now()->year],
             [
                 'id_surat_pengajuan' => $suratMknId,
@@ -68,7 +69,6 @@ class PermintaanBarangSeeder extends Seeder
                 'catatan_purchasing' => 'Menunggu approval atasan',
                 'id_logistik' => $logistikId,
                 'id_purchasing' => $purchasingId,
-                'id_atasan' => null,
                 'id_akun' => $logistikId,
                 'created_at' => now()->subDays(2),
                 'updated_at' => now()->subDays(2),
@@ -76,7 +76,7 @@ class PermintaanBarangSeeder extends Seeder
         );
 
         // Seed contoh permintaan barang - 003
-        DB::table('permintaan_barang')->updateOrInsert(
+        PermintaanBarang::updateOrCreate(
             ['no_permintaan_barang' => '003/LOG/KCE/' . now()->year],
             [
                 'id_surat_pengajuan' => $suratAdmId,
@@ -96,218 +96,126 @@ class PermintaanBarangSeeder extends Seeder
             ]
         );
 
-        // Tambahan data untuk melengkapi status alur
-        // Disetujui Atasan -> Dibeli Purchasing -> Diterima Logistik -> Diserahkan ke Divisi
-        DB::table('permintaan_barang')->updateOrInsert(
-            ['no_permintaan_barang' => '004/LOG/KCE/' . now()->year],
+        // Tambahan data flow lainnya
+        $additionalEntries = [
             [
-                'id_surat_pengajuan' => $suratAdmId,
-                'tanggal_permintaan' => now()->toDateString(),
-                'id_status_wo' => $getStatusId('Disetujui Atasan'),
+                'no' => '004',
+                'surat_id' => $suratAdmId,
                 'status' => 'Disetujui Atasan',
-                'total_estimasi_harga' => 360000,
-                'catatan_atasan' => 'Disetujui untuk perawatan berkala',
-                'id_logistik' => $logistikId,
-                'id_purchasing' => $purchasingId,
-                'id_atasan' => $atasanId,
-                'id_akun' => $logistikId,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]
-        );
-
-        DB::table('permintaan_barang')->updateOrInsert(
-            ['no_permintaan_barang' => '005/LOG/KCE/' . now()->year],
+                'harga' => 360000,
+                'catatan' => 'Disetujui untuk perawatan berkala',
+                'atasan_id' => $atasanId
+            ],
             [
-                'id_surat_pengajuan' => $suratMknId,
-                'tanggal_permintaan' => now()->toDateString(),
-                'id_status_wo' => $getStatusId('Dibeli Purchasing'),
+                'no' => '005',
+                'surat_id' => $suratMknId,
                 'status' => 'Dibeli Purchasing',
-                'total_estimasi_harga' => 550000,
-                'catatan_purchasing' => 'Pembelian selesai',
-                'id_logistik' => $logistikId,
-                'id_purchasing' => $purchasingId,
-                'id_atasan' => $atasanId,
-                'id_akun' => $logistikId,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]
-        );
-
-        DB::table('permintaan_barang')->updateOrInsert(
-            ['no_permintaan_barang' => '006/LOG/KCE/' . now()->year],
+                'harga' => 550000,
+                'catatan' => 'Pembelian selesai',
+                'atasan_id' => $atasanId,
+                'purchasing_id' => $purchasingId
+            ],
             [
-                'id_surat_pengajuan' => $suratAdmId,
-                'tanggal_permintaan' => now()->toDateString(),
-                'id_status_wo' => $getStatusId('Diterima Logistik'),
+                'no' => '006',
+                'surat_id' => $suratAdmId,
                 'status' => 'Diterima Logistik',
-                'total_estimasi_harga' => 225000,
-                'catatan_logistik' => 'Barang diterima lengkap',
-                'id_logistik' => $logistikId,
-                'id_purchasing' => $purchasingId,
-                'id_atasan' => $atasanId,
-                'id_akun' => $logistikId,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]
-        );
-
-        DB::table('permintaan_barang')->updateOrInsert(
-            ['no_permintaan_barang' => '007/LOG/KCE/' . now()->year],
+                'harga' => 225000,
+                'catatan' => 'Barang diterima lengkap',
+                'atasan_id' => $atasanId,
+                'purchasing_id' => $purchasingId
+            ],
             [
-                'id_surat_pengajuan' => $suratMknId,
-                'tanggal_permintaan' => now()->toDateString(),
-                'id_status_wo' => $getStatusId('Diserahkan ke Divisi'),
+                'no' => '007',
+                'surat_id' => $suratMknId,
                 'status' => 'Diserahkan ke Divisi',
-                'total_estimasi_harga' => 175000,
-                'catatan_logistik' => 'Diserahkan ke divisi pengaju',
-                'id_logistik' => $logistikId,
-                'id_purchasing' => $purchasingId,
-                'id_atasan' => $atasanId,
-                'id_akun' => $logistikId,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]
-        );
-
-        // Tambahan data untuk memastikan semua menu memiliki data
-        // Menunggu Purchasing (untuk menu Permintaan Barang Purchasing)
-        DB::table('permintaan_barang')->updateOrInsert(
-            ['no_permintaan_barang' => '008/LOG/KCE/' . now()->year],
+                'harga' => 175000,
+                'catatan' => 'Diserahkan ke divisi pengaju',
+                'atasan_id' => $atasanId,
+                'purchasing_id' => $purchasingId
+            ],
             [
-                'id_surat_pengajuan' => $suratLogId,
-                'tanggal_permintaan' => now()->subDays(1)->toDateString(),
-                'id_status_wo' => $getStatusId('Menunggu Purchasing'),
+                'no' => '008',
+                'surat_id' => $suratLogId,
                 'status' => 'Menunggu Purchasing',
-                'total_estimasi_harga' => 700000,
-                'catatan_logistik' => 'Urgent untuk perbaikan',
-                'id_logistik' => $logistikId,
-                'id_purchasing' => null,
-                'id_atasan' => null,
-                'id_akun' => $logistikId,
-                'created_at' => now()->subDays(1),
-                'updated_at' => now()->subDays(1),
-            ]
-        );
-
-        // Menunggu Approval Atasan (untuk menu Approval Permintaan Atasan)
-        DB::table('permintaan_barang')->updateOrInsert(
-            ['no_permintaan_barang' => '009/LOG/KCE/' . now()->year],
+                'harga' => 700000,
+                'catatan' => 'Urgent untuk perbaikan'
+            ],
             [
-                'id_surat_pengajuan' => $suratMknId,
-                'tanggal_permintaan' => now()->subDays(1)->toDateString(),
-                'id_status_wo' => $getStatusId('Menunggu Approval Atasan'),
+                'no' => '009',
+                'surat_id' => $suratMknId,
                 'status' => 'Menunggu Approval Atasan',
-                'total_estimasi_harga' => 850000,
-                'catatan_logistik' => 'Butuh approval karena harga tinggi',
-                'catatan_purchasing' => 'Menunggu approval atasan',
-                'id_logistik' => $logistikId,
-                'id_purchasing' => $purchasingId,
-                'id_atasan' => null,
-                'id_akun' => $logistikId,
-                'created_at' => now()->subDays(1),
-                'updated_at' => now()->subDays(1),
-            ]
-        );
-
-        // Ditolak Atasan (untuk menu Riwayat Approval Atasan)
-        DB::table('permintaan_barang')->updateOrInsert(
-            ['no_permintaan_barang' => '010/LOG/KCE/' . now()->year],
+                'harga' => 850000,
+                'catatan' => 'Butuh approval karena harga tinggi',
+                'purchasing_id' => $purchasingId
+            ],
             [
-                'id_surat_pengajuan' => $suratAdmId,
-                'tanggal_permintaan' => now()->subDays(4)->toDateString(),
-                'id_status_wo' => $getStatusId('Ditolak Atasan'),
+                'no' => '010',
+                'surat_id' => $suratAdmId,
                 'status' => 'Ditolak Atasan',
-                'total_estimasi_harga' => 2000000,
-                'catatan_logistik' => 'Permintaan komponen premium',
-                'catatan_purchasing' => 'Dikirim untuk approval',
-                'catatan_atasan' => 'Ditolak karena anggaran tidak mencukupi',
-                'id_logistik' => $logistikId,
-                'id_purchasing' => $purchasingId,
-                'id_atasan' => $atasanId,
-                'id_akun' => $logistikId,
-                'created_at' => now()->subDays(4),
-                'updated_at' => now()->subDays(4),
-            ]
-        );
-
-        // Tambahan data untuk Disetujui Atasan (untuk menu Beli Barang Purchasing)
-        DB::table('permintaan_barang')->updateOrInsert(
-            ['no_permintaan_barang' => '011/LOG/KCE/' . now()->year],
+                'harga' => 2000000,
+                'catatan' => 'Ditolak karena anggaran tidak mencukupi',
+                'atasan_id' => $atasanId,
+                'purchasing_id' => $purchasingId
+            ],
             [
-                'id_surat_pengajuan' => $suratAdmId,
-                'tanggal_permintaan' => now()->subDays(2)->toDateString(),
-                'id_status_wo' => $getStatusId('Disetujui Atasan'),
+                'no' => '011',
+                'surat_id' => $suratAdmId,
                 'status' => 'Disetujui Atasan',
-                'total_estimasi_harga' => 1200000,
-                'catatan_atasan' => 'Disetujui untuk perawatan berkala',
-                'id_logistik' => $logistikId,
-                'id_purchasing' => $purchasingId,
-                'id_atasan' => $atasanId,
-                'id_akun' => $logistikId,
-                'created_at' => now()->subDays(2),
-                'updated_at' => now()->subDays(2),
-            ]
-        );
-
-        // Tambahan data untuk Dibeli Purchasing (untuk menu Kirim Barang Purchasing)
-        DB::table('permintaan_barang')->updateOrInsert(
-            ['no_permintaan_barang' => '012/LOG/KCE/' . now()->year],
+                'harga' => 1200000,
+                'catatan' => 'Disetujui untuk perawatan berkala',
+                'atasan_id' => $atasanId,
+                'purchasing_id' => $purchasingId
+            ],
             [
-                'id_surat_pengajuan' => $suratMknId,
-                'tanggal_permintaan' => now()->subDays(1)->toDateString(),
-                'id_status_wo' => $getStatusId('Dibeli Purchasing'),
+                'no' => '012',
+                'surat_id' => $suratMknId,
                 'status' => 'Dibeli Purchasing',
-                'total_estimasi_harga' => 450000,
-                'catatan_purchasing' => 'Pembelian selesai, siap dikirim',
-                'id_logistik' => $logistikId,
-                'id_purchasing' => $purchasingId,
-                'id_atasan' => $atasanId,
-                'id_akun' => $logistikId,
-                'created_at' => now()->subDays(1),
-                'updated_at' => now()->subDays(1),
-            ]
-        );
-
-        // Tambahan data untuk Dikirim Purchasing (untuk menu Terima Barang Logistik)
-        DB::table('permintaan_barang')->updateOrInsert(
-            ['no_permintaan_barang' => '013/LOG/KCE/' . now()->year],
+                'harga' => 450000,
+                'catatan' => 'Pembelian selesai, siap dikirim',
+                'atasan_id' => $atasanId,
+                'purchasing_id' => $purchasingId
+            ],
             [
-                'id_surat_pengajuan' => $suratAdmId,
-                'tanggal_permintaan' => now()->toDateString(),
-                'id_status_wo' => $getStatusId('Dikirim Purchasing'),
+                'no' => '013',
+                'surat_id' => $suratAdmId,
                 'status' => 'Dikirim Purchasing',
-                'total_estimasi_harga' => 650000,
-                'catatan_logistik' => 'Menunggu penerimaan',
-                'catatan_purchasing' => 'Sudah dikirim ke logistik',
-                'catatan_atasan' => 'Disetujui',
-                'id_logistik' => $logistikId,
-                'id_purchasing' => $purchasingId,
-                'id_atasan' => $atasanId,
-                'id_akun' => $logistikId,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]
-        );
-
-        // Tambahan data untuk Diterima Logistik (untuk menu Serahkan Barang Logistik)
-        DB::table('permintaan_barang')->updateOrInsert(
-            ['no_permintaan_barang' => '014/LOG/KCE/' . now()->year],
+                'harga' => 650000,
+                'catatan' => 'Sudah dikirim ke logistik',
+                'atasan_id' => $atasanId,
+                'purchasing_id' => $purchasingId
+            ],
             [
-                'id_surat_pengajuan' => $suratMknId,
-                'tanggal_permintaan' => now()->toDateString(),
-                'id_status_wo' => $getStatusId('Diterima Logistik'),
+                'no' => '014',
+                'surat_id' => $suratMknId,
                 'status' => 'Diterima Logistik',
-                'total_estimasi_harga' => 285000,
-                'catatan_logistik' => 'Barang diterima lengkap, siap diserahkan',
-                'id_logistik' => $logistikId,
-                'id_purchasing' => $purchasingId,
-                'id_atasan' => $atasanId,
-                'id_akun' => $logistikId,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]
-        );
+                'harga' => 285000,
+                'catatan' => 'Barang diterima lengkap, siap diserahkan',
+                'atasan_id' => $atasanId,
+                'purchasing_id' => $purchasingId
+            ],
+        ];
+
+        foreach ($additionalEntries as $entry) {
+            PermintaanBarang::updateOrCreate(
+                ['no_permintaan_barang' => $entry['no'] . '/LOG/KCE/' . now()->year],
+                [
+                    'id_surat_pengajuan' => $entry['surat_id'],
+                    'tanggal_permintaan' => now()->toDateString(),
+                    'id_status_wo' => $getStatusId($entry['status']),
+                    'status' => $entry['status'],
+                    'total_estimasi_harga' => $entry['harga'],
+                    'catatan_atasan' => ($entry['atasan_id'] ?? null) ? ($entry['catatan'] ?? 'Disetujui') : null,
+                    'catatan_purchasing' => ($entry['purchasing_id'] ?? null) ? ($entry['catatan'] ?? 'Selesai') : null,
+                    'catatan_logistik' => $entry['catatan'],
+                    'id_logistik' => $logistikId,
+                    'id_purchasing' => $entry['purchasing_id'] ?? null,
+                    'id_atasan' => $entry['atasan_id'] ?? null,
+                    'id_akun' => $logistikId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+        }
     }
 }
 

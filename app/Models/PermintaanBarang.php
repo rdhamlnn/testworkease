@@ -26,6 +26,11 @@ class PermintaanBarang extends Model
         'id_akun',
     ];
 
+    protected $casts = [
+        'tanggal_permintaan' => 'date',
+        'total_estimasi_harga' => 'decimal:2',
+    ];
+
     public function suratPengajuan()
     {
         return $this->belongsTo(SuratPengajuan::class, 'id_surat_pengajuan');
@@ -54,6 +59,20 @@ class PermintaanBarang extends Model
     public function statusWo()
     {
         return $this->belongsTo(StatusWo::class, 'id_status_wo');
+    }
+
+    /**
+     * Detail barang permintaan (many-to-many ke master daftar_barang via pivot).
+     */
+    /**
+     * Scope untuk memfilter berdasarkan status.
+     */
+    public function scopeForStatus($query, $status)
+    {
+        if (is_array($status)) {
+            return $query->whereIn('status', $status);
+        }
+        return $query->where('status', $status);
     }
 
     /**

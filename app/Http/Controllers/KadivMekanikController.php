@@ -22,6 +22,8 @@ use App\Exports\LaporanPemakaianBarangExport;
 
 class KadivMekanikController extends Controller
 {
+    use \App\Traits\WorkOrderActions, \App\Traits\UserProfileActions;
+
     /**
      * Calculate week date range for real calendar weeks (Monday to Sunday) using Indonesia timezone
      */
@@ -35,20 +37,11 @@ class KadivMekanikController extends Controller
         $lastDayOfMonth->modify('last day of this month');
         $lastDay = (int)$lastDayOfMonth->format('d');
         
-        // Calculate week range based on date ranges in the month
-        // Minggu 1: tanggal 1-7
-        // Minggu 2: tanggal 8-14
-        // Minggu 3: tanggal 15-21
-        // Minggu 4: tanggal 22-28
-        // Minggu 5: tanggal 29 sampai akhir bulan (jika ada)
-        
         $startDay = (($weekNumber - 1) * 7) + 1;
         $endDay = min($startDay + 6, $lastDay);
         
         // If week number is beyond the month, return null
-        if ($startDay > $lastDay) {
-            return null;
-        }
+        if ($startDay > $lastDay) return null;
         
         // Create start and end dates
         $weekStartDate = new \DateTime($tahun . '-' . str_pad($bulan, 2, '0', STR_PAD_LEFT) . '-' . str_pad($startDay, 2, '0', STR_PAD_LEFT), new \DateTimeZone('Asia/Makassar'));
@@ -71,8 +64,6 @@ class KadivMekanikController extends Controller
         $totalLaporanBarang = LaporanPemakaianBarang::count();
         $workOrderPending = SuratPengajuan::where('status', 'Menunggu')->count();
 
-        // ========== DATA CHART REAL DARI DATABASE ==========
-        
         // 1. Status Work Order yang Dikelola
         $managedWorkOrderStatus = SuratPengajuan::select('status', DB::raw('count(*) as total'))
             ->groupBy('status')
@@ -80,7 +71,7 @@ class KadivMekanikController extends Controller
             ->pluck('total', 'status')
             ->toArray();
 
-        // 2. Trend Laporan (3 bulan terakhir - lebih sederhana)
+        // 2. Trend Laporan (3 bulan terakhir)
         $monthlyReportTrend = LaporanHarianMekanik::select(
                 DB::raw('MONTH(tanggal) as month'),
                 DB::raw('YEAR(tanggal) as year'),
@@ -101,21 +92,14 @@ class KadivMekanikController extends Controller
             ->toArray();
 
         // 4. Aktivitas Terbaru
-        $recentActivities = SuratPengajuan::join('karyawan', 'surat_pengajuan.id_akun', '=', 'karyawan.id_karyawan')
-            ->select('surat_pengajuan.*', 'karyawan.nama_lengkap')
-            ->orderBy('surat_pengajuan.created_at', 'desc')
+        $recentActivities = SuratPengajuan::with('akun.karyawan')
+            ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
 
         return view('kadivmekanik.dashboard', compact(
-            'totalWorkOrder', 
-            'totalLaporanHarian', 
-            'totalLaporanBarang', 
-            'workOrderPending',
-            'managedWorkOrderStatus',
-            'monthlyReportTrend',
-            'materialUsagePerUnit',
-            'recentActivities'
+            'totalWorkOrder', 'totalLaporanHarian', 'totalLaporanBarang', 'workOrderPending',
+            'managedWorkOrderStatus', 'monthlyReportTrend', 'materialUsagePerUnit', 'recentActivities'
         ));
     }
 
@@ -124,44 +108,17 @@ class KadivMekanikController extends Controller
      */
     public function workOrder()
     {
-        $userDivisi = Session::get('user_divisi');
+        $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Mekanik';
         
-        // Ambil nama divisi user yang login
-        $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi') ?? 'Mekanik';
-        
-        // WO yang dibuat oleh divisi pengaju (akun yang login)
         $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])
-            ->where('divisi_pengaju', $userDivisiNama)
+            ->fromDivisi($userDivisiNama)
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($item) {
-                return (object)[
-                    'id' => $item->id_surat_pengajuan,
-                    'id_surat_pengajuan' => $item->id_surat_pengajuan,
-                    'no_surat_pengajuan' => $item->no_surat_pengajuan,
-                    'no_work_order' => $item->no_surat_pengajuan,
-                    'divisi_pengaju' => $item->divisi_pengaju,
-                    'ditujukan' => $item->ditujukan,
-                    'tanggal' => $item->tanggal,
-                    'unit_code' => $item->unit ?: '',
-                    'uraian' => $item->uraian,
-                    'dokumentasi' => $item->dokumentasi,
-                    'status' => $item->verifikator->nama_status ?? ($item->status ?? 'Menunggu'),
-                    'id_verifikator' => $item->id_verifikator,
-                    'verifikator' => $item->verifikator,
-                    'divisi_nama' => $item->divisi->nama_divisi ?? '',
-                    'unit_nama' => $item->getRelation('unit') ? $item->getRelation('unit')->nama_unit : '',
-                    'akun_email' => $item->akun->email ?? '',
-                    'jenisWorkOrder' => $item->jenisWorkOrder
-                ];
-            });
+            ->get();
 
-        // Ambil data untuk dropdown
         $divisi = Divisi::where('nama_divisi', '!=', 'Administrator')->get();
         $unit = Unit::all();
-        $karyawan = DB::table('karyawan')->get();
+        $karyawan = Karyawan::all();
         $unitOptions = Unit::all();
-        // Filter jenis work order: Mekanik tidak bisa mengajukan "Perbaikan" karena perbaikan hanya ditujukan ke Mekanik oleh divisi lain
         $jenisWorkOrder = \App\Models\JenisWorkOrder::where('nama_jenis_wo', '!=', 'Perbaikan')->get();
         $daftarBarang = \App\Models\DaftarBarang::all();
         
@@ -175,39 +132,14 @@ class KadivMekanikController extends Controller
      */
     public function daftarPengajuanWorkOrder()
     {
-        $userDivisi = Session::get('user_divisi');
+        $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Mekanik';
         
-        // Ambil nama divisi user yang login
-        $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi') ?? 'Mekanik';
-        
-        // WO yang diterima oleh divisi user yang login (dari divisi lain)
-        // Hanya menampilkan yang status Menunggu (id_verifikator = 1)
         $submissionWorkOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])
-            ->where('ditujukan', $userDivisiNama)
+            ->toDivisi($userDivisiNama)
             ->where('divisi_pengaju', '!=', $userDivisiNama)
-            ->where('id_verifikator', 1) // Hanya status Menunggu (1)
+            ->byVerifikator(1) // Hanya status Menunggu
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($item) {
-                return (object)[
-                    'id' => $item->id_surat_pengajuan,
-                    'id_surat_pengajuan' => $item->id_surat_pengajuan,
-                    'no_surat_pengajuan' => $item->no_surat_pengajuan,
-                    'no_work_order' => $item->no_surat_pengajuan,
-                    'divisi_pengaju' => $item->divisi_pengaju,
-                    'ditujukan' => $item->ditujukan,
-                    'tanggal' => $item->tanggal,
-                    'unit_code' => $item->unit ?: '',
-                    'uraian' => $item->uraian,
-                    'dokumentasi' => $item->dokumentasi,
-                    'status' => $item->verifikator->nama_status ?? ($item->status ?? 'Menunggu'),
-                    'id_verifikator' => $item->id_verifikator,
-                    'divisi_nama' => $item->divisi->nama_divisi ?? '',
-                    'unit_nama' => $item->getRelation('unit') ? $item->getRelation('unit')->nama_unit : '',
-                    'akun_email' => $item->akun->email ?? '',
-                    'jenisWorkOrder' => $item->jenisWorkOrder
-                ];
-            });
+            ->get();
 
         return view('kadivmekanik.daftar_pengajuan_work_order', compact('submissionWorkOrders'));
     }
@@ -217,25 +149,13 @@ class KadivMekanikController extends Controller
      */
     public function riwayatWorkOrder()
     {
-        $userDivisi = Session::get('user_divisi');
+        $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Mekanik';
         
-        // Ambil nama divisi user yang login
-        $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi') ?? 'Mekanik';
-        
-        // WO yang sudah selesai (status Disetujui - id_verifikator = 2) atau Ditolak (id_verifikator = 3)
-        // Gabungkan WO yang dibuat dan diterima oleh divisi user yang login
-        $workOrdersDibuat = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])
-            ->where('divisi_pengaju', $userDivisiNama)
-            ->whereIn('id_verifikator', [2, 3]) // Status Disetujui (2) dan Ditolak (3)
+        $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])
+            ->dibuatAtauDiterima($userDivisiNama)
+            ->byVerifikator([2, 3]) // Status Disetujui dan Ditolak
+            ->orderBy('created_at', 'desc')
             ->get();
-        
-        $workOrdersDiterima = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])
-            ->where('ditujukan', $userDivisiNama)
-            ->where('divisi_pengaju', '!=', $userDivisiNama)
-            ->whereIn('id_verifikator', [2, 3]) // Status Disetujui (2) dan Ditolak (3)
-            ->get();
-        
-        $workOrders = $workOrdersDibuat->merge($workOrdersDiterima)->sortByDesc('created_at');
         
         return view('kadivmekanik.riwayat_work_order', compact('workOrders'));
     }
@@ -246,8 +166,6 @@ class KadivMekanikController extends Controller
     public function storeWorkOrder(Request $request)
     {
         $request->validate([
-            'divisi_pengaju' => 'required|string',
-            'ditujukan' => 'required|string',
             'id_jenis_wo' => 'required|exists:jenis_work_order,id_jenis_wo',
             'tanggal' => 'required|date',
             'unit' => 'required|string',
@@ -255,33 +173,16 @@ class KadivMekanikController extends Controller
             'dokumentasi' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
-        // Validasi: Divisi lain tidak boleh mengajukan ke Admin
-        $adminDivisi = DB::table('divisi')->where('nama_divisi', 'Administrator')->first();
-        if ($adminDivisi && $request->ditujukan === 'Administrator') {
-            return redirect()->back()
-                ->with('error', 'Tidak dapat mengajukan work order ke Administrator. Administrator hanya berfungsi untuk memantau dan mengelola data.');
+        if ($request->ditujukan === 'Administrator') {
+            return redirect()->back()->with('error', 'Tidak dapat mengajukan ke Administrator.');
         }
 
         try {
-            // Handle file upload
-            $dokumentasiPath = null;
-            if ($request->hasFile('dokumentasi')) {
-                $dokumentasiPath = $request->file('dokumentasi')->store('work-orders', 'public');
-            }
+            $dokumentasiPath = $request->hasFile('dokumentasi') ? $this->handleUpload($request->file('dokumentasi'), 'work-orders') : null;
+            $unitId = Unit::where('nama_unit', $request->unit)->value('id_unit') ?: 1;
 
-            // Get unit ID
-            $unitId = 1; // Default
-            $selectedUnit = Unit::where('nama_unit', $request->unit)->first();
-            if ($selectedUnit) {
-                $unitId = $selectedUnit->id_unit;
-            }
-
-            // Generate work order number
-            $workOrderNumber = $this->generateWorkOrderNumber();
-
-            // Simpan ke database
             SuratPengajuan::create([
-                'no_surat_pengajuan' => $workOrderNumber,
+                'no_surat_pengajuan' => $this->generateWorkOrderNumber('MKN'),
                 'ditujukan' => $request->ditujukan,
                 'id_jenis_wo' => $request->id_jenis_wo,
                 'tanggal' => $request->tanggal,
@@ -290,51 +191,16 @@ class KadivMekanikController extends Controller
                 'uraian' => $request->uraian,
                 'dokumentasi' => $dokumentasiPath,
                 'id_divisi' => session('user_divisi', 1),
-                'id_peran' => 2, // KadivMekanik role
-                'id_verifikator' => 1, // Default status
+                'id_peran' => 2,
+                'id_verifikator' => 1,
                 'id_akun' => session('user_id', 1),
                 'id_unit' => $unitId
             ]);
 
             return redirect()->route('kadivmekanik.work-order', ['from' => 'crud'])->with('success', 'Data berhasil ditambahkan');
         } catch (\Exception $e) {
-            return redirect()->route('kadivmekanik.work-order')->with('error', 'Gagal membuat work order: ' . $e->getMessage());
+            return redirect()->route('kadivmekanik.work-order')->with('error', 'Gagal: ' . $e->getMessage());
         }
-    }
-
-    /**
-     * Show work order.
-     */
-    public function showWorkOrder($id)
-    {
-        $workOrder = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])->findOrFail($id);
-        
-        // Generate URL untuk dokumentasi jika ada
-        $dokumentasiUrl = null;
-        if ($workOrder->dokumentasi) {
-            // Gunakan asset() helper untuk generate URL relatif yang kompatibel dengan Laragon
-            $dokumentasiUrl = asset('storage/' . $workOrder->dokumentasi);
-        }
-        
-        $data = [
-            'id_surat_pengajuan' => $workOrder->id_surat_pengajuan,
-            'no_surat_pengajuan' => $workOrder->no_surat_pengajuan,
-            'no_work_order' => $workOrder->no_surat_pengajuan,
-            'divisi_pengaju' => $workOrder->divisi_pengaju,
-            'ditujukan' => $workOrder->ditujukan,
-            'id_jenis_wo' => $workOrder->id_jenis_wo,
-            'jenis_wo' => $workOrder->jenisWorkOrder ? $workOrder->jenisWorkOrder->nama_jenis_wo : null,
-            'tanggal' => $workOrder->tanggal,
-            'unit' => $workOrder->unit,
-            'id_unit' => $workOrder->id_unit,
-            'uraian' => $workOrder->uraian,
-            'dokumentasi' => $workOrder->dokumentasi,
-            'dokumentasi_url' => $dokumentasiUrl, // URL lengkap untuk akses file
-            'status' => $workOrder->verifikator ? $workOrder->verifikator->nama_status : ($workOrder->status ?? 'Menunggu'),
-            'id_verifikator' => $workOrder->id_verifikator,
-        ];
-
-        return response()->json($data);
     }
 
     /**
@@ -343,8 +209,6 @@ class KadivMekanikController extends Controller
     public function updateWorkOrder(Request $request, $id)
     {
         $request->validate([
-            'divisi_pengaju' => 'required|string',
-            'ditujukan' => 'required|string',
             'id_jenis_wo' => 'required|exists:jenis_work_order,id_jenis_wo',
             'tanggal' => 'required|date',
             'unit' => 'required|string',
@@ -354,39 +218,20 @@ class KadivMekanikController extends Controller
 
         try {
             $workOrder = SuratPengajuan::findOrFail($id);
-            
-            // Validasi: tidak bisa edit jika sudah disetujui atau ditolak
             if (in_array($workOrder->id_verifikator, [2, 3])) {
-                return redirect()->back()
-                    ->with('error', 'Work Order tidak dapat diedit karena sudah disetujui atau ditolak.');
+                return redirect()->back()->with('error', 'Work Order sudah diproses.');
             }
 
-            // Handle file upload if new file is provided or delete if requested
             $dokumentasiPath = $workOrder->dokumentasi;
-            
-            // Check if user wants to delete dokumentasi
             if ($request->has('delete_dokumentasi') && $request->delete_dokumentasi == '1') {
-                // Delete old file if exists
-                if ($workOrder->dokumentasi && Storage::disk('public')->exists($workOrder->dokumentasi)) {
-                    Storage::disk('public')->delete($workOrder->dokumentasi);
-                }
+                $this->deleteFile($workOrder->dokumentasi);
                 $dokumentasiPath = null;
             } elseif ($request->hasFile('dokumentasi')) {
-                // Delete old file if exists
-                if ($workOrder->dokumentasi && Storage::disk('public')->exists($workOrder->dokumentasi)) {
-                    Storage::disk('public')->delete($workOrder->dokumentasi);
-                }
-                $dokumentasiPath = $request->file('dokumentasi')->store('work-orders', 'public');
+                $dokumentasiPath = $this->handleUpload($request->file('dokumentasi'), 'work-orders', $workOrder->dokumentasi);
             }
 
-            // Get unit ID
-            $unitId = 1; // Default
-            $selectedUnit = Unit::where('nama_unit', $request->unit)->first();
-            if ($selectedUnit) {
-                $unitId = $selectedUnit->id_unit;
-            }
+            $unitId = Unit::where('nama_unit', $request->unit)->value('id_unit') ?: 1;
 
-            // Update database
             $workOrder->update([
                 'ditujukan' => $request->ditujukan,
                 'id_jenis_wo' => $request->id_jenis_wo,
@@ -400,225 +245,7 @@ class KadivMekanikController extends Controller
 
             return redirect()->route('kadivmekanik.work-order', ['from' => 'crud'])->with('success', 'Data berhasil diperbarui');
         } catch (\Exception $e) {
-            return redirect()->route('kadivmekanik.work-order')->with('error', 'Gagal mengupdate work order: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Delete work order.
-     */
-    public function hapusWorkOrder($id)
-    {
-        try {
-            $workOrder = SuratPengajuan::findOrFail($id);
-            
-            // Validasi: tidak bisa hapus jika sudah disetujui atau ditolak
-            if (in_array($workOrder->id_verifikator, [2, 3])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Work Order tidak dapat dihapus karena sudah disetujui atau ditolak.'
-                ], 403);
-            }
-
-            // Delete file if exists
-            if ($workOrder->dokumentasi && Storage::disk('public')->exists($workOrder->dokumentasi)) {
-                Storage::disk('public')->delete($workOrder->dokumentasi);
-            }
-
-            // Delete from database
-            $workOrder->delete();
-
-            // Simpan success message di session sebelum return JSON
-            session()->flash('success', 'Data berhasil dihapus!');
-            session()->flash('from_crud', true);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Data berhasil dihapus!',
-                'redirect' => route('kadivmekanik.work-order')
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menghapus data: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Approve work order.
-     */
-    public function approveWorkOrder($id)
-    {
-        try {
-            $workOrder = SuratPengajuan::findOrFail($id);
-            $userDivisi = Session::get('user_divisi');
-            $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi');
-            
-            // Hanya divisi yang dituju yang bisa approve
-            if ($workOrder->ditujukan !== $userDivisiNama) {
-                Session::flash('error', 'Anda tidak memiliki akses untuk menyetujui work order ini.');
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Anda tidak memiliki akses untuk menyetujui work order ini.',
-                    'redirect' => route('kadivmekanik.daftar-pengajuan-work-order', ['from' => 'crud'])
-                ], 403);
-            }
-            
-            $workOrder->update([
-                'id_verifikator' => 2, // 2 = Disetujui
-                'status' => 'Disetujui'
-            ]);
-            
-            // Set session message untuk notifikasi toast
-            Session::flash('success', 'Work Order berhasil disetujui!');
-            
-            // Return JSON untuk AJAX dengan redirect URL yang sudah include from=crud
-            $redirectUrl = route('kadivmekanik.daftar-pengajuan-work-order', ['from' => 'crud']);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Work Order berhasil disetujui!',
-                'redirect' => $redirectUrl
-            ]);
-        } catch (\Exception $e) {
-            Session::flash('error', 'Gagal menyetujui work order: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menyetujui work order: ' . $e->getMessage(),
-                'redirect' => route('kadivmekanik.daftar-pengajuan-work-order', ['from' => 'crud'])
-            ], 500);
-        }
-    }
-
-    /**
-     * Reject work order.
-     */
-    public function rejectWorkOrder($id)
-    {
-        try {
-            $workOrder = SuratPengajuan::findOrFail($id);
-            $userDivisi = Session::get('user_divisi');
-            $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi');
-            
-            // Hanya divisi yang dituju yang bisa reject
-            if ($workOrder->ditujukan !== $userDivisiNama) {
-                Session::flash('error', 'Anda tidak memiliki akses untuk menolak work order ini.');
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Anda tidak memiliki akses untuk menolak work order ini.',
-                    'redirect' => route('kadivmekanik.daftar-pengajuan-work-order', ['from' => 'crud'])
-                ], 403);
-            }
-            
-            $workOrder->update([
-                'id_verifikator' => 3, // 3 = Ditolak
-                'status' => 'Ditolak'
-            ]);
-            
-            // Set session message untuk notifikasi toast
-            Session::flash('success', 'Work Order berhasil ditolak!');
-            
-            // Return JSON untuk AJAX dengan redirect URL yang sudah include from=crud
-            $redirectUrl = route('kadivmekanik.daftar-pengajuan-work-order', ['from' => 'crud']);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Work Order berhasil ditolak!',
-                'redirect' => $redirectUrl
-            ]);
-        } catch (\Exception $e) {
-            Session::flash('error', 'Gagal menolak work order: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menolak work order: ' . $e->getMessage(),
-                'redirect' => route('kadivmekanik.daftar-pengajuan-work-order', ['from' => 'crud'])
-            ], 500);
-        }
-    }
-
-    /**
-     * Cek stok barang untuk work order
-     */
-    public function cekStokBarang($id)
-    {
-        try {
-            $workOrder = SuratPengajuan::findOrFail($id);
-            
-            // Cek apakah ada permintaan barang terkait
-            $permintaanBarang = PermintaanBarang::where('id_surat_pengajuan', $id)->first();
-            
-            if (!$permintaanBarang) {
-                return response()->json([
-                    'success' => true,
-                    'has_barang' => false,
-                    'message' => 'Work Order ini tidak memiliki daftar barang (mungkin jenis jasa/perbaikan)',
-                    'stok_info' => []
-                ]);
-            }
-            
-            // Ambil detail barang
-            $detailBarang = DetailBarangPermintaan::where('id_permintaan_barang', $permintaanBarang->id_permintaan_barang)
-                ->with('masterBarang')
-                ->get();
-            
-            $stokInfo = [];
-            $allStokCukup = true;
-            $adaBarangHabis = false;
-            
-            foreach ($detailBarang as $detail) {
-                $namaBarang = $detail->nama_barang;
-                $jumlahDiminta = $detail->jumlah ?? 0;
-                
-                // Cek stok dari master barang
-                $masterBarang = null;
-                if ($detail->id_daftar_barang_master) {
-                    $masterBarang = DaftarBarang::find($detail->id_daftar_barang_master);
-                } else {
-                    // Jika tidak ada id_daftar_barang_master, cari berdasarkan nama
-                    $masterBarang = DaftarBarang::where('nama_barang', $namaBarang)->first();
-                }
-                
-                $stokTersedia = $masterBarang ? ($masterBarang->stok ?? 0) : 0;
-                $stokCukup = $stokTersedia >= $jumlahDiminta;
-                $statusStok = 'cukup';
-                
-                if ($stokTersedia == 0) {
-                    $statusStok = 'habis';
-                    $adaBarangHabis = true;
-                    $allStokCukup = false;
-                } elseif ($stokTersedia < $jumlahDiminta) {
-                    $statusStok = 'kurang';
-                    $allStokCukup = false;
-                }
-                
-                $stokInfo[] = [
-                    'nama_barang' => $namaBarang,
-                    'jumlah_diminta' => $jumlahDiminta,
-                    'satuan' => $detail->satuan ?? '-',
-                    'stok_tersedia' => $stokTersedia,
-                    'status_stok' => $statusStok,
-                    'stok_cukup' => $stokCukup,
-                    'kekurangan' => max(0, $jumlahDiminta - $stokTersedia)
-                ];
-            }
-            
-            return response()->json([
-                'success' => true,
-                'has_barang' => true,
-                'all_stok_cukup' => $allStokCukup,
-                'ada_barang_habis' => $adaBarangHabis,
-                'stok_info' => $stokInfo,
-                'message' => $allStokCukup 
-                    ? 'Semua stok barang tersedia' 
-                    : ($adaBarangHabis ? 'Ada barang yang habis' : 'Ada barang yang stoknya kurang')
-            ]);
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengecek stok: ' . $e->getMessage()
-            ], 500);
+            return redirect()->route('kadivmekanik.work-order')->with('error', 'Gagal: ' . $e->getMessage());
         }
     }
 
@@ -1886,118 +1513,11 @@ class KadivMekanikController extends Controller
 
     /**
      * Display profile page.
+     * Get the view name for profile.
      */
-    public function profile()
+    protected function getProfileView()
     {
-        $user = DB::table('akun')
-            ->join('karyawan', 'akun.id_karyawan', '=', 'karyawan.id_karyawan')
-            ->join('divisi', 'akun.id_divisi', '=', 'divisi.id_divisi')
-            ->where('akun.id_akun', session('user_id'))
-            ->select('akun.*', 'karyawan.*', 'divisi.nama_divisi')
-            ->first();
-
-        return view('kadivmekanik.profile', compact('user'));
-    }
-
-    /**
-     * Update profile.
-     */
-    public function updateProfile(Request $request)
-    {
-        $request->validate([
-            'nama_lengkap' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
-            'no_hp' => 'required|string|max:20',
-            'alamat' => 'required|string|max:255',
-            'jabatan' => 'required|string|max:255',
-        ]);
-
-        try {
-            $userId = session('user_id');
-            $karyawanId = session('user_karyawan');
-            
-            // Update karyawan data
-            DB::table('karyawan')
-                ->where('id_karyawan', $karyawanId)
-                ->update([
-                    'nama_lengkap' => $request->nama_lengkap,
-                    'no_hp' => $request->no_hp,
-                    'alamat' => $request->alamat,
-                    'jabatan' => $request->jabatan,
-                    'updated_at' => now(),
-                ]);
-
-            // Update email di tabel akun
-            DB::table('akun')
-                ->where('id_akun', $userId)
-                ->update([
-                    'email' => $request->email,
-                    'updated_at' => now(),
-                ]);
-
-            // Update session data
-            session([
-                'nama_lengkap' => $request->nama_lengkap,
-                'email' => $request->email,
-                'no_hp' => $request->no_hp,
-                'alamat' => $request->alamat,
-                'jabatan' => $request->jabatan,
-                'updated_at' => now()
-            ]);
-            
-            // Save session to ensure it persists
-            session()->save();
-
-            return redirect()->route('kadivmekanik.profile', ['from' => 'crud'])->with('success', 'Data berhasil diperbarui');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Gagal memperbarui profile: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Change password.
-     */
-    public function changePassword(Request $request)
-    {
-        $request->validate([
-            'current_password' => 'required',
-            'new_password' => 'required|min:6|confirmed',
-        ]);
-
-        try {
-            $user = DB::table('akun')->where('id_akun', session('user_id'))->first();
-            
-            if (!Hash::check($request->current_password, $user->password)) {
-                return back()->with('error', 'Password lama tidak sesuai!');
-            }
-
-            DB::table('akun')
-                ->where('id_akun', session('user_id'))
-                ->update([
-                    'password' => Hash::make($request->new_password),
-                    'updated_at' => now(),
-                ]);
-
-            return redirect()->route('kadivmekanik.profile', ['from' => 'crud'])->with('success', 'Password berhasil diubah!');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Gagal mengubah password: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Upload photo.
-     */
-    public function uploadPhoto(Request $request)
-    {
-        return redirect()->route('kadivmekanik.profile')->with('error', 'Fitur upload foto dinonaktifkan.');
-    }
-
-    /**
-     * Delete photo.
-     */
-    public function deletePhoto()
-    {
-        return redirect()->route('kadivmekanik.profile')->with('error', 'Fitur foto profil dinonaktifkan.');
+        return 'kadivmekanik.profile';
     }
 
     /**
@@ -2149,37 +1669,11 @@ class KadivMekanikController extends Controller
      */
     public function getRecentActivities()
     {
-        $activities = SuratPengajuan::join('karyawan', 'surat_pengajuan.id_akun', '=', 'karyawan.id_karyawan')
-            ->select('surat_pengajuan.*', 'karyawan.nama_lengkap')
-            ->orderBy('surat_pengajuan.created_at', 'desc')
+        $activities = SuratPengajuan::with('akun.karyawan')
+            ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
         
         return response()->json($activities);
-    }
-
-    /**
-     * Generate work order number.
-     */
-    private function generateWorkOrderNumber()
-    {
-        $year = Carbon::now('Asia/Makassar')->year;
-        $month = Carbon::now('Asia/Makassar')->month;
-        
-        // Get the last work order number for this year
-        $lastWorkOrder = SuratPengajuan::whereYear('created_at', $year)
-            ->whereMonth('created_at', $month)
-            ->orderBy('created_at', 'desc')
-            ->first();
-        
-        if ($lastWorkOrder) {
-            // Extract sequence number from last work order
-            $lastNumber = explode('/', $lastWorkOrder->no_surat_pengajuan)[0];
-            $sequence = str_pad((int)$lastNumber + 1, 2, '0', STR_PAD_LEFT);
-        } else {
-            $sequence = '01';
-        }
-        
-        return "{$sequence}/MKN/KCE/{$year}";
     }
 }

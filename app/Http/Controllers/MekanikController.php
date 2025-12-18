@@ -15,43 +15,17 @@ use Carbon\Carbon;
 
 class MekanikController extends Controller
 {
+    use \App\Traits\UserProfileActions, \App\Traits\ReportHelper;
+
+
     /**
-     * Calculate week date range for real calendar weeks (Monday to Sunday) using Indonesia timezone
+     * Get the view name for profile.
      */
-    private function calculateWeekRange($tahun, $bulan, $weekNumber)
+    protected function getProfileView()
     {
-        // Get the first day of the month using Indonesia timezone
-        $firstDayOfMonth = new \DateTime($tahun . '-' . str_pad($bulan, 2, '0', STR_PAD_LEFT) . '-01', new \DateTimeZone('Asia/Makassar'));
-        
-        // Get the last day of the month
-        $lastDayOfMonth = clone $firstDayOfMonth;
-        $lastDayOfMonth->modify('last day of this month');
-        $lastDay = (int)$lastDayOfMonth->format('d');
-        
-        // Calculate week range based on date ranges in the month
-        // Minggu 1: tanggal 1-7
-        // Minggu 2: tanggal 8-14
-        // Minggu 3: tanggal 15-21
-        // Minggu 4: tanggal 22-28
-        // Minggu 5: tanggal 29 sampai akhir bulan (jika ada)
-        
-        $startDay = (($weekNumber - 1) * 7) + 1;
-        $endDay = min($startDay + 6, $lastDay);
-        
-        // If week number is beyond the month, return null
-        if ($startDay > $lastDay) {
-            return null;
-        }
-        
-        // Create start and end dates
-        $weekStartDate = new \DateTime($tahun . '-' . str_pad($bulan, 2, '0', STR_PAD_LEFT) . '-' . str_pad($startDay, 2, '0', STR_PAD_LEFT), new \DateTimeZone('Asia/Makassar'));
-        $weekEndDate = new \DateTime($tahun . '-' . str_pad($bulan, 2, '0', STR_PAD_LEFT) . '-' . str_pad($endDay, 2, '0', STR_PAD_LEFT), new \DateTimeZone('Asia/Makassar'));
-        
-        return [
-            'start' => $weekStartDate->format('Y-m-d'),
-            'end' => $weekEndDate->format('Y-m-d')
-        ];
+        return 'mekanik.profile';
     }
+
 
     /**
      * Display the dashboard page.
@@ -332,13 +306,7 @@ class MekanikController extends Controller
         ]);
     }
 
-    /**
-     * Display profile page.
-     */
-    public function profile()
-    {
-        return view('mekanik.profile');
-    }
+
 
     /**
      * Store laporan harian mekanik.
@@ -452,117 +420,12 @@ class MekanikController extends Controller
         return response()->json($laporan);
     }
 
-    /**
-     * Update profile.
-     */
-    public function updateProfile(Request $request)
-    {
-        $request->validate([
-            'nama_lengkap' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
-            'no_hp' => 'nullable|string|max:20',
-            'alamat' => 'nullable|string',
-            'jabatan' => 'required|string|max:255',
-        ]);
 
-        try {
-            $userId = session('user_id');
-            $karyawanId = session('user_karyawan');
-            
-            // Update data karyawan
-            DB::table('karyawan')
-                ->where('id_karyawan', $karyawanId)
-                ->update([
-                    'nama_lengkap' => $request->nama_lengkap,
-                    'no_hp' => $request->no_hp,
-                    'alamat' => $request->alamat,
-                    'jabatan' => $request->jabatan,
-                    'updated_at' => now(),
-                ]);
-            
-            // Update email di tabel akun
-            DB::table('akun')
-                ->where('id_akun', $userId)
-                ->update([
-                    'email' => $request->email,
-                    'updated_at' => now(),
-                ]);
 
-            // Upload foto dinonaktifkan
 
-            // Update session data
-            session([
-                'nama_lengkap' => $request->nama_lengkap,
-                'email' => $request->email,
-                'no_hp' => $request->no_hp,
-                'alamat' => $request->alamat,
-                'jabatan' => $request->jabatan,
-                'updated_at' => now()
-            ]);
-            
-            // Save session to ensure it persists
-            session()->save();
 
-            return redirect()->back()->with('success', 'Data berhasil diperbarui')->with('from_crud', true);
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal mengupdate profile: ' . $e->getMessage());
-        }
-    }
 
-    /**
-     * Upload photo profile.
-     */
-    public function uploadPhoto(Request $request)
-    {
-        return redirect()->back()->with('error', 'Fitur upload foto dinonaktifkan.');
-    }
 
-    /**
-     * Delete photo profile.
-     */
-    public function deletePhoto()
-    {
-        return redirect()->back()->with('error', 'Fitur foto profil dinonaktifkan.');
-    }
-
-    /**
-     * Change password.
-     */
-    public function changePassword(Request $request)
-    {
-        $request->validate([
-            'current_password' => 'required|string',
-            'new_password' => 'required|string|min:8|confirmed',
-        ]);
-
-        try {
-            $userId = session('user_id');
-            
-            // Get current user data
-            $akun = DB::table('akun')->where('id_akun', $userId)->first();
-            
-            if (!$akun) {
-                return redirect()->back()->with('error', 'User tidak ditemukan!');
-            }
-            
-            // Verify current password
-            if (!Hash::check($request->current_password, $akun->password)) {
-                return redirect()->back()->with('error', 'Password lama tidak sesuai!');
-            }
-            
-            // Update password
-            DB::table('akun')
-                ->where('id_akun', $userId)
-                ->update([
-                    'password' => Hash::make($request->new_password),
-                    'updated_at' => now(),
-                ]);
-
-            return redirect()->back()->with('success', 'Password berhasil diubah!')->with('from_crud', true);
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal mengubah password: ' . $e->getMessage());
-        }
-    }
 
 
     /**

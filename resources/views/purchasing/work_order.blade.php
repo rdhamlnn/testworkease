@@ -424,30 +424,20 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                <div class="d-flex gap-2">
-                                                    <button type="button" class="btn btn-info btn-sm btn-view" data-id="{{ $wo->id_surat_pengajuan }}" title="Lihat Detail">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                    @if($status == 'Menunggu')
-                                                    <button type="button"
-                                                        class="btn btn-warning btn-sm btn-edit"
-                                                        data-id="{{ $wo->id_surat_pengajuan }}"
-                                                        data-locked="{{ $isLocked ? 'true' : 'false' }}"
-                                                        data-lock-message="{{ $isLocked ? 'Work Order tidak dapat diedit karena status sudah '.$statusLower.'.' : '' }}"
-                                                        title="Edit">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-danger btn-sm btn-delete"
-                                                        data-url="{{ route('purchasing.work-order.destroy', $wo->id_surat_pengajuan) }}"
-                                                        data-message="Yakin ingin menghapus work order ini?"
-                                                        data-locked="{{ $isLocked ? 'true' : 'false' }}"
-                                                        data-lock-message="{{ $isLocked ? 'Work Order tidak dapat dihapus karena status sudah '.$statusLower.'.' : '' }}"
-                                                        title="Hapus">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                    @endif
-                                                </div>
-                                            </td>
+    <div class="d-flex gap-2">
+        <x-button type="button" class="btn btn-info btn-sm btn-view" data-id="{{ $wo->id_surat_pengajuan }}" title="Lihat Detail">
+    <i class="fas fa-eye"></i> Lihat Detail
+</x-button>
+@if($status == 'Menunggu')
+    <x-button type="button" class="btn btn-warning btn-sm btn-edit" data-id="{{ $wo->id_surat_pengajuan }}" data-locked="{{ $isLocked ? 'true' : 'false' }}" data-lock-message="{{ $isLocked ? 'Work Order tidak dapat diedit karena status sudah ' . $statusLower . '.' : '' }}" title="Edit">
+        <i class="fas fa-edit"></i> Edit
+    </x-button>
+    <x-button type="button" class="btn btn-danger btn-sm btn-delete" data-url="{{ route('purchasing.work-order.destroy', $wo->id_surat_pengajuan) }}" data-message="Yakin ingin menghapus work order ini?" data-locked="{{ $isLocked ? 'true' : 'false' }}" data-lock-message="{{ $isLocked ? 'Work Order tidak dapat dihapus karena status sudah ' . $statusLower . '.' : '' }}" title="Hapus">
+        <i class="fas fa-trash"></i> Hapus
+    </x-button>
+@endif
+    </div>
+</td>
                                         </tr>
                                     @empty
                                         <tr>
