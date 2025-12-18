@@ -161,7 +161,8 @@ class KadivMekanikController extends Controller
         $unit = Unit::all();
         $karyawan = DB::table('karyawan')->get();
         $unitOptions = Unit::all();
-        $jenisWorkOrder = \App\Models\JenisWorkOrder::all();
+        // Filter jenis work order: Mekanik tidak bisa mengajukan "Perbaikan" karena perbaikan hanya ditujukan ke Mekanik oleh divisi lain
+        $jenisWorkOrder = \App\Models\JenisWorkOrder::where('nama_jenis_wo', '!=', 'Perbaikan')->get();
         $daftarBarang = \App\Models\DaftarBarang::all();
         
         $nextWorkOrderNumber = $this->generateWorkOrderNumber();

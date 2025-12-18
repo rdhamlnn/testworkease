@@ -40,6 +40,28 @@
         margin-right: 0;
     }
 
+    /* Pastikan button action bisa diklik */
+    .btn-view,
+    .btn-edit,
+    .btn-delete {
+        cursor: pointer !important;
+        position: relative !important;
+        z-index: 10 !important;
+        pointer-events: auto !important;
+    }
+
+    .btn-view img,
+    .btn-edit img,
+    .btn-delete img {
+        pointer-events: none !important;
+    }
+
+    /* Pastikan field ditujukan bisa diklik saat enabled */
+    #ditujukan:not(:disabled) {
+        cursor: pointer !important;
+        pointer-events: auto !important;
+    }
+
     .status-badge {
         font-size: 0.75rem;
         padding: 0.25rem 0.5rem;
@@ -561,24 +583,26 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <div style="display: flex; gap: 5px;">
+                                        <div style="display: flex; gap: 5px; align-items: center;">
                                             <button type="button" class="btn btn-info btn-sm btn-icon btn-view" 
-                                                data-id="{{ $wo->id_surat_pengajuan }}" title="Lihat Detail">
-                                                <img src="https://cdn-icons-png.flaticon.com/128/709/709612.png" alt="view">
+                                                data-id="{{ $wo->id_surat_pengajuan }}" title="Lihat Detail" style="cursor: pointer; position: relative; z-index: 10; pointer-events: auto;">
+                                                <img src="https://cdn-icons-png.flaticon.com/128/709/709612.png" alt="view" style="pointer-events: none;">
                                             </button>
                                             @if($status == 'Menunggu')
                                             <button type="button" class="btn btn-warning btn-sm btn-icon btn-edit" 
                                                 data-id="{{ $wo->id_surat_pengajuan }}" title="Edit"
                                                 data-locked="{{ $isLocked ? 'true' : 'false' }}"
-                                                data-lock-message="{{ $isLocked ? 'Work Order tidak dapat diedit karena status sudah '.$statusLower.'.' : '' }}">
-                                                <img src="https://cdn-icons-png.flaticon.com/128/2355/2355330.png" alt="edit">
+                                                data-lock-message="{{ $isLocked ? 'Work Order tidak dapat diedit karena status sudah '.$statusLower.'.' : '' }}"
+                                                style="cursor: pointer; position: relative; z-index: 10; pointer-events: auto;">
+                                                <img src="https://cdn-icons-png.flaticon.com/128/2355/2355330.png" alt="edit" style="pointer-events: none;">
                                             </button>
                                             <button type="button" class="btn btn-danger btn-sm btn-icon btn-delete" 
                                                 data-url="{{ route('kadivplasma.hapus-work-order', $wo->id_surat_pengajuan) }}"
                                                 data-message="Yakin ingin menghapus work order ini?" title="Hapus"
                                                 data-locked="{{ $isLocked ? 'true' : 'false' }}"
-                                                data-lock-message="{{ $isLocked ? 'Work Order tidak dapat dihapus karena status sudah '.$statusLower.'.' : '' }}">
-                                                <img src="https://cdn-icons-png.flaticon.com/128/484/484611.png" alt="hapus">
+                                                data-lock-message="{{ $isLocked ? 'Work Order tidak dapat dihapus karena status sudah '.$statusLower.'.' : '' }}"
+                                                style="cursor: pointer; position: relative; z-index: 10; pointer-events: auto;">
+                                                <img src="https://cdn-icons-png.flaticon.com/128/484/484611.png" alt="hapus" style="pointer-events: none;">
                                             </button>
                                             
                                             @endif
@@ -646,7 +670,7 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="tanggal">Tanggal <span class="text-danger">*</span></label>
-                                        <input type="date" class="form-control" id="tanggal" name="tanggal" required>
+                                        <input type="date" class="form-control" id="tanggal" name="tanggal" value="{{ old('tanggal', date('Y-m-d')) }}" required>
                                     </div>
                                 </div>
                             </div>
@@ -961,6 +985,20 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
+                            <label><strong>Jenis Work Order:</strong></label>
+                            <p id="view_jenis_wo" class="form-control-plaintext border p-2 rounded"></p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label><strong>Status:</strong></label>
+                            <p id="view_status" class="form-control-plaintext border p-2 rounded"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
                             <label id="view_label_unit"><strong>Unit:</strong></label>
                             <p id="view_unit" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
@@ -1029,6 +1067,37 @@
                 },
                 "emptyTable": "Tidak ada data work order"
             }
+        });
+
+        // Pastikan event handler tetap bekerja setelah DataTable di-render ulang
+        $('#workOrderTable').on('draw.dt', function() {
+            // Re-bind event handlers setelah DataTable redraw
+        });
+
+        // Pastikan button bisa diklik dengan menambahkan event handler langsung ke table
+        $('#workOrderTable tbody').on('click', '.btn-view', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var id = $(this).data('id');
+            if (id && typeof viewWorkOrder === 'function') {
+                viewWorkOrder(id);
+            }
+        });
+
+        $('#workOrderTable tbody').on('click', '.btn-edit', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (isLockedAction(this)) {
+                notifyLockedAction(this, 'Work Order tidak dapat diedit karena status sudah final.');
+                return false;
+            }
+
+            var id = $(this).data('id');
+            if (id && typeof editWorkOrder === 'function') {
+                editWorkOrder(id);
+            }
+            return false;
         });
 
         // Set tanggal hari ini untuk form tambah
@@ -1335,7 +1404,8 @@
         }
         
         // Toggle field unit berdasarkan jenis work order
-        function toggleUnitField() {
+        // Buat global agar bisa diakses dari luar document.ready
+        window.toggleUnitField = function() {
             const jenisWoSelect = $('#id_jenis_wo');
             const selectedJenisWo = jenisWoSelect.find('option:selected').data('nama-jenis');
             const unitInput = $('#unit');
@@ -1419,7 +1489,8 @@
         }
 
         // Filter divisi "Ditujukan" berdasarkan jenis work order
-        function filterDivisiDitujukan() {
+        // Buat global agar bisa diakses dari luar document.ready
+        window.filterDivisiDitujukan = function() {
             const jenisWoSelect = $('#id_jenis_wo');
             const ditujukanSelect = $('#ditujukan');
             const selectedJenisWo = jenisWoSelect.find('option:selected').data('nama-jenis');
@@ -1440,12 +1511,14 @@
             // Filter berdasarkan jenis work order
             let allowedDivisi = [];
             
+            // Aturan: Pembelian → Logistik, Perbaikan → Mekanik, Permintaan → semua kecuali Admin/Purchasing/Atasan/Logistik (dan diri sendiri)
             if (selectedJenisWo.toLowerCase() === 'pembelian') {
                 allowedDivisi = ['Logistik'];
             } else if (selectedJenisWo.toLowerCase() === 'perbaikan') {
                 allowedDivisi = ['Mekanik'];
             } else if (selectedJenisWo.toLowerCase() === 'permintaan') {
-                allowedDivisi = ['Produksi', 'Quality Control'];
+                // Permintaan: Produksi, Plasma, Quality Control, Mekanik (kecuali Admin, Purchasing, Atasan, Logistik)
+                allowedDivisi = ['Produksi', 'Quality Control', 'Mekanik']; // Tidak termasuk Plasma karena user adalah Plasma
             }
             
             // Jika ada filter, sembunyikan option yang tidak sesuai
@@ -1501,15 +1574,16 @@
                 return;
             }
             
-            // Filter berdasarkan jenis work order
+            // Aturan: Pembelian → Logistik, Perbaikan → Mekanik, Permintaan → semua kecuali Admin/Purchasing/Atasan/Logistik (dan diri sendiri)
             let allowedDivisi = [];
             
             if (selectedJenisWo.toLowerCase() === 'pembelian') {
                 allowedDivisi = ['Logistik'];
             } else if (selectedJenisWo.toLowerCase() === 'perbaikan') {
-                allowedDivisi = ['Quality Control'];
+                allowedDivisi = ['Mekanik'];
             } else if (selectedJenisWo.toLowerCase() === 'permintaan') {
-                allowedDivisi = ['Produksi', 'Quality Control'];
+                // Permintaan: Produksi, Plasma, Quality Control, Mekanik (kecuali Admin, Purchasing, Atasan, Logistik)
+                allowedDivisi = ['Produksi', 'Quality Control', 'Mekanik']; // Tidak termasuk Plasma karena user adalah Plasma
             }
             
             // Jika ada filter, sembunyikan option yang tidak sesuai
@@ -1551,20 +1625,13 @@
         let barangItemCount = 0;
         
         // Toggle section barang berdasarkan jenis WO
-        function toggleBarangSection() {
-            const jenisWO = $('#id_jenis_wo option:selected').data('nama-jenis');
-            const barangSection = $('#barang-section');
-            
-            // Tampilkan section barang jika jenis WO = Perbaikan atau Pembelian
-            if (jenisWO === 'Perbaikan' || jenisWO === 'Pembelian') {
-                barangSection.show();
-            } else {
-                barangSection.hide();
-                // Clear semua barang items jika section disembunyikan
-                $('#daftar-barang-container').empty();
-                barangItemCount = 0;
-            }
-        }
+        // Buat global agar bisa diakses dari luar document.ready
+        window.toggleBarangSection = function() {
+            // SELALU hide karena sudah diwakili oleh Select2 dinamis (unit_pembelian_container)
+            $('#barang-section').hide();
+            $('#daftar-barang-container').empty();
+            barangItemCount = 0;
+        };
         
         // Tambah item barang
         $('#tambah-barang-btn').on('click', function() {
@@ -1653,24 +1720,8 @@
             $(this).closest('.barang-item').remove();
         });
         
-        $('#id_jenis_wo').on('change', function() {
-            const selectedValue = $(this).val();
-            const ditujukanSelect = $('#ditujukan');
-            
-            // Enable field Ditujukan jika Jenis Work Order sudah dipilih
-            if (selectedValue && selectedValue !== '') {
-                ditujukanSelect.prop('disabled', false);
-                ditujukanSelect.find('option:first').text('-- Pilih Divisi --');
-            } else {
-                ditujukanSelect.prop('disabled', true);
-                ditujukanSelect.val('');
-                ditujukanSelect.find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
-            }
-            
-            filterDivisiDitujukan();
-            toggleUnitField();
-            toggleBarangSection();
-        });
+        // Event listener untuk perubahan jenis work order sudah dipindahkan ke luar document.ready
+        // untuk memastikan bekerja meskipun modal dibuka setelah page load
         
         // Event listener untuk perubahan jenis work order di form edit
         $('#edit_id_jenis_wo').on('change', function() {
@@ -1679,7 +1730,10 @@
             
             // Enable field Ditujukan jika Jenis Work Order sudah dipilih
             if (selectedValue && selectedValue !== '') {
-                ditujukanSelect.prop('disabled', false);
+                ditujukanSelect.prop('disabled', false).css({
+                    'pointer-events': 'auto',
+                    'cursor': 'pointer'
+                });
                 ditujukanSelect.find('option:first').text('-- Pilih Divisi --');
             } else {
                 ditujukanSelect.prop('disabled', true);
@@ -1687,14 +1741,21 @@
                 ditujukanSelect.find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
             }
             
-            filterDivisiDitujukanEdit();
+            // Hapus filterDivisiDitujukanEdit karena bisa error jika dipanggil dari luar scope
             toggleUnitFieldEdit();
             toggleBarangSectionEdit();
         });
         
         // Jalankan filter saat halaman dimuat (jika ada nilai yang sudah dipilih)
-        filterDivisiDitujukan();
-        toggleUnitField();
+        if (typeof window.filterDivisiDitujukan === 'function') {
+            window.filterDivisiDitujukan();
+        }
+        if (typeof window.toggleUnitField === 'function') {
+            window.toggleUnitField();
+        }
+        if (typeof window.toggleBarangSection === 'function') {
+            window.toggleBarangSection();
+        }
         
         // Event handler untuk button tambah barang (form create)
         $(document).on('click', '.btn-tambah-barang', function() {
@@ -1760,6 +1821,10 @@
         
         // Reset field ditujukan dan unit saat modal create dibuka
         $('#tambahWorkOrderModal').on('show.bs.modal', function() {
+            // Set tanggal otomatis ke hari ini
+            const today = new Date().toISOString().split('T')[0];
+            $('#tanggal').val(today);
+            
             $('#id_jenis_wo').val('');
             $('#ditujukan').val('').prop('disabled', true);
             $('#ditujukan').find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
@@ -1768,9 +1833,45 @@
             clearUnitSelects(false);
             // Reset label ke default
             $('#label_unit').html('Nama Unit / Code <span class="text-danger">*</span>');
-            filterDivisiDitujukan();
-            toggleUnitField();
-            toggleBarangSection();
+            if (typeof window.filterDivisiDitujukan === 'function') {
+                window.filterDivisiDitujukan();
+            }
+            if (typeof window.toggleUnitField === 'function') {
+                window.toggleUnitField();
+            }
+            
+            // Re-bind event handler untuk id_jenis_wo saat modal dibuka
+            $('#id_jenis_wo').off('change').on('change', function() {
+                const selectedValue = $(this).val();
+                const ditujukanSelect = $('#ditujukan');
+                
+                console.log('Jenis WO changed in modal:', selectedValue);
+                
+                // Enable field Ditujukan jika Jenis Work Order sudah dipilih
+                if (selectedValue && selectedValue !== '') {
+                    ditujukanSelect.prop('disabled', false).css({
+                        'pointer-events': 'auto',
+                        'cursor': 'pointer'
+                    });
+                    ditujukanSelect.find('option:first').text('-- Pilih Divisi --');
+                    console.log('Field ditujukan enabled in modal');
+                } else {
+                    ditujukanSelect.prop('disabled', true);
+                    ditujukanSelect.val('');
+                    ditujukanSelect.find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
+                }
+                
+                // Panggil fungsi-fungsi
+                if (typeof window.filterDivisiDitujukan === 'function') {
+                    window.filterDivisiDitujukan();
+                }
+                if (typeof window.toggleUnitField === 'function') {
+                    window.toggleUnitField();
+                }
+                if (typeof window.toggleBarangSection === 'function') {
+                    window.toggleBarangSection();
+                }
+            });
         });
         
         // Autofocus pada field Jenis Work Order saat modal fully shown
@@ -1838,24 +1939,77 @@
             }
         });
 
-        // Event handler untuk button view
-        $(document).on('click', '.btn-view', function() {
-            var id = $(this).data('id');
+        // Event handler untuk button view - pastikan bekerja dengan DataTable
+        // Handler ini sudah ada di dalam document.ready, tambahkan juga di luar untuk robustness
+    });
+
+    // Event handler di luar document.ready untuk memastikan button view/edit selalu berfungsi
+    $(document).on('click', '.btn-view', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        var id = $(this).data('id');
+        if (id && typeof viewWorkOrder === 'function') {
             viewWorkOrder(id);
-        });
+        }
+    });
 
-        // Event handler untuk button edit
-        $(document).on('click', '.btn-edit', function(e) {
-            if (isLockedAction(this)) {
-                e.preventDefault();
-                e.stopPropagation();
-                notifyLockedAction(this, 'Work Order tidak dapat diedit karena status sudah final.');
-                return;
-            }
+    $(document).on('click', '.btn-edit', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        
+        if (isLockedAction(this)) {
+            notifyLockedAction(this, 'Work Order tidak dapat diedit karena status sudah final.');
+            return false;
+        }
 
-            var id = $(this).data('id');
+        var id = $(this).data('id');
+        if (id && typeof editWorkOrder === 'function') {
             editWorkOrder(id);
-        });
+        }
+        return false;
+    });
+
+    // Event handler untuk field ditujukan - DI LUAR document.ready agar selalu aktif
+    // Gunakan event delegation untuk memastikan bekerja meskipun modal dibuka setelah page load
+    $(document).off('change', '#id_jenis_wo').on('change', '#id_jenis_wo', function() {
+        const selectedValue = $(this).val();
+        const ditujukanSelect = $('#ditujukan');
+        
+        console.log('Jenis WO changed:', selectedValue);
+        
+        // Enable field Ditujukan jika Jenis Work Order sudah dipilih
+        if (selectedValue && selectedValue !== '') {
+            ditujukanSelect.prop('disabled', false).css({
+                'pointer-events': 'auto',
+                'cursor': 'pointer'
+            });
+            ditujukanSelect.find('option:first').text('-- Pilih Divisi --');
+            console.log('Field ditujukan enabled');
+        } else {
+            ditujukanSelect.prop('disabled', true);
+            ditujukanSelect.val('');
+            ditujukanSelect.find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
+            console.log('Field ditujukan disabled');
+        }
+        
+        // Panggil fungsi-fungsi yang sudah dibuat global dengan delay kecil untuk memastikan tersedia
+        setTimeout(function() {
+            if (typeof window.filterDivisiDitujukan === 'function') {
+                window.filterDivisiDitujukan();
+            } else {
+                console.error('filterDivisiDitujukan function not found');
+            }
+            if (typeof window.toggleUnitField === 'function') {
+                window.toggleUnitField();
+            } else {
+                console.error('toggleUnitField function not found');
+            }
+            if (typeof window.toggleBarangSection === 'function') {
+                window.toggleBarangSection();
+            }
+        }, 50);
     });
 
     // Form tambah work order - pastikan nilai unit dikirim dengan benar
@@ -2055,7 +2209,12 @@
     function viewWorkOrder(id) {
         // Ambil data dari server
         fetch(`/kadivplasma/work-order/${id}`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 $('#view_no_wo').text(data.no_work_order);
                 $('#view_tanggal').text(new Date(data.tanggal).toLocaleDateString('id-ID'));
@@ -2164,6 +2323,7 @@
                 }
                 $('#view_status').html('<span class="badge ' + badgeClass + '">' + statusText + '</span>');
                 
+                $('#view_jenis_wo').text(data.jenis_wo || '-');
                 $('#view_uraian').text(data.uraian);
                 if (data.dokumentasi && data.dokumentasi !== '-') {
                     // Cek apakah file adalah gambar
@@ -2202,7 +2362,12 @@
     function editWorkOrder(id) {
         // Ambil data dari server
         fetch(`/kadivplasma/work-order/${id}`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 $('#edit_id').val(data.id_surat_pengajuan);
                 $('#edit_no_work_order').val(data.no_work_order);
@@ -2212,20 +2377,26 @@
                 
                 // Enable field Ditujukan setelah Jenis Work Order dipilih
                 if (data.id_jenis_wo) {
-                    $('#edit_ditujukan').prop('disabled', false);
+                    $('#edit_ditujukan').prop('disabled', false).css({
+                        'pointer-events': 'auto',
+                        'cursor': 'pointer'
+                    });
                     $('#edit_ditujukan').find('option:first').text('-- Pilih Divisi --');
                 }
                 
-                // Toggle field ditujukan dan unit berdasarkan jenis work order
-                filterDivisiDitujukanEdit();
-                toggleUnitFieldEdit();
+                // Toggle field unit berdasarkan jenis work order
+                if (typeof toggleUnitFieldEdit === 'function') {
+                    toggleUnitFieldEdit();
+                }
                 
                 // Toggle section barang berdasarkan jenis WO
                 setTimeout(function() {
-                    toggleBarangSectionEdit();
+                    if (typeof toggleBarangSectionEdit === 'function') {
+                        toggleBarangSectionEdit();
+                    }
                 }, 100);
                 
-                // Set nilai ditujukan setelah filter dijalankan
+                // Set nilai ditujukan langsung (tanpa filter untuk menghindari error)
                 $('#edit_ditujukan').val(data.ditujukan);
                 
                 // Set nilai unit ke field yang sesuai
@@ -2360,7 +2531,7 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Gagal mengambil data work order');
+                alert('Gagal mengambil data work order: ' + error.message);
             });
     }
 

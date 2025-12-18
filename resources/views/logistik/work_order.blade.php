@@ -44,6 +44,28 @@
         margin-right: 0;
     }
 
+    /* Pastikan button action bisa diklik */
+    .btn-view,
+    .btn-edit,
+    .btn-delete {
+        cursor: pointer !important;
+        position: relative !important;
+        z-index: 10 !important;
+        pointer-events: auto !important;
+    }
+
+    .btn-view img,
+    .btn-edit img,
+    .btn-delete img {
+        pointer-events: none !important;
+    }
+
+    /* Pastikan field ditujukan bisa diklik saat enabled */
+    #ditujukan:not(:disabled) {
+        cursor: pointer !important;
+        pointer-events: auto !important;
+    }
+
     .status-badge {
         font-size: 0.75rem;
         padding: 0.25rem 0.5rem;
@@ -689,7 +711,7 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="tanggal">Tanggal <span class="text-danger">*</span></label>
-                                        <input type="date" class="form-control" id="tanggal" name="tanggal" required>
+                                        <input type="date" class="form-control" id="tanggal" name="tanggal" value="{{ old('tanggal', date('Y-m-d')) }}" required>
                                     </div>
                                 </div>
                             </div>
@@ -1505,7 +1527,8 @@
         }
         
         // Toggle field unit berdasarkan jenis work order
-        function toggleUnitField() {
+        // Buat global agar bisa diakses dari luar document.ready
+        window.toggleUnitField = function() {
             const jenisWoSelect = $('#id_jenis_wo');
             const selectedJenisWo = jenisWoSelect.find('option:selected').data('nama-jenis');
             const unitInput = $('#unit');
@@ -1547,7 +1570,8 @@
         }
 
         // Filter divisi "Ditujukan" berdasarkan jenis work order
-        function filterDivisiDitujukan() {
+        // Buat global agar bisa diakses dari luar document.ready
+        window.filterDivisiDitujukan = function() {
             const jenisWoSelect = $('#id_jenis_wo');
             const ditujukanSelect = $('#ditujukan');
             const selectedJenisWo = jenisWoSelect.find('option:selected').data('nama-jenis');
@@ -1568,12 +1592,13 @@
             // Filter berdasarkan jenis work order
             let allowedDivisi = [];
             
+            // Untuk Logistik: Pembelian → Purchasing, Perbaikan → Mekanik, Permintaan → Produksi, Plasma, Quality Control, Mekanik
             if (selectedJenisWo.toLowerCase() === 'pembelian') {
                 allowedDivisi = ['Purchasing'];
             } else if (selectedJenisWo.toLowerCase() === 'perbaikan') {
                 allowedDivisi = ['Mekanik'];
             } else if (selectedJenisWo.toLowerCase() === 'permintaan') {
-                allowedDivisi = ['Produksi', 'Plasma', 'Quality Control'];
+                allowedDivisi = ['Produksi', 'Plasma', 'Quality Control', 'Mekanik'];
             }
             
             // Jika ada filter, sembunyikan option yang tidak sesuai
@@ -1620,12 +1645,13 @@
         let barangItemCount = 0;
         
         // Toggle section barang berdasarkan jenis WO
-        function toggleBarangSection() {
+        // Buat global agar bisa diakses dari luar document.ready
+        window.toggleBarangSection = function() {
             // SELALU hide karena sudah diwakili oleh Select2 dinamis (unit_pembelian_container)
             $('#barang-section').hide();
             $('#daftar-barang-container').empty();
             barangItemCount = 0;
-        }
+        };
         
         // Toggle section barang untuk form edit
         function toggleBarangSectionEdit() {
@@ -1712,25 +1738,8 @@
             $(this).closest('.barang-item').remove();
         });
         
-        // Event listener untuk perubahan jenis work order
-        $(document).on('change', '#id_jenis_wo', function() {
-            const selectedValue = $(this).val();
-            const ditujukanSelect = $('#ditujukan');
-            
-            // Enable field Ditujukan jika Jenis Work Order sudah dipilih
-            if (selectedValue && selectedValue !== '') {
-                ditujukanSelect.prop('disabled', false);
-                ditujukanSelect.find('option:first').text('-- Pilih Divisi --');
-            } else {
-                ditujukanSelect.prop('disabled', true);
-                ditujukanSelect.val('');
-                ditujukanSelect.find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
-            }
-            
-            filterDivisiDitujukan();
-            toggleUnitField();
-            toggleBarangSection();
-        });
+        // Event listener untuk perubahan jenis work order sudah dipindahkan ke luar document.ready
+        // untuk memastikan bekerja meskipun modal dibuka setelah page load
         
         // Event listener untuk perubahan jenis work order di form edit
         $('#editJenisWoLogistik').on('change', function() {
@@ -1739,7 +1748,10 @@
             
             // Enable field Ditujukan jika Jenis Work Order sudah dipilih
             if (selectedValue && selectedValue !== '') {
-                ditujukanSelect.prop('disabled', false);
+                ditujukanSelect.prop('disabled', false).css({
+                    'pointer-events': 'auto',
+                    'cursor': 'pointer'
+                });
                 ditujukanSelect.find('option:first').text('-- Pilih Divisi --');
             } else {
                 ditujukanSelect.prop('disabled', true);
@@ -1747,17 +1759,23 @@
                 ditujukanSelect.find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
             }
             
-            filterDivisiDitujukanEdit();
+            // Hapus filterDivisiDitujukanEdit karena bisa error jika dipanggil dari luar scope
             toggleUnitFieldEdit();
             toggleBarangSectionEdit();
         });
         
         // Jalankan toggle saat halaman dimuat
-        toggleBarangSection();
+        if (typeof window.toggleBarangSection === 'function') {
+            window.toggleBarangSection();
+        }
         
         // Jalankan filter saat halaman dimuat (jika ada nilai yang sudah dipilih)
-        filterDivisiDitujukan();
-        toggleUnitField();
+        if (typeof window.filterDivisiDitujukan === 'function') {
+            window.filterDivisiDitujukan();
+        }
+        if (typeof window.toggleUnitField === 'function') {
+            window.toggleUnitField();
+        }
         
         // Event handler untuk button tambah barang (form create)
         $(document).on('click', '.btn-tambah-barang', function() {
@@ -1823,6 +1841,10 @@
         
         // Reset field ditujukan dan unit saat modal create dibuka
         $('#tambahWorkOrderModal').on('show.bs.modal', function() {
+            // Set tanggal otomatis ke hari ini
+            const today = new Date().toISOString().split('T')[0];
+            $('#tanggal').val(today);
+            
             $('#id_jenis_wo').val('');
             $('#ditujukan').val('').prop('disabled', true);
             $('#ditujukan').find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
@@ -1831,8 +1853,45 @@
             clearUnitSelects(false);
             // Kembalikan label ke default
             $('#label_unit').html('Nama Unit / Code <span class="text-danger">*</span>');
-            filterDivisiDitujukan();
-            toggleUnitField();
+            if (typeof window.filterDivisiDitujukan === 'function') {
+                window.filterDivisiDitujukan();
+            }
+            if (typeof window.toggleUnitField === 'function') {
+                window.toggleUnitField();
+            }
+            
+            // Re-bind event handler untuk id_jenis_wo saat modal dibuka
+            $('#id_jenis_wo').off('change').on('change', function() {
+                const selectedValue = $(this).val();
+                const ditujukanSelect = $('#ditujukan');
+                
+                console.log('Jenis WO changed in modal:', selectedValue);
+                
+                // Enable field Ditujukan jika Jenis Work Order sudah dipilih
+                if (selectedValue && selectedValue !== '') {
+                    ditujukanSelect.prop('disabled', false).css({
+                        'pointer-events': 'auto',
+                        'cursor': 'pointer'
+                    });
+                    ditujukanSelect.find('option:first').text('-- Pilih Divisi --');
+                    console.log('Field ditujukan enabled in modal');
+                } else {
+                    ditujukanSelect.prop('disabled', true);
+                    ditujukanSelect.val('');
+                    ditujukanSelect.find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
+                }
+                
+                // Panggil fungsi-fungsi
+                if (typeof window.filterDivisiDitujukan === 'function') {
+                    window.filterDivisiDitujukan();
+                }
+                if (typeof window.toggleUnitField === 'function') {
+                    window.toggleUnitField();
+                }
+                if (typeof window.toggleBarangSection === 'function') {
+                    window.toggleBarangSection();
+                }
+            });
         });
         
         // Reset field ditujukan dan unit saat modal edit dibuka
@@ -1916,37 +1975,71 @@
         $(document).on('click', '.btn-view', function(e) {
             e.preventDefault();
             e.stopPropagation();
+            e.stopImmediatePropagation();
             var id = $(this).data('id');
-            viewWorkOrderLogistik(id);
+            if (id && typeof viewWorkOrderLogistik === 'function') {
+                viewWorkOrderLogistik(id);
+            }
         });
 
         // Event handler untuk button edit
-        $(document).on('click', '.btn-edit', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            console.log('Button edit diklik');
-            const $btn = $(this);
-            const isLocked = $btn.data('locked');
-            const lockMessage = $btn.data('lock-message') || $btn.data('lockMessage');
-            
-            console.log('isLocked:', isLocked, 'lockMessage:', lockMessage);
-            
-            if (isLocked === true || isLocked === 'true') {
-                console.log('Work order terkunci');
-                if (lockMessage) {
-                    notifyLockedAction(this, lockMessage);
-                } else {
-                    notifyLockedAction(this, 'Work Order tidak dapat diedit karena status sudah final.');
-                }
-                return false;
-            }
-
-            var id = $btn.data('id');
-            console.log('Membuka edit untuk ID:', id);
-            editWorkOrderLogistik(id);
+    $(document).on('click', '.btn-edit', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        
+        if (isLockedAction(this)) {
+            notifyLockedAction(this, 'Work Order tidak dapat diedit karena status sudah final.');
             return false;
-        });
+        }
+
+        var id = $(this).data('id');
+        if (id && typeof editWorkOrderLogistik === 'function') {
+            editWorkOrderLogistik(id);
+        }
+        return false;
+    });
+
+    // Event handler untuk field ditujukan - DI LUAR document.ready agar selalu aktif
+    // Gunakan event delegation untuk memastikan bekerja meskipun modal dibuka setelah page load
+    $(document).off('change', '#id_jenis_wo').on('change', '#id_jenis_wo', function() {
+        const selectedValue = $(this).val();
+        const ditujukanSelect = $('#ditujukan');
+        
+        console.log('Jenis WO changed:', selectedValue);
+        
+        // Enable field Ditujukan jika Jenis Work Order sudah dipilih
+        if (selectedValue && selectedValue !== '') {
+            ditujukanSelect.prop('disabled', false).css({
+                'pointer-events': 'auto',
+                'cursor': 'pointer'
+            });
+            ditujukanSelect.find('option:first').text('-- Pilih Divisi --');
+            console.log('Field ditujukan enabled');
+        } else {
+            ditujukanSelect.prop('disabled', true);
+            ditujukanSelect.val('');
+            ditujukanSelect.find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
+            console.log('Field ditujukan disabled');
+        }
+        
+        // Panggil fungsi-fungsi yang sudah dibuat global dengan delay kecil untuk memastikan tersedia
+        setTimeout(function() {
+            if (typeof window.filterDivisiDitujukan === 'function') {
+                window.filterDivisiDitujukan();
+            } else {
+                console.error('filterDivisiDitujukan function not found');
+            }
+            if (typeof window.toggleUnitField === 'function') {
+                window.toggleUnitField();
+            } else {
+                console.error('toggleUnitField function not found');
+            }
+            if (typeof window.toggleBarangSection === 'function') {
+                window.toggleBarangSection();
+            }
+        }, 50);
+    });
         
         // Form edit work order - pastikan nilai unit dikirim dengan benar
         console.log('Mendaftarkan event handler form submit edit work order...');
@@ -2005,6 +2098,34 @@
         console.log('Semua event handler berhasil didaftarkan');
         
         }); // End of $(document).ready()
+
+    // Event handler di luar document.ready untuk memastikan button view/edit selalu berfungsi
+    $(document).on('click', '.btn-view', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        var id = $(this).data('id');
+        if (id && typeof viewWorkOrderLogistik === 'function') {
+            viewWorkOrderLogistik(id);
+        }
+    });
+
+    $(document).on('click', '.btn-edit', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        
+        if (isLockedAction(this)) {
+            notifyLockedAction(this, 'Work Order tidak dapat diedit karena status sudah final.');
+            return false;
+        }
+
+        var id = $(this).data('id');
+        if (id && typeof editWorkOrderLogistik === 'function') {
+            editWorkOrderLogistik(id);
+        }
+        return false;
+    });
     } // End of initializeWorkOrderScripts()
     
     // Pastikan event handler untuk button edit terdaftar di global scope juga
@@ -2220,12 +2341,13 @@
         // Filter berdasarkan jenis work order
         let allowedDivisi = [];
         
+        // Untuk Logistik: Pembelian → Purchasing, Perbaikan → Mekanik, Permintaan → Produksi, Plasma, Quality Control, Mekanik
         if (selectedJenisWo.toLowerCase() === 'pembelian') {
             allowedDivisi = ['Purchasing'];
         } else if (selectedJenisWo.toLowerCase() === 'perbaikan') {
             allowedDivisi = ['Mekanik'];
         } else if (selectedJenisWo.toLowerCase() === 'permintaan') {
-            allowedDivisi = ['Produksi', 'Plasma', 'Quality Control'];
+            allowedDivisi = ['Produksi', 'Plasma', 'Quality Control', 'Mekanik'];
         }
         
         // Jika ada filter, sembunyikan option yang tidak sesuai
@@ -2740,11 +2862,16 @@
                 
                 // Tunggu sebentar untuk memastikan Select2 sudah update
                 setTimeout(function() {
-                    // Toggle field ditujukan dan unit berdasarkan jenis work order
-                    filterDivisiDitujukanEdit();
-                    toggleUnitFieldEdit();
+                    // Toggle field unit berdasarkan jenis work order
+                    if (typeof toggleUnitFieldEdit === 'function') {
+                        toggleUnitFieldEdit();
+                    }
                     
-                    // Set nilai ditujukan setelah filter dijalankan
+                    // Set nilai ditujukan langsung (tanpa filter untuk menghindari error)
+                    $('#editDitujukanLogistik').prop('disabled', false).css({
+                        'pointer-events': 'auto',
+                        'cursor': 'pointer'
+                    });
                     $('#editDitujukanLogistik').val(data.ditujukan);
                     
                     // Set nilai unit ke field yang sesuai

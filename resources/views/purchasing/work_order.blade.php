@@ -44,6 +44,28 @@
         margin-right: 0;
     }
 
+    /* Pastikan button action bisa diklik */
+    .btn-view,
+    .btn-edit,
+    .btn-delete {
+        cursor: pointer !important;
+        position: relative !important;
+        z-index: 10 !important;
+        pointer-events: auto !important;
+    }
+
+    .btn-view img,
+    .btn-edit img,
+    .btn-delete img {
+        pointer-events: none !important;
+    }
+
+    /* Pastikan field ditujukan bisa diklik saat enabled */
+    #ditujukan:not(:disabled) {
+        cursor: pointer !important;
+        pointer-events: auto !important;
+    }
+
     .status-badge {
         font-size: 0.75rem;
         padding: 0.25rem 0.5rem;
@@ -879,7 +901,74 @@
         let barangItemCount = 0;
         
         // Toggle section barang berdasarkan jenis WO
-        function toggleBarangSection() {
+        // Filter divisi "Ditujukan" berdasarkan jenis work order
+        // Buat global agar bisa diakses dari luar document.ready
+        // Untuk Purchasing: Tidak ada jenis Pembelian, Perbaikan → Mekanik, Permintaan → Produksi, Plasma, Quality Control, Mekanik
+        window.filterDivisiDitujukan = function() {
+            const jenisWoSelect = $('#id_jenis_wo');
+            const ditujukanSelect = $('#ditujukan');
+            const selectedJenisWo = jenisWoSelect.find('option:selected').data('nama-jenis');
+            
+            // Simpan semua option divisi terlebih dahulu
+            if (!ditujukanSelect.data('original-options')) {
+                ditujukanSelect.data('original-options', ditujukanSelect.html());
+            }
+            
+            // Reset ke semua option
+            ditujukanSelect.html(ditujukanSelect.data('original-options'));
+            
+            // Jika tidak ada jenis WO yang dipilih, tampilkan semua
+            if (!selectedJenisWo) {
+                return;
+            }
+            
+            // Filter berdasarkan jenis work order
+            // Untuk Purchasing: Tidak ada jenis Pembelian
+            let allowedDivisi = [];
+            
+            if (selectedJenisWo.toLowerCase() === 'perbaikan') {
+                allowedDivisi = ['Mekanik'];
+            } else if (selectedJenisWo.toLowerCase() === 'permintaan') {
+                allowedDivisi = ['Produksi', 'Plasma', 'Quality Control', 'Mekanik'];
+            }
+            // Pembelian tidak berlaku untuk purchasing (purchasing tidak bisa mengajukan pembelian)
+            
+            // Jika ada filter, sembunyikan option yang tidak sesuai
+            if (allowedDivisi.length > 0) {
+                ditujukanSelect.find('option').each(function() {
+                    const optionValue = $(this).val();
+                    const optionText = $(this).text().trim();
+                    
+                    // Selalu tampilkan option placeholder
+                    if (optionValue === '') {
+                        return;
+                    }
+                    
+                    // Cek apakah divisi ini termasuk dalam allowedDivisi
+                    const isAllowed = allowedDivisi.some(divisi => 
+                        optionText.toLowerCase() === divisi.toLowerCase() || 
+                        optionValue.toLowerCase() === divisi.toLowerCase()
+                    );
+                    
+                    if (!isAllowed) {
+                        $(this).hide();
+                    } else {
+                        $(this).show();
+                    }
+                });
+                
+                // Reset pilihan jika yang dipilih tidak sesuai filter
+                const currentValue = ditujukanSelect.val();
+                if (currentValue && !allowedDivisi.some(divisi => 
+                    currentValue.toLowerCase() === divisi.toLowerCase()
+                )) {
+                    ditujukanSelect.val('');
+                }
+            }
+        };
+        
+        // Buat global agar bisa diakses dari luar document.ready
+        window.toggleBarangSection = function() {
             // SELALU hide karena sudah diwakili oleh Select2 dinamis (unit_pembelian_container)
             $('#barang-section-purchasing').hide();
             $('#daftar-barang-container-purchasing').empty();
@@ -894,7 +983,8 @@
         }
         
         // Toggle field unit berdasarkan jenis work order
-        function toggleUnitField() {
+        // Buat global agar bisa diakses dari luar document.ready
+        window.toggleUnitField = function() {
             const jenisWoSelect = $('#id_jenis_wo');
             const selectedJenisWo = jenisWoSelect.find('option:selected').data('nama-jenis');
             const unitInput = $('#unit');
@@ -918,6 +1008,69 @@
                 unitContainer.hide();
                 // Ubah label kembali menjadi "Nama Unit / Code"
                 unitLabel.html('Nama Unit / Code <span class="text-danger">*</span>');
+            }
+        }
+        
+        // Filter divisi "Ditujukan" untuk form edit
+        function filterDivisiDitujukanEdit() {
+            const jenisWoSelect = $('#editJenisWoPurchasing');
+            const ditujukanSelect = $('#editDitujukanPurchasing');
+            const selectedJenisWo = jenisWoSelect.find('option:selected').data('nama-jenis');
+            
+            // Simpan semua option divisi terlebih dahulu
+            if (!ditujukanSelect.data('original-options')) {
+                ditujukanSelect.data('original-options', ditujukanSelect.html());
+            }
+            
+            // Reset ke semua option
+            ditujukanSelect.html(ditujukanSelect.data('original-options'));
+            
+            // Jika tidak ada jenis WO yang dipilih, tampilkan semua
+            if (!selectedJenisWo) {
+                return;
+            }
+            
+            // Aturan: Untuk Purchasing: Tidak ada jenis Pembelian, Perbaikan → Mekanik, Permintaan → Produksi, Plasma, Quality Control, Mekanik
+            let allowedDivisi = [];
+            
+            if (selectedJenisWo.toLowerCase() === 'perbaikan') {
+                allowedDivisi = ['Mekanik'];
+            } else if (selectedJenisWo.toLowerCase() === 'permintaan') {
+                allowedDivisi = ['Produksi', 'Plasma', 'Quality Control', 'Mekanik'];
+            }
+            // Pembelian tidak berlaku untuk purchasing (purchasing tidak bisa mengajukan pembelian)
+            
+            // Jika ada filter, sembunyikan option yang tidak sesuai
+            if (allowedDivisi.length > 0) {
+                ditujukanSelect.find('option').each(function() {
+                    const optionValue = $(this).val();
+                    const optionText = $(this).text().trim();
+                    
+                    // Selalu tampilkan option placeholder
+                    if (optionValue === '') {
+                        return;
+                    }
+                    
+                    // Cek apakah divisi ini termasuk dalam allowedDivisi
+                    const isAllowed = allowedDivisi.some(divisi => 
+                        optionText.toLowerCase() === divisi.toLowerCase() || 
+                        optionValue.toLowerCase() === divisi.toLowerCase()
+                    );
+                    
+                    if (!isAllowed) {
+                        $(this).hide();
+                    } else {
+                        $(this).show();
+                    }
+                });
+                
+                // Reset pilihan jika yang dipilih tidak sesuai filter
+                const currentValue = ditujukanSelect.val();
+                if (currentValue && !allowedDivisi.some(divisi => 
+                    currentValue.toLowerCase() === divisi.toLowerCase()
+                )) {
+                    ditujukanSelect.val('');
+                }
             }
         }
         
@@ -1021,10 +1174,13 @@
             $(this).closest('.barang-item').remove();
         });
         
-        // Event listener untuk perubahan jenis work order
-        $('#id_jenis_wo').on('change', function() {
+        // Event listener untuk perubahan jenis work order sudah dipindahkan ke luar document.ready
+        // untuk memastikan bekerja meskipun modal dibuka setelah page load
+        
+        // Event listener untuk perubahan jenis work order di form edit
+        $('#editJenisWoPurchasing').on('change', function() {
             const selectedValue = $(this).val();
-            const ditujukanSelect = $('#ditujukan');
+            const ditujukanSelect = $('#editDitujukanPurchasing');
             
             // Enable field Ditujukan jika Jenis Work Order sudah dipilih
             if (selectedValue && selectedValue !== '') {
@@ -1036,38 +1192,173 @@
                 ditujukanSelect.find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
             }
             
-            toggleBarangSection();
-            toggleUnitField();
-        });
-        
-        // Event listener untuk perubahan jenis work order di form edit
-        $('#editJenisWoPurchasing').on('change', function() {
+            filterDivisiDitujukanEdit();
             toggleBarangSectionEdit();
             toggleUnitFieldEdit();
         });
         
         // Jalankan toggle saat halaman dimuat
-        toggleBarangSection();
-        toggleUnitField();
+        if (typeof window.toggleBarangSection === 'function') {
+            window.toggleBarangSection();
+        }
+        if (typeof window.toggleUnitField === 'function') {
+            window.toggleUnitField();
+        }
+        if (typeof window.filterDivisiDitujukan === 'function') {
+            window.filterDivisiDitujukan();
+        }
+        
+        // Reset field ditujukan dan unit saat modal create dibuka
+        $('#modalTambahWorkOrderPurchasing').on('show.bs.modal', function() {
+            // Set tanggal otomatis ke hari ini
+            const today = new Date().toISOString().split('T')[0];
+            $('#tanggal').val(today);
+            
+            $('#id_jenis_wo').val('');
+            $('#ditujukan').val('').prop('disabled', true);
+            $('#ditujukan').find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
+            $('#unit').val('').show().attr('required', 'required').attr('name', 'unit');
+            $('#unit_pembelian_container').hide();
+            // Kembalikan label ke default
+            $('#label_unit').html('Nama Unit / Code <span class="text-danger">*</span>');
+            if (typeof window.filterDivisiDitujukan === 'function') {
+                window.filterDivisiDitujukan();
+            }
+            if (typeof window.toggleUnitField === 'function') {
+                window.toggleUnitField();
+            }
+            
+            // Re-bind event handler untuk id_jenis_wo saat modal dibuka
+            $('#id_jenis_wo').off('change').on('change', function() {
+                const selectedValue = $(this).val();
+                const ditujukanSelect = $('#ditujukan');
+                
+                console.log('Jenis WO changed in modal:', selectedValue);
+                
+                // Enable field Ditujukan jika Jenis Work Order sudah dipilih
+                if (selectedValue && selectedValue !== '') {
+                    ditujukanSelect.prop('disabled', false).css({
+                        'pointer-events': 'auto',
+                        'cursor': 'pointer'
+                    });
+                    ditujukanSelect.find('option:first').text('-- Pilih Divisi --');
+                    console.log('Field ditujukan enabled in modal');
+                } else {
+                    ditujukanSelect.prop('disabled', true);
+                    ditujukanSelect.val('');
+                    ditujukanSelect.find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
+                }
+                
+                // Panggil fungsi-fungsi
+                if (typeof window.filterDivisiDitujukan === 'function') {
+                    window.filterDivisiDitujukan();
+                }
+                if (typeof window.toggleUnitField === 'function') {
+                    window.toggleUnitField();
+                }
+                if (typeof window.toggleBarangSection === 'function') {
+                    window.toggleBarangSection();
+                }
+            });
+        });
 
         // Event handler untuk button view
-        $(document).on('click', '.btn-view', function() {
+        $(document).on('click', '.btn-view', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
             var id = $(this).data('id');
-            viewWorkOrderPurchasing(id);
+            if (id && typeof viewWorkOrderPurchasing === 'function') {
+                viewWorkOrderPurchasing(id);
+            }
         });
 
         // Event handler untuk button edit
         $(document).on('click', '.btn-edit', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            
             if (isLockedAction(this)) {
-                e.preventDefault();
-                e.stopPropagation();
                 notifyLockedAction(this, 'Work Order tidak dapat diedit karena status sudah final.');
-                return;
+                return false;
             }
 
             var id = $(this).data('id');
-            editWorkOrderPurchasing(id);
+            if (id && typeof editWorkOrderPurchasing === 'function') {
+                editWorkOrderPurchasing(id);
+            }
+            return false;
         });
+    });
+
+    // Event handler di luar document.ready untuk memastikan button view/edit selalu berfungsi
+    $(document).on('click', '.btn-view', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        var id = $(this).data('id');
+        if (id && typeof viewWorkOrderPurchasing === 'function') {
+            viewWorkOrderPurchasing(id);
+        }
+    });
+
+    $(document).on('click', '.btn-edit', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        
+        if (isLockedAction(this)) {
+            notifyLockedAction(this, 'Work Order tidak dapat diedit karena status sudah final.');
+            return false;
+        }
+
+        var id = $(this).data('id');
+        if (id && typeof editWorkOrderPurchasing === 'function') {
+            editWorkOrderPurchasing(id);
+        }
+        return false;
+    });
+
+    // Event handler untuk field ditujukan - DI LUAR document.ready agar selalu aktif
+    // Gunakan event delegation untuk memastikan bekerja meskipun modal dibuka setelah page load
+    $(document).off('change', '#id_jenis_wo').on('change', '#id_jenis_wo', function() {
+        const selectedValue = $(this).val();
+        const ditujukanSelect = $('#ditujukan');
+        
+        console.log('Jenis WO changed:', selectedValue);
+        
+        // Enable field Ditujukan jika Jenis Work Order sudah dipilih
+        if (selectedValue && selectedValue !== '') {
+            ditujukanSelect.prop('disabled', false).css({
+                'pointer-events': 'auto',
+                'cursor': 'pointer'
+            });
+            ditujukanSelect.find('option:first').text('-- Pilih Divisi --');
+            console.log('Field ditujukan enabled');
+        } else {
+            ditujukanSelect.prop('disabled', true);
+            ditujukanSelect.val('');
+            ditujukanSelect.find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
+            console.log('Field ditujukan disabled');
+        }
+        
+        // Panggil fungsi-fungsi yang sudah dibuat global dengan delay kecil untuk memastikan tersedia
+        setTimeout(function() {
+            if (typeof window.filterDivisiDitujukan === 'function') {
+                window.filterDivisiDitujukan();
+            } else {
+                console.error('filterDivisiDitujukan function not found');
+            }
+            if (typeof window.toggleUnitField === 'function') {
+                window.toggleUnitField();
+            } else {
+                console.error('toggleUnitField function not found');
+            }
+            if (typeof window.toggleBarangSection === 'function') {
+                window.toggleBarangSection();
+            }
+        }, 50);
     });
 
     // Form tambah work order - biarkan submit normal ke server
@@ -1087,7 +1378,12 @@
         // Ambil data dari server
         const WORK_ORDER_API_URL_PUR = "{{ route('purchasing.api.work-order', ['id' => '__ID__']) }}";
         fetch(WORK_ORDER_API_URL_PUR.replace('__ID__', id))
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 $('#viewNoWorkOrderPurchasing').text(data.no_work_order || data.no_surat_pengajuan);
                 $('#viewTanggalPurchasing').text(new Date(data.tanggal).toLocaleDateString('id-ID'));
@@ -1158,13 +1454,31 @@
         const WORK_ORDER_API_URL_PUR = "{{ route('purchasing.api.work-order', ['id' => '__ID__']) }}";
         const UPDATE_WORK_ORDER_URL_PUR = "{{ route('purchasing.work-order.update', ['id' => '__ID__']) }}";
         fetch(WORK_ORDER_API_URL_PUR.replace('__ID__', id))
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 $('#formEditWorkOrderPurchasing').attr('action', UPDATE_WORK_ORDER_URL_PUR.replace('__ID__', data.id_surat_pengajuan));
                 $('#editNoWorkOrderPurchasing').val(data.no_work_order || data.no_surat_pengajuan);
                 $('#editTanggalPurchasing').val(data.tanggal);
                 $('#editDitujukanPurchasing').val(data.ditujukan);
-                $('#editJenisWoPurchasing').val(data.id_jenis_wo).trigger('change');
+                $('#editJenisWoPurchasing').val(data.id_jenis_wo);
+                
+                // Enable field Ditujukan setelah Jenis Work Order dipilih
+                if (data.id_jenis_wo) {
+                    $('#editDitujukanPurchasing').prop('disabled', false);
+                    $('#editDitujukanPurchasing').find('option:first').text('-- Pilih Divisi --');
+                }
+                
+                // Toggle field ditujukan dan unit berdasarkan jenis work order
+                filterDivisiDitujukanEdit();
+                toggleUnitFieldEdit();
+                
+                // Set nilai ditujukan setelah filter dijalankan
+                $('#editDitujukanPurchasing').val(data.ditujukan);
                 $('#editUnitPurchasing').val(data.unit);
                 $('#editUraianPurchasing').val(data.uraian);
                 

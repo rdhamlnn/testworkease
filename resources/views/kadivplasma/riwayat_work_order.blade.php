@@ -387,14 +387,15 @@
         // Filter berdasarkan status
         $('#filterStatus').on('change', function() {
             var status = $(this).val();
+            // Kolom Status adalah index 7 (0-based: No=0, No WO=1, Jenis WO=2, Divisi=3, Tanggal=4, Unit=5, Uraian=6, Status=7, Aksi=8)
             if (status === '') {
-                table.column(9).search('').draw(); // Kolom Status (index 9 setelah penambahan kolom Jenis WO)
+                table.column(7).search('').draw();
             } else if (status === 'Disetujui') {
-                // Filter untuk Disetujui atau Selesai
-                table.column(9).search('^(Disetujui|Selesai)$', true, false).draw();
+                // Filter untuk Disetujui atau Selesai - cari di seluruh text kolom
+                table.column(7).search('(Disetujui|Selesai)', true, false).draw();
             } else {
-                // Exact match untuk Ditolak
-                table.column(9).search('^' + status + '$', true, false).draw();
+                // Exact match atau contains untuk status lain
+                table.column(7).search(status, true, false).draw();
             }
         });
 

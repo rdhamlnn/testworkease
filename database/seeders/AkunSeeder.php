@@ -58,7 +58,8 @@ class AkunSeeder extends Seeder
                 // Pastikan divisi ada sebelum insert karyawan
                 $divisiExists = DB::table('divisi')->where('id_divisi', $divisiId)->exists();
                 if (!$divisiExists) {
-                    // Skip jika divisi tidak ada
+                    // Jika divisi tidak ada, tetap isi array dengan fallback object agar tidak error
+                    $karyawanList[$id] = (object)['id_karyawan' => $id];
                     continue;
                 }
                 
@@ -102,27 +103,39 @@ class AkunSeeder extends Seeder
                         'updated_at' => now(),
                     ]);
                     
-                    $karyawan = (object)['id_karyawan' => $id];
+                    $karyawan = DB::table('karyawan')->where('id_karyawan', $id)->first();
                 } catch (\Exception $e) {
-                    // Jika insert gagal, gunakan fallback
-                    $karyawan = (object)['id_karyawan' => $id];
+                    // Jika insert gagal, coba ambil dari database atau gunakan fallback
+                    $karyawan = DB::table('karyawan')->where('id_karyawan', $id)->first();
+                    if (!$karyawan) {
+                        $karyawan = (object)['id_karyawan' => $id];
+                    }
                 }
             }
-            $karyawanList[$id] = $karyawan;
+            // Pastikan selalu ada di array meskipun null
+            if (!isset($karyawanList[$id])) {
+                $karyawanList[$id] = $karyawan;
+            }
         }
 
-        // Helper function untuk insert atau update akun tanpa mengubah password jika sudah ada
+        // Helper function untuk insert atau update akun
         // Juga update email dari example.com ke kce.com jika ada, dan update email lama dengan format kadiv*
         $upsertAkun = function($email, $password, $idKaryawan, $idDivisi, $idPeran) {
+            // Pastikan idPeran tidak null
+            if (!$idPeran) {
+                return;
+            }
+            
             // Cek apakah email baru (kce.com) sudah ada
             $exists = DB::table('akun')->where('email', $email)->exists();
             
             if ($exists) {
-                // Update tanpa mengubah password
+                // Update dengan relasi yang benar dan reset password untuk memastikan konsistensi
                 DB::table('akun')->where('email', $email)->update([
                     'id_karyawan' => $idKaryawan,
                     'id_divisi' => $idDivisi,
                     'id_peran' => $idPeran,
+                    'password' => Hash::make($password), // Reset password untuk memastikan konsistensi
                     'updated_at' => now(),
                 ]);
             } else {
@@ -148,12 +161,13 @@ class AkunSeeder extends Seeder
                 }
                 
                 if ($oldExists) {
-                    // Update email dari format lama ke format baru tanpa mengubah password
+                    // Update email dari format lama ke format baru dengan reset password
                     DB::table('akun')->where('email', $oldEmail)->update([
                         'email' => $email,
                         'id_karyawan' => $idKaryawan,
                         'id_divisi' => $idDivisi,
                         'id_peran' => $idPeran,
+                        'password' => Hash::make($password), // Reset password untuk memastikan konsistensi
                         'updated_at' => now(),
                     ]);
                 } else {
@@ -180,7 +194,31 @@ class AkunSeeder extends Seeder
             $adminRole ? $adminRole->id_peran : 1
         );
         
-        // Kadiv Mekanik
+        // Kadiv Mekanik - Pastikan dibuat dengan benar
+        // Pastikan karyawan dengan id_karyawan = 2 ada sebelum membuat akun
+        if (!isset($karyawanList[2]) || !$karyawanList[2] || !property_exists($karyawanList[2], 'id_karyawan')) {
+            // Buat karyawan jika belum ada
+            try {
+                DB::table('karyawan')->updateOrInsert(
+                    ['id_karyawan' => 2],
+                    [
+                        'id_karyawan' => 2,
+                        'nama_lengkap' => 'Budi Hermawan',
+                        'alamat' => 'Jl. Mekanik No.2',
+                        'no_hp' => '081234567891',
+                        'jabatan' => 'Kepala Divisi Mekanik',
+                        'id_divisi' => $mekanikDivisiId,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]
+                );
+                $karyawanList[2] = DB::table('karyawan')->where('id_karyawan', 2)->first();
+            } catch (\Exception $e) {
+                // Jika masih gagal, gunakan fallback
+                $karyawanList[2] = (object)['id_karyawan' => 2];
+            }
+        }
+        
         $upsertAkun(
             'kadivmekanik@kce.com',
             'password',
