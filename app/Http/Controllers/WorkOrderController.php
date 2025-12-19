@@ -85,20 +85,6 @@ class WorkOrderController extends Controller
         return view('admin.work_order', compact('workOrders', 'divisi', 'unit', 'statusVerifikator', 'nextWorkOrderNumber', 'karyawan', 'unitOptions', 'jenisWorkOrder'));
     }
 
-
-        // Ambil data untuk dropdown (exclude Administrator)
-        $divisi = Divisi::where('nama_divisi', '!=', 'Administrator')->get();
-        $unit = Unit::all();
-        $statusVerifikator = StatusVerifikator::all();
-        $karyawan = DB::table('karyawan')->get(); // Untuk dropdown ditujukan
-        $unitOptions = Unit::all();
-        $jenisWorkOrder = JenisWorkOrder::all();
-
-        $nextWorkOrderNumber = $this->generateWorkOrderNumber();
-
-        return view('admin.work_order', compact('workOrders', 'divisi', 'unit', 'statusVerifikator', 'nextWorkOrderNumber', 'karyawan', 'unitOptions', 'jenisWorkOrder'));
-    }
-
     /**
      * Display daftar pengajuan work orders (WO yang diterima dari divisi lain).
      */
@@ -133,10 +119,6 @@ class WorkOrderController extends Controller
         return view('admin.daftar_pengajuan_work_order', compact('submissionWorkOrders'));
     }
 
-
-        return view('admin.daftar_pengajuan_work_order', compact('submissionWorkOrders'));
-    }
-
     /**
      * Display riwayat work order page (WO yang sudah selesai).
      */
@@ -152,7 +134,6 @@ class WorkOrderController extends Controller
 
         return view('admin.riwayat_work_order', compact('workOrders'));
     }
-
 
     /**
      * Store a newly created work order.
@@ -197,12 +178,10 @@ class WorkOrderController extends Controller
         }
     }
 
-
     public function getData($id)
     {
         return $this->showWorkOrder($id);
     }
-
 
     public function update(Request $request, $id)
     {
@@ -242,7 +221,6 @@ class WorkOrderController extends Controller
         }
     }
 
-
     public function destroy($id)
     {
         if (Session::get('user_peran') == 1) {
@@ -260,7 +238,6 @@ class WorkOrderController extends Controller
     {
         return $this->rejectWorkOrder($id);
     }
-
 
     /**
      * Print work order.
@@ -296,10 +273,8 @@ class WorkOrderController extends Controller
         ])->setPaper('A4', 'portrait');
 
         $cleanNo = str_replace(['/', '\\'], '-', $wo->no_surat_pengajuan);
-        $filename = "WorkOrder_{$cleanNo}.pdf";
+        $filename = "WorkOrder_{{$cleanNo}}.pdf";
 
         return $pdf->stream($filename);
     }
-
-
 }

@@ -31,11 +31,11 @@ class AkunSeeder extends Seeder
         $qcDivisiId = $qcDivisi->id_divisi ?? 6;
         $atasanDivisiId = $atasanDivisi->id_divisi ?? 8;
 
-        // Get specific roles (menggunakan data dari tabel peran agar id_peran selalu konsisten)
-        $adminRole = DB::table('peran')->where('nama_peran', 'Admin')->first();
-        $kadivRole = DB::table('peran')->where('nama_peran', 'Kadiv')->first();
-        $karyawanRole = DB::table('peran')->where('nama_peran', 'Karyawan')->first();
-        $atasanRole = DB::table('peran')->where('nama_peran', 'Atasan')->first();
+        // Get specific role IDs (ensuring they exist)
+        $adminRoleId = $this->getRoleId('Admin');
+        $kadivRoleId = $this->getRoleId('Kadiv'); // adjust name if needed
+        $karyawanRoleId = $this->getRoleId('Karyawan');
+        $atasanRoleId = $this->getRoleId('Atasan');
 
         // Pastikan semua karyawan yang diperlukan ada
         $karyawanIds = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -86,15 +86,15 @@ class AkunSeeder extends Seeder
 
         // Definisi data akun
         $akunData = [
-            ['email' => 'admin@kce.com', 'id_karyawan' => 1, 'id_divisi' => $adminDivisiId, 'peran' => $adminRole],
-            ['email' => 'kadivmekanik@kce.com', 'id_karyawan' => 2, 'id_divisi' => $mekanikDivisiId, 'peran' => $kadivRole],
-            ['email' => 'mekanik@kce.com', 'id_karyawan' => 3, 'id_divisi' => $mekanikDivisiId, 'peran' => $karyawanRole],
-            ['email' => 'kadivlogistik@kce.com', 'id_karyawan' => 4, 'id_divisi' => $logistikDivisiId, 'peran' => $kadivRole],
-            ['email' => 'kadivpurchasing@kce.com', 'id_karyawan' => 5, 'id_divisi' => $purchasingDivisiId, 'peran' => $kadivRole],
-            ['email' => 'kadivproduksi@kce.com', 'id_karyawan' => 6, 'id_divisi' => $produksiDivisiId, 'peran' => $kadivRole],
-            ['email' => 'kadivplasma@kce.com', 'id_karyawan' => 7, 'id_divisi' => $plasmaDivisiId, 'peran' => $kadivRole],
-            ['email' => 'kadivqc@kce.com', 'id_karyawan' => 8, 'id_divisi' => $qcDivisiId, 'peran' => $kadivRole],
-            ['email' => 'atasan@kce.com', 'id_karyawan' => 9, 'id_divisi' => $atasanDivisiId, 'peran' => $atasanRole],
+            ['email' => 'admin@kce.com', 'id_karyawan' => 1, 'id_divisi' => $adminDivisiId, 'peran' => $adminRoleId],
+            ['email' => 'kadivmekanik@kce.com', 'id_karyawan' => 2, 'id_divisi' => $mekanikDivisiId, 'peran' => $kadivRoleId],
+            ['email' => 'mekanik@kce.com', 'id_karyawan' => 3, 'id_divisi' => $mekanikDivisiId, 'peran' => $karyawanRoleId],
+            ['email' => 'logistik@kce.com', 'id_karyawan' => 4, 'id_divisi' => $logistikDivisiId, 'peran' => $kadivRoleId],
+            ['email' => 'purchasing@kce.com', 'id_karyawan' => 5, 'id_divisi' => $purchasingDivisiId, 'peran' => $kadivRoleId],
+            ['email' => 'kadivproduksi@kce.com', 'id_karyawan' => 6, 'id_divisi' => $produksiDivisiId, 'peran' => $kadivRoleId],
+            ['email' => 'kadivplasma@kce.com', 'id_karyawan' => 7, 'id_divisi' => $plasmaDivisiId, 'peran' => $kadivRoleId],
+            ['email' => 'kadivqc@kce.com', 'id_karyawan' => 8, 'id_divisi' => $qcDivisiId, 'peran' => $kadivRoleId],
+            ['email' => 'atasan@kce.com', 'id_karyawan' => 9, 'id_divisi' => $atasanDivisiId, 'peran' => $atasanRoleId],
         ];
 
         foreach ($akunData as $data) {
@@ -103,8 +103,23 @@ class AkunSeeder extends Seeder
                 'password',
                 $data['id_karyawan'],
                 $data['id_divisi'],
-                $data['peran'] ? $data['peran']->id_peran : 1
+                $data['peran'] ?? 1
             );
+        
         }
     }
-}
+
+    /**
+     * Retrieve the ID of a role by its name.
+     * Throws RuntimeException if the role does not exist.
+     */
+    private function getRoleId(string $roleName): int
+    {
+        $roleId = DB::table('peran')->where('nama_peran', $roleName)->value('id_peran');
+        if (is_null($roleId)) {
+            throw new \RuntimeException("Role '{$roleName}' not found in peran table.");
+        }
+        return (int) $roleId;
+    }
+
+    }

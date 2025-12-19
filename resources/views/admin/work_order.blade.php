@@ -611,12 +611,6 @@
                             <p id="view_unit" class="form-control-plaintext border p-2 rounded">-</p>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label><strong>Status:</strong></label>
-                            <p id="view_status" class="form-control-plaintext border p-2 rounded">-</p>
-                        </div>
-                    </div>
                 </div>
                 <div class="form-group">
                     <label><strong>Uraian:</strong></label>

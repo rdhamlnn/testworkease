@@ -77,20 +77,6 @@ class Akun extends Model
         if ($exists) {
             DB::table('akun')->where('email', $email)->update($data);
         } else {
-            // Check for legacy email formats and update if found
-            $emailName = explode('@', $email)[0];
-            $legacy = [
-                $emailName . '@kce.com',
-                'kadiv' . $emailName . '@kce.com',
-            ];
-
-            foreach ($legacy as $old) {
-                $oldRecord = DB::table('akun')->where('email', $old)->first();
-                if ($oldRecord) {
-                    DB::table('akun')->where('email', $old)->update(array_merge(['email' => $email], $data));
-                    return;
-                }
-            }
             // Insert new record
             DB::table('akun')->insert(array_merge(['email' => $email, 'created_at' => now()], $data));
         }
