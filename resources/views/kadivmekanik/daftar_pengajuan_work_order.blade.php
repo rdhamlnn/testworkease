@@ -54,7 +54,7 @@
                                     </td>
                                     <td>{{ $wo->divisi_pengaju }}</td>
                                     <td>{{ \Carbon\Carbon::parse($wo->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
-                                    <td>{{ $wo->unit_code }}</td>
+                                    <td>{{ $wo->unit }}</td>
                                     <td>{{ Str::limit($wo->uraian, 30) }}</td>
                                     <td>
                                         @if($status == 'Disetujui' || $status == 'Selesai')
@@ -75,14 +75,6 @@
                                                 <i class="fas fa-eye"></i>
                                             </button>
                                             @if($status == 'Menunggu')
-                                                <!-- Button Cek Stok -->
-                                                <button type="button" 
-                                                        class="btn btn-warning btn-sm btn-icon btn-cek-stok" 
-                                                        data-wo-id="{{ $wo->id_surat_pengajuan }}"
-                                                        title="Cek Stok Barang">
-                                                    <i class="fas fa-box"></i>
-                                                </button>
-                                                
                                                 <!-- Button Approve (akan di-disable jika stok tidak cukup) -->
                                                 <form action="{{ route('kadivmekanik.approve-work-order', $wo->id_surat_pengajuan) }}" method="POST" class="approve-form" style="display:inline;" 
                                                     data-message="Yakin ingin menyetujui work order ini?"

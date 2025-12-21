@@ -354,7 +354,7 @@
                                                 @endif
                                             </td>
                                             <td>{{ $wo->divisi_pengaju }}</td>
-                                            <td>{{ \Carbon\Carbon::parse($wo->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
+                                            <td data-order="{{ \Carbon\Carbon::parse($wo->tanggal)->format('Y-m-d') }}">{{ \Carbon\Carbon::parse($wo->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
                                             <td>{{ $wo->unit_code ?? $wo->unit }}</td>
                                             <td>{{ Str::limit($wo->uraian, 30) }}</td>
                                             <td>
@@ -492,6 +492,7 @@
             "autoWidth": false,
             "pageLength": 10,
             "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+            "order": [[4, "desc"]],
             "language": {
                 "search": "Cari:",
                 "lengthMenu": "Tampilkan _MENU_ data per halaman",

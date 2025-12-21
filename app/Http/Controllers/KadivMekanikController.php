@@ -19,6 +19,7 @@ use App\Models\DaftarBarang;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Exports\LaporanPemakaianBarangExport;
+use App\Models\Karyawan;
 
 class KadivMekanikController extends Controller
 {
@@ -115,16 +116,15 @@ class KadivMekanikController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $divisi = Divisi::where('nama_divisi', '!=', 'Administrator')->get();
-        $unit = Unit::all();
-        $karyawan = Karyawan::all();
-        $unitOptions = Unit::all();
-        $jenisWorkOrder = \App\Models\JenisWorkOrder::where('nama_jenis_wo', '!=', 'Perbaikan')->get();
-        $daftarBarang = \App\Models\DaftarBarang::all();
-        
-        $nextWorkOrderNumber = $this->generateWorkOrderNumber();
+        // Variables compatible with purchasing view
+        $divisiTujuan = Divisi::where('nama_divisi', '!=', 'Administrator')->orderBy('nama_divisi')->get();
+        $unit = Unit::orderBy('nama_unit')->get();
+        $jenisWorkOrder = \App\Models\JenisWorkOrder::all();
+        $nextWorkOrderNumber = $this->generateWorkOrderNumber('MKN');
+        $daftarBarang = \App\Models\DaftarBarang::orderBy('nama_barang')->get();
+        $divisiPengaju = $userDivisiNama;
 
-        return view('kadivmekanik.work_order', compact('workOrders', 'divisi', 'unit', 'nextWorkOrderNumber', 'karyawan', 'unitOptions', 'jenisWorkOrder', 'daftarBarang'));
+        return view('kadivmekanik.work_order', compact('userDivisiNama', 'divisiTujuan', 'unit', 'jenisWorkOrder', 'nextWorkOrderNumber', 'workOrders', 'daftarBarang', 'divisiPengaju'));
     }
 
     /**
@@ -178,24 +178,30 @@ class KadivMekanikController extends Controller
         }
 
         try {
-            $dokumentasiPath = $request->hasFile('dokumentasi') ? $this->handleUpload($request->file('dokumentasi'), 'work-orders') : null;
             $unitId = Unit::where('nama_unit', $request->unit)->value('id_unit') ?: 1;
+            $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Mekanik';
 
-            SuratPengajuan::create([
+            $dokumentasiPath = $request->hasFile('dokumentasi') ? $this->handleUpload($request->file('dokumentasi'), 'work-orders') : null;
+
+            $workOrder = SuratPengajuan::create([
                 'no_surat_pengajuan' => $this->generateWorkOrderNumber('MKN'),
                 'ditujukan' => $request->ditujukan,
                 'id_jenis_wo' => $request->id_jenis_wo,
                 'tanggal' => $request->tanggal,
-                'divisi_pengaju' => $request->divisi_pengaju,
+                'divisi_pengaju' => $userDivisiNama,
                 'unit' => $request->unit,
                 'uraian' => $request->uraian,
                 'dokumentasi' => $dokumentasiPath,
-                'id_divisi' => session('user_divisi', 1),
-                'id_peran' => 2,
+                'status' => 'Menunggu',
+                'id_divisi' => Session::get('user_divisi'),
+                'id_peran' => Session::get('user_peran'),
                 'id_verifikator' => 1,
-                'id_akun' => session('user_id', 1),
-                'id_unit' => $unitId
+                'id_akun' => Session::get('user_id'),
+                'id_unit' => $unitId,
             ]);
+
+            // Process permintaan barang if any items are submitted
+            $this->processPermintaanBarang($request, $workOrder);
 
             return redirect()->route('kadivmekanik.work-order', ['from' => 'crud'])->with('success', 'Data berhasil ditambahkan');
         } catch (\Exception $e) {
@@ -208,10 +214,18 @@ class KadivMekanikController extends Controller
      */
     public function updateWorkOrder(Request $request, $id)
     {
+        // Log untuk debugging
+        \Log::info('updateWorkOrder called', [
+            'id' => $id,
+            'request_data' => $request->except(['dokumentasi', '_token', '_method']),
+            'has_file' => $request->hasFile('dokumentasi'),
+        ]);
+
         $request->validate([
             'id_jenis_wo' => 'required|exists:jenis_work_order,id_jenis_wo',
             'tanggal' => 'required|date',
-            'unit' => 'required|string',
+            'ditujukan' => 'required|string',
+            'unit' => 'required', // Allow string or array
             'uraian' => 'required|string',
             'dokumentasi' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
@@ -223,21 +237,42 @@ class KadivMekanikController extends Controller
             }
 
             $dokumentasiPath = $workOrder->dokumentasi;
+            
+            // Debug file upload
+            \Log::info('File upload debug', [
+                'hasFile' => $request->hasFile('dokumentasi'),
+                'allFiles' => array_keys($request->allFiles()),
+                'delete_dokumentasi' => $request->get('delete_dokumentasi'),
+                'current_dokumentasi' => $workOrder->dokumentasi,
+            ]);
+            
             if ($request->has('delete_dokumentasi') && $request->delete_dokumentasi == '1') {
                 $this->deleteFile($workOrder->dokumentasi);
                 $dokumentasiPath = null;
             } elseif ($request->hasFile('dokumentasi')) {
+                \Log::info('File received', [
+                    'name' => $request->file('dokumentasi')->getClientOriginalName(),
+                    'size' => $request->file('dokumentasi')->getSize(),
+                ]);
                 $dokumentasiPath = $this->handleUpload($request->file('dokumentasi'), 'work-orders', $workOrder->dokumentasi);
+                \Log::info('File uploaded to: ' . $dokumentasiPath);
             }
 
-            $unitId = Unit::where('nama_unit', $request->unit)->value('id_unit') ?: 1;
+            // Handle unit - bisa string atau array
+            $unitValue = $request->unit;
+            if (is_array($unitValue)) {
+                // Jika array, gabungkan jadi string
+                $unitValue = implode(', ', $unitValue);
+            }
+
+            $unitId = Unit::where('nama_unit', $unitValue)->value('id_unit') ?: 1;
 
             $workOrder->update([
                 'ditujukan' => $request->ditujukan,
                 'id_jenis_wo' => $request->id_jenis_wo,
                 'tanggal' => $request->tanggal,
                 'divisi_pengaju' => $request->divisi_pengaju,
-                'unit' => $request->unit,
+                'unit' => $unitValue,
                 'uraian' => $request->uraian,
                 'dokumentasi' => $dokumentasiPath,
                 'id_unit' => $unitId
@@ -246,6 +281,50 @@ class KadivMekanikController extends Controller
             return redirect()->route('kadivmekanik.work-order', ['from' => 'crud'])->with('success', 'Data berhasil diperbarui');
         } catch (\Exception $e) {
             return redirect()->route('kadivmekanik.work-order')->with('error', 'Gagal: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Process auto-creation of PermintaanBarang.
+     */
+    private function processPermintaanBarang(Request $request, $workOrder)
+    {
+        if ($request->has('barang') && is_array($request->barang) && count($request->barang) > 0) {
+            $barangItems = array_filter($request->barang, function($item) {
+                return !empty($item['nama_barang']) && !empty($item['jumlah']);
+            });
+            
+            if (count($barangItems) > 0) {
+                $totalHarga = 0;
+                foreach ($barangItems as $item) {
+                    $totalHarga += ($item['estimasi_harga'] ?? 0) * ($item['jumlah'] ?? 0);
+                }
+                
+                $permintaan = PermintaanBarang::create([
+                    'no_permintaan_barang' => $this->generateNoPermintaan('LOG'),
+                    'id_surat_pengajuan' => $workOrder->id_surat_pengajuan,
+                    'tanggal_permintaan' => $request->tanggal,
+                    'status' => 'Menunggu Logistik',
+                    'total_estimasi_harga' => $totalHarga,
+                    'id_akun' => Session::get('user_id', 1),
+                ]);
+                
+                foreach ($barangItems as $item) {
+                    $master = DaftarBarang::firstOrCreate(
+                        ['nama_barang' => $item['nama_barang'], 'satuan' => $item['satuan'] ?? null],
+                        ['stok' => 0]
+                    );
+                    
+                    DetailBarangPermintaan::create([
+                        'id_permintaan_barang' => $permintaan->id_permintaan_barang,
+                        'id_daftar_barang_master' => $master->id_daftar_barang,
+                        'nama_barang' => $item['nama_barang'],
+                        'jumlah' => (int)($item['jumlah'] ?? 0),
+                        'satuan' => $item['satuan'] ?? null,
+                        'estimasi_harga' => isset($item['estimasi_harga']) ? (float)$item['estimasi_harga'] : null,
+                    ]);
+                }
+            }
         }
     }
 

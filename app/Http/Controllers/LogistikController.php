@@ -89,14 +89,14 @@ class LogistikController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
         
-        $divisi = Divisi::where('nama_divisi', '!=', 'Administrator')->get();
         $divisiTujuan = Divisi::where('nama_divisi', '!=', 'Administrator')->orderBy('nama_divisi')->get();
         $unit = Unit::orderBy('nama_unit')->get();
         $jenisWorkOrder = JenisWorkOrder::all();
-        $daftarBarang = DaftarBarang::all();
-        $nextNoWO = $this->generateWorkOrderNumber('LOG');
+        $daftarBarang = DaftarBarang::orderBy('nama_barang')->get();
+        $nextWorkOrderNumber = $this->generateWorkOrderNumber('LOG');
+        $divisiPengaju = $userDivisiNama;
 
-        return view('logistik.work_order', compact('userDivisiNama', 'divisi', 'divisiTujuan', 'unit', 'jenisWorkOrder', 'daftarBarang', 'nextNoWO', 'workOrders'));
+        return view('logistik.work_order', compact('userDivisiNama', 'divisiTujuan', 'unit', 'jenisWorkOrder', 'daftarBarang', 'nextWorkOrderNumber', 'workOrders', 'divisiPengaju'));
     }
 
     public function daftarWorkOrder()
@@ -203,10 +203,16 @@ class LogistikController extends Controller
         $request->validate([
             'id_jenis_wo' => 'required|exists:jenis_work_order,id_jenis_wo',
             'tanggal' => 'required|date',
-            'unit' => 'required|string',
+            'unit' => 'required',
             'uraian' => 'required|string',
             'dokumentasi' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
+
+        // Jika unit adalah array (dari Select2 multiple), konversi ke string
+        $unitValue = $request->unit;
+        if (is_array($unitValue)) {
+            $unitValue = implode(', ', $unitValue);
+        }
 
         try {
             $workOrder = SuratPengajuan::findOrFail($id);
@@ -222,13 +228,13 @@ class LogistikController extends Controller
                 $dokumentasiPath = $this->handleUpload($request->file('dokumentasi'), 'work-orders', $workOrder->dokumentasi);
             }
 
-            $unitId = Unit::where('nama_unit', $request->unit)->value('id_unit') ?: 1;
+            $unitId = Unit::where('nama_unit', $unitValue)->value('id_unit') ?: 1;
 
             $workOrder->update([
                 'ditujukan' => $request->ditujukan,
                 'id_jenis_wo' => $request->id_jenis_wo,
                 'tanggal' => $request->tanggal,
-                'unit' => $request->unit,
+                'unit' => $unitValue,
                 'uraian' => $request->uraian,
                 'dokumentasi' => $dokumentasiPath,
                 'id_unit' => $unitId,

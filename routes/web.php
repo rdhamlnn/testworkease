@@ -279,9 +279,11 @@ Route::middleware(['role:kadiv'])->prefix('logistik')->name('logistik.')->group(
     Route::get('/daftar-work-order', [LogistikController::class, 'daftarWorkOrder'])->name('daftar-work-order');
     Route::get('/riwayat-work-order', [LogistikController::class, 'riwayatWorkOrder'])->name('riwayat-work-order');
     Route::post('/work-order', [LogistikController::class, 'storeWorkOrder'])->name('work-order.store');
+    Route::get('/work-order/{id}', [LogistikController::class, 'showWorkOrder'])->where('id', '[0-9]+');
     Route::get('/work-order/detail/{id}', [LogistikController::class, 'showWorkOrder'])->name('work-order.show');
     Route::put('/work-order/{id}', [LogistikController::class, 'updateWorkOrder'])->name('work-order.update');
     Route::delete('/work-order/{id}', [LogistikController::class, 'destroyWorkOrder'])->name('work-order.destroy');
+    Route::delete('/work-order/delete/{id}', [LogistikController::class, 'destroyWorkOrder'])->name('hapus-work-order');
     Route::get('/work-order/cetak/{id}', [LogistikController::class, 'cetakpdf'])->name('work-order.cetak');
 
     // Work Order Approval
@@ -342,8 +344,10 @@ Route::middleware(['role:kadiv'])->prefix('purchasing')->name('purchasing.')->gr
     Route::get('/api/permintaan-barang/{id}', [PurchasingController::class, 'showPermintaanBarang'])->name('api.permintaan-barang');
     Route::get('/api/units/search', [PurchasingController::class, 'searchUnits'])->name('api.units.search');
     Route::post('/work-order', [PurchasingController::class, 'storeWorkOrder'])->name('work-order.store');
+    Route::get('/work-order/{id}', [PurchasingController::class, 'showWorkOrder'])->where('id', '[0-9]+');
     Route::put('/work-order/{id}', [PurchasingController::class, 'updateWorkOrder'])->name('work-order.update');
     Route::delete('/work-order/{id}', [PurchasingController::class, 'destroyWorkOrder'])->name('work-order.destroy');
+    Route::delete('/work-order/delete/{id}', [PurchasingController::class, 'destroyWorkOrder'])->name('hapus-work-order');
     Route::get('/work-order/cetak/{id}', [PurchasingController::class, 'cetak'])->name('work-order.cetak');
 
     // Work Order Approval
