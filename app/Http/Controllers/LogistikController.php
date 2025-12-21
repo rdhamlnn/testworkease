@@ -79,13 +79,26 @@ class LogistikController extends Controller
     
     /**
      * Display work order masuk page.
+     * Menampilkan WO yang dibuat oleh Logistik ATAU WO yang dikembalikan ke Logistik untuk dikirim ulang
      */
     public function workOrder()
     {
         $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Logistik';
         
+        // Tampilkan WO yang:
+        // 1. Dibuat oleh divisi ini (divisi_pengaju = Logistik), ATAU
+        // 2. Dikembalikan ke divisi ini untuk dikirim ulang (ditujukan = Logistik dan status berisi 'Ditolak')
         $workOrders = SuratPengajuan::with(['unit', 'jenisWorkOrder', 'verifikator'])
-            ->fromDivisi($userDivisiNama)
+            ->where(function($query) use ($userDivisiNama) {
+                // WO yang dibuat oleh Logistik
+                $query->where('divisi_pengaju', $userDivisiNama);
+            })
+            ->orWhere(function($query) use ($userDivisiNama) {
+                // WO yang dikembalikan ke Logistik untuk diajukan ulang
+                $query->where('ditujukan', $userDivisiNama)
+                      ->where('divisi_pengaju', $userDivisiNama)
+                      ->where('status', 'LIKE', '%Ditolak%');
+            })
             ->orderBy('created_at', 'desc')
             ->get();
         

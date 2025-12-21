@@ -759,8 +759,8 @@
                                         <label for="ditujukan">Ditujukan <span class="text-danger">*</span></label>
                                         <select class="form-control" name="ditujukan" id="ditujukan" required disabled>
                                             <option value="">-- Pilih Jenis Work Order terlebih dahulu --</option>
-                                            <!-- Options untuk Pembelian: purchasing → Logistik -->
-                                            <option value="Logistik" data-jenis-wo="pembelian" style="display: none;">Logistik</option>
+                                            <!-- Options untuk Pembelian: ditujukan ke Purchasing -->
+                                            <option value="Purchasing" data-jenis-wo="pembelian" style="display: none;">Purchasing</option>
                                             <!-- Options untuk Perbaikan: ditujukan ke Mekanik -->
                                             <option value="Mekanik" data-jenis-wo="perbaikan" style="display: none;">Mekanik</option>
                                             <!-- Options untuk Permintaan: semua kecuali Atasan, Purchasing, Admin, dan Mekanik sendiri -->
@@ -923,8 +923,8 @@
                                         <label for="edit_ditujukan">Ditujukan <span class="text-danger">*</span></label>
                                         <select class="form-control" name="ditujukan" id="edit_ditujukan" required disabled>
                                             <option value="">-- Pilih Jenis Work Order terlebih dahulu --</option>
-                                            <!-- Options untuk Pembelian: purchasing → Logistik -->
-                                            <option value="Logistik" data-jenis-wo="pembelian" style="display: none;">Logistik</option>
+                                            <!-- Options untuk Pembelian: ditujukan ke Purchasing -->
+                                            <option value="Purchasing" data-jenis-wo="pembelian" style="display: none;">Purchasing</option>
                                             <!-- Options untuk Perbaikan: ditujukan ke Mekanik -->
                                             <option value="Mekanik" data-jenis-wo="perbaikan" style="display: none;">Mekanik</option>
                                             <!-- Options untuk Permintaan: semua kecuali Atasan, Purchasing, Admin, dan Mekanik sendiri -->
@@ -1783,7 +1783,6 @@
             const unitContainer = $('#unit_pembelian_container');
             const unitLabel = $('#label_unit');
             
-            // Jika jenis work order adalah "Pembelian", tampilkan container dinamis dan sembunyikan input
             if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
                 // Hide text input dan unit select (untuk perbaikan)
                 unitInput.hide().removeAttr('required').removeAttr('name');
@@ -1791,13 +1790,10 @@
                 $('#perbaikan_unit_toggle').hide();
                 
                 unitContainer.show();
-                // Ubah label menjadi "Daftar barang"
                 unitLabel.html('Daftar barang <span class="text-danger">*</span>');
                 
-                // Jika container kosong, tambahkan select pertama
                 if (unitContainer.find('.unit-select-wrapper').length === 0) {
                     unitContainer.html(getUnitSelectTemplate(0, false));
-                    // Gunakan timeout untuk memastikan DOM sudah siap
                     setTimeout(function() {
                         const firstSelect = unitContainer.find('.select2-unit-dynamic[data-index="0"]');
                         if (typeof initSelect2Dynamic === 'function') {

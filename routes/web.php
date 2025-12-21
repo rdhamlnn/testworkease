@@ -25,6 +25,9 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+// Include debug routes
+require __DIR__.'/debug.php';
+
 // Public preview routes (bypass authentication for testing)
 Route::get('/preview-laporan-harian-mekanik', [KadivMekanikController::class, 'previewLaporanHarianMekanik']);
 Route::get('/download-laporan-harian-mekanik-pdf', [KadivMekanikController::class, 'downloadPdfLaporanHarianMekanik']);
@@ -163,6 +166,7 @@ Route::middleware(['role:kadiv'])->prefix('kadivmekanik')->name('kadivmekanik.')
     Route::post('/work-order/approve/{id}', [KadivMekanikController::class, 'approveWorkOrder'])->name('approve-work-order');
     Route::put('/work-order/{id}/reject', [KadivMekanikController::class, 'rejectWorkOrder'])->name('work-order.reject');
     Route::post('/work-order/reject/{id}', [KadivMekanikController::class, 'rejectWorkOrder'])->name('reject-work-order');
+    Route::post('/work-order/resend/{id}', [KadivMekanikController::class, 'resendWorkOrder'])->name('work-order.resend');
     Route::get('/work-order/{id}/cek-stok', [KadivMekanikController::class, 'cekStokBarang'])->name('cek-stok-barang');
     Route::put('/work-order/{id}/status', [KadivMekanikController::class, 'updateStatusWorkOrder'])->name('work-order.update-status');
 
@@ -359,6 +363,7 @@ Route::middleware(['role:kadiv'])->prefix('purchasing')->name('purchasing.')->gr
     // Work Order Harga & Forward
     Route::put('/work-order/{id}/update-harga', [PurchasingController::class, 'updateHargaWorkOrder'])->name('work-order.update-harga');
     Route::post('/work-order/{id}/forward-to-atasan', [PurchasingController::class, 'forwardWorkOrderToAtasan'])->name('work-order.forward-to-atasan');
+    Route::post('/work-order/{id}/resend-to-atasan', [PurchasingController::class, 'resendWorkOrderToAtasan'])->name('work-order.resend-to-atasan');
 
     // 🔹 PERMINTAAN BARANG
     Route::get('/permintaan-barang', [PurchasingController::class, 'permintaanBarang'])->name('permintaan-barang');
@@ -433,6 +438,7 @@ Route::middleware(['role:kadiv'])->prefix('kadivproduksi')->name('kadivproduksi.
     Route::post('/work-order/approve/{id}', [KadivProduksiController::class, 'approveWorkOrder'])->name('approve-work-order');
     Route::put('/work-order/{id}/reject', [KadivProduksiController::class, 'rejectWorkOrder'])->name('work-order.reject');
     Route::post('/work-order/reject/{id}', [KadivProduksiController::class, 'rejectWorkOrder'])->name('reject-work-order');
+    Route::post('/work-order/resend/{id}', [KadivProduksiController::class, 'resendWorkOrder'])->name('work-order.resend');
 
     // 🔹 PROFILE
     Route::get('/profile', [KadivProduksiController::class, 'profile'])->name('profile');
@@ -464,6 +470,7 @@ Route::middleware(['role:kadiv'])->prefix('kadivplasma')->name('kadivplasma.')->
     Route::post('/work-order/approve/{id}', [KadivPlasmaController::class, 'approveWorkOrder'])->name('approve-work-order');
     Route::put('/work-order/{id}/reject', [KadivPlasmaController::class, 'rejectWorkOrder'])->name('work-order.reject');
     Route::post('/work-order/reject/{id}', [KadivPlasmaController::class, 'rejectWorkOrder'])->name('reject-work-order');
+    Route::post('/work-order/resend/{id}', [KadivPlasmaController::class, 'resendWorkOrder'])->name('work-order.resend');
 
     // 🔹 PROFILE
     Route::get('/profile', [KadivPlasmaController::class, 'profile'])->name('profile');
@@ -495,6 +502,7 @@ Route::middleware(['role:kadiv'])->prefix('kadivqc')->name('kadivqc.')->group(fu
     Route::post('/work-order/approve/{id}', [KadivQcController::class, 'approveWorkOrder'])->name('approve-work-order');
     Route::put('/work-order/{id}/reject', [KadivQcController::class, 'rejectWorkOrder'])->name('work-order.reject');
     Route::post('/work-order/reject/{id}', [KadivQcController::class, 'rejectWorkOrder'])->name('reject-work-order');
+    Route::post('/work-order/resend/{id}', [KadivQcController::class, 'resendWorkOrder'])->name('work-order.resend');
 
     // 🔹 PROFILE
     Route::get('/profile', [KadivQcController::class, 'profile'])->name('profile');

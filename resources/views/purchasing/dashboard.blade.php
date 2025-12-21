@@ -43,7 +43,7 @@
 
         <div class="col-lg-3 col-md-6 col-sm-6 col-12">
             <div class="card card-statistic-1">
-                <div class="card-icon bg-warning"><i class="fas fa-cash-register"></i></div>
+                <div class="card-icon bg-warning"><i class="fas fa-check-circle"></i></div>
                 <div class="card-wrap">
                     <div class="card-header">
                         <h4>Dibeli</h4>

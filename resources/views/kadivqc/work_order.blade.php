@@ -660,6 +660,19 @@
                                                 data-lock-message="{{ $isLocked ? 'Work Order tidak dapat dihapus karena status sudah '.$statusLower.'.' : '' }}">
                                                 <i class="fas fa-trash"></i>
                                             </button>
+                                            @elseif($status == 'Ditolak')
+                                            {{-- Button Edit untuk Work Order yang Ditolak --}}
+                                            <button type="button" class="btn btn-warning btn-sm btn-edit" 
+                                                data-id="{{ $wo->id_surat_pengajuan }}" title="Edit Work Order">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            {{-- Button Kirim Ulang Ajuan untuk WO yang ditolak --}}
+                                            <button type="button" class="btn btn-success btn-sm btn-resend" 
+                                                data-id="{{ $wo->id_surat_pengajuan }}"
+                                                data-url="{{ route('kadivqc.work-order.resend', $wo->id_surat_pengajuan) }}"
+                                                title="Kirim Ulang Ajuan">
+                                                <i class="fas fa-paper-plane"></i> Kirim Ulang
+                                            </button>
                                             @endif
                                         </div>
                                     </td>
@@ -2517,6 +2530,83 @@
         return false;
     });
 
+    // Handler untuk button Kirim Ulang Ajuan
+    $(document).on('click', '.btn-resend', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        
+        var id = $(this).data('id');
+        var url = $(this).data('url');
+        
+        if (!id || !url) {
+            console.error('ID atau URL tidak ditemukan');
+            return false;
+        }
+        
+        // Simpan URL ke global variable untuk digunakan di modal
+        window.currentResendUrl = url;
+        
+        // Tampilkan modal konfirmasi
+        $('#konfirmasiKirimUlangModal').modal('show');
+        
+        return false;
+    });
+
+    // Handler untuk button OK di modal konfirmasi kirim ulang
+    $(document).on('click', '#btnKonfirmasiKirimUlang', function(e) {
+        e.preventDefault();
+        
+        var url = window.currentResendUrl;
+        
+        if (!url) {
+            console.error('URL tidak ditemukan');
+            return false;
+        }
+        
+        // Tutup modal
+        $('#konfirmasiKirimUlangModal').modal('hide');
+        
+        // Kirim AJAX request
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Tampilkan notifikasi sukses
+                    if (typeof showToastNotification === 'function') {
+                        showToastNotification('success', response.message);
+                    }
+                    
+                    // Redirect atau reload
+                    if (response.redirect) {
+                        window.location.href = response.redirect;
+                    } else {
+                        window.location.reload();
+                    }
+                } else {
+                    // Tampilkan notifikasi gagal
+                    if (typeof showToastNotification === 'function') {
+                        showToastNotification('error', response.message);
+                    }
+                }
+            },
+            error: function(xhr) {
+                var response = xhr.responseJSON;
+                var errorMessage = response && response.message ? response.message : 'Terjadi kesalahan saat mengirim work order.';
+                
+                if (typeof showToastNotification === 'function') {
+                    showToastNotification('error', errorMessage);
+                }
+            }
+        });
+    });
+
+
+
     // View work order
     function viewWorkOrder(id) {
         fetch(`/kadivqc/work-order/${id}`)
@@ -3051,6 +3141,45 @@
     }
 
 </script>
+
+<!-- Modal Konfirmasi Kirim Ulang Work Order -->
+<div class="modal fade" id="konfirmasiKirimUlangModal" tabindex="-1" role="dialog" aria-labelledby="konfirmasiKirimUlangModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 500px;">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #1B3C88 !important;">
+                <h5 class="modal-title text-white" id="konfirmasiKirimUlangModalLabel">
+                    <i class="fas fa-paper-plane mr-2"></i>Konfirmasi Kirim Ulang
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 1;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-question-circle" style="font-size: 3.5rem; color: #1B3C88;"></i>
+                </div>
+                <div style="border-left: 4px solid #1B3C88; background-color: #e8f0fe; border: 1px solid #1B3C88; border-radius: 8px; padding: 20px;">
+                    <h6 style="color: #1B3C88; font-weight: 600; margin-bottom: 10px;">
+                        <i class="fas fa-info-circle mr-2"></i>Informasi:
+                    </h6>
+                    <hr style="border-top: 1px solid #1B3C88; margin: 10px 0;">
+                    <p style="color: #2c3e50; margin-bottom: 0; font-size: 14px; line-height: 1.6;">
+                        Apakah Anda yakin ingin mengirim ulang work order ini ke divisi tujuan?
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer" style="background-color: #f8f9fa;">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-2"></i>Batal
+                </button>
+                <button type="button" class="btn btn-primary" id="btnKonfirmasiKirimUlang" style="background-color: #1B3C88; border-color: #1B3C88;">
+                    <i class="fas fa-check mr-2"></i>Ya, Kirim Ulang
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @include('components.delete-confirm-modal')
 
 <!-- Modal View Dokumentasi -->

@@ -102,13 +102,25 @@ class PurchasingController extends Controller
 
     /**
      * Display work order masuk page.
+     * Menampilkan WO yang dibuat oleh Purchasing ATAU WO yang ditolak Atasan dan dikembalikan ke Purchasing
      */
     public function workOrder()
     {
         $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Purchasing';
         
+        // Tampilkan WO yang:
+        // 1. Dibuat oleh Purchasing
+        // 2. Ditolak Atasan dan dikembalikan ke Purchasing (status mengandung 'Ditolak Atasan')
         $workOrders = SuratPengajuan::with(['unit', 'jenisWorkOrder', 'verifikator'])
-            ->fromDivisi($userDivisiNama)
+            ->where(function($query) use ($userDivisiNama) {
+                // WO yang dibuat oleh Purchasing
+                $query->where('divisi_pengaju', $userDivisiNama);
+            })
+            ->orWhere(function($query) use ($userDivisiNama) {
+                // WO yang ditolak Atasan dan dikembalikan ke Purchasing
+                $query->where('ditujukan', $userDivisiNama)
+                      ->where('status', 'LIKE', '%Ditolak Atasan%');
+            })
             ->orderBy('created_at', 'desc')
             ->get();
         
@@ -126,12 +138,75 @@ class PurchasingController extends Controller
     {
         $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Purchasing';
         
-        $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])
+        // Load nested relations
+        $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent', 'permintaanBarang.daftarBarang.masterBarang'])
             ->toDivisi($userDivisiNama)
             ->where('divisi_pengaju', '!=', $userDivisiNama)
             ->byVerifikator(1)
             ->orderBy('created_at', 'desc')
             ->get();
+        
+        // Preload semua harga barang untuk efisiensi
+        $masterBarangPrices = DB::table('daftar_barang')
+            ->whereNotNull('harga_barang')
+            ->where('harga_barang', '>', 0)
+            ->pluck('harga_barang', 'nama_barang')
+            ->toArray();
+        
+        // Hitung total harga untuk setiap work order
+        $workOrders->each(function ($wo) use ($masterBarangPrices) {
+            $totalHarga = 0;
+            
+            // Prioritas 1: Hitung dari detail_barang_permintaan
+            if ($wo->permintaanBarang && $wo->permintaanBarang->daftarBarang && $wo->permintaanBarang->daftarBarang->count() > 0) {
+                foreach ($wo->permintaanBarang->daftarBarang as $detail) {
+                    $jumlah = $detail->jumlah ?? 1;
+                    
+                    if ($detail->estimasi_harga && $detail->estimasi_harga > 0) {
+                        $totalHarga += $detail->estimasi_harga;
+                    } elseif ($detail->masterBarang && $detail->masterBarang->harga_barang && $detail->masterBarang->harga_barang > 0) {
+                        $totalHarga += $detail->masterBarang->harga_barang * $jumlah;
+                    }
+                }
+            }
+            
+            // Prioritas 2: Fallback ke total_estimasi_harga
+            if ($totalHarga == 0 && $wo->permintaanBarang && $wo->permintaanBarang->total_estimasi_harga > 0) {
+                $totalHarga = $wo->permintaanBarang->total_estimasi_harga;
+            }
+            
+            // Prioritas 3: Parse dari field unit jika masih 0
+            // Format: "Filter Oli (qty: 1), Belt Alternator (qty: 2)"
+            if ($totalHarga == 0 && $wo->unit) {
+                $unitString = is_object($wo->unit) ? ($wo->unit->nama_unit ?? '') : $wo->unit;
+                
+                // Parse items dari string unit
+                // Match patterns like "Nama Barang (qty: N)" or just "Nama Barang"
+                preg_match_all('/([^,]+?)(?:\s*\(qty:\s*(\d+)\))?(?:,|$)/i', $unitString, $matches, PREG_SET_ORDER);
+                
+                foreach ($matches as $match) {
+                    $namaBarang = trim($match[1]);
+                    $qty = isset($match[2]) ? (int)$match[2] : 1;
+                    
+                    if (empty($namaBarang)) continue;
+                    
+                    // Cari harga dari master barang
+                    $harga = 0;
+                    foreach ($masterBarangPrices as $nama => $price) {
+                        if (stripos($namaBarang, $nama) !== false || stripos($nama, $namaBarang) !== false) {
+                            $harga = $price;
+                            break;
+                        }
+                    }
+                    
+                    if ($harga > 0) {
+                        $totalHarga += $harga * $qty;
+                    }
+                }
+            }
+            
+            $wo->calculated_total_harga = $totalHarga;
+        });
         
         return view('purchasing.daftar_work_order', compact('workOrders'));
     }
@@ -290,8 +365,31 @@ class PurchasingController extends Controller
             
             if (count($barangItems) > 0) {
                 $totalHarga = 0;
+                $processedItems = [];
+                
+                // Pre-process items untuk mendapatkan harga dari master jika tidak ada
                 foreach ($barangItems as $item) {
-                    $totalHarga += ($item['estimasi_harga'] ?? 0) * ($item['jumlah'] ?? 0);
+                    $master = DaftarBarang::firstOrCreate(
+                        ['nama_barang' => $item['nama_barang'], 'satuan' => $item['satuan'] ?? null],
+                        ['stok' => 0]
+                    );
+                    
+                    // Ambil harga: prioritas dari form, fallback ke master barang
+                    $hargaSatuan = isset($item['estimasi_harga']) && $item['estimasi_harga'] > 0 
+                        ? (float)$item['estimasi_harga'] 
+                        : ($master->harga_barang ?? 0);
+                    
+                    $jumlah = (int)($item['jumlah'] ?? 0);
+                    $hargaTotal = $hargaSatuan * $jumlah;
+                    $totalHarga += $hargaTotal;
+                    
+                    $processedItems[] = [
+                        'master' => $master,
+                        'nama_barang' => $item['nama_barang'],
+                        'jumlah' => $jumlah,
+                        'satuan' => $item['satuan'] ?? null,
+                        'estimasi_harga' => $hargaTotal > 0 ? $hargaTotal : null,
+                    ];
                 }
                 
                 $permintaan = PermintaanBarang::create([
@@ -303,19 +401,14 @@ class PurchasingController extends Controller
                     'id_akun' => Session::get('user_id', 1),
                 ]);
                 
-                foreach ($barangItems as $item) {
-                    $master = DaftarBarang::firstOrCreate(
-                        ['nama_barang' => $item['nama_barang'], 'satuan' => $item['satuan'] ?? null],
-                        ['stok' => 0]
-                    );
-                    
+                foreach ($processedItems as $item) {
                     DetailBarangPermintaan::create([
                         'id_permintaan_barang' => $permintaan->id_permintaan_barang,
-                        'id_daftar_barang_master' => $master->id_daftar_barang,
+                        'id_daftar_barang_master' => $item['master']->id_daftar_barang,
                         'nama_barang' => $item['nama_barang'],
-                        'jumlah' => (int)($item['jumlah'] ?? 0),
-                        'satuan' => $item['satuan'] ?? null,
-                        'estimasi_harga' => isset($item['estimasi_harga']) ? (float)$item['estimasi_harga'] : null,
+                        'jumlah' => $item['jumlah'],
+                        'satuan' => $item['satuan'],
+                        'estimasi_harga' => $item['estimasi_harga'],
                     ]);
                 }
             }
@@ -631,11 +724,12 @@ class PurchasingController extends Controller
      */
     /**
      * Approve work order.
+     * Jika jenis WO = Pembelian dan ditujukan = Purchasing, maka teruskan ke Atasan
      */
     public function approveWorkOrder($id)
     {
         try {
-            $workOrder = SuratPengajuan::findOrFail($id);
+            $workOrder = SuratPengajuan::with('jenisWorkOrder')->findOrFail($id);
             $userDivisi = Session::get('user_divisi');
             $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi');
             
@@ -649,20 +743,36 @@ class PurchasingController extends Controller
                 ], 403);
             }
             
-            $workOrder->update([
-                'id_verifikator' => 2, // 2 = Disetujui
-                'status' => 'Disetujui'
-            ]);
+            // Cek jenis work order
+            $jenisWo = $workOrder->jenisWorkOrder ? strtolower($workOrder->jenisWorkOrder->nama_jenis_wo) : '';
             
-            // Set session message untuk notifikasi toast
-            Session::flash('success', 'Work Order berhasil disetujui!');
+            // Jika jenis WO = Pembelian, teruskan ke Atasan untuk approval
+            if ($jenisWo === 'pembelian') {
+                $workOrder->update([
+                    'ditujukan' => 'Atasan', // Teruskan ke Atasan
+                    'id_verifikator' => 1, // 1 = Menunggu (reset untuk approval atasan)
+                    'status' => 'Menunggu Approval Atasan'
+                ]);
+                
+                Session::flash('success', 'Work Order berhasil diteruskan ke Atasan untuk approval!');
+                $message = 'Work Order berhasil diteruskan ke Atasan untuk approval!';
+            } else {
+                // Untuk jenis WO lainnya, langsung disetujui
+                $workOrder->update([
+                    'id_verifikator' => 2, // 2 = Disetujui
+                    'status' => 'Disetujui Purchasing'
+                ]);
+                
+                Session::flash('success', 'Work Order berhasil disetujui!');
+                $message = 'Work Order berhasil disetujui!';
+            }
             
-            // Return JSON untuk AJAX dengan redirect URL yang sudah include from=crud
+            // Return JSON untuk AJAX dengan redirect URL
             $redirectUrl = route('purchasing.daftar-work-order', ['from' => 'crud']);
             
             return response()->json([
                 'success' => true,
-                'message' => 'Work Order berhasil disetujui!',
+                'message' => $message,
                 'redirect' => $redirectUrl
             ]);
         } catch (\Exception $e) {
@@ -677,11 +787,13 @@ class PurchasingController extends Controller
     
     /**
      * Reject work order.
+     * Jika jenis WO = Pembelian dan ditujukan = Purchasing, kembalikan ke divisi pengaju (Logistik)
+     * untuk dikirim ulang
      */
     public function rejectWorkOrder($id)
     {
         try {
-            $workOrder = SuratPengajuan::findOrFail($id);
+            $workOrder = SuratPengajuan::with('jenisWorkOrder')->findOrFail($id);
             $userDivisi = Session::get('user_divisi');
             $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi');
             
@@ -695,20 +807,39 @@ class PurchasingController extends Controller
                 ], 403);
             }
             
-            $workOrder->update([
-                'id_verifikator' => 3, // 3 = Ditolak
-                'status' => 'Ditolak'
-            ]);
+            // Cek jenis work order
+            $jenisWo = $workOrder->jenisWorkOrder ? strtolower($workOrder->jenisWorkOrder->nama_jenis_wo) : '';
             
-            // Set session message untuk notifikasi toast
-            Session::flash('success', 'Work Order berhasil ditolak!');
+            // Jika jenis WO = Pembelian, kembalikan ke divisi pengaju untuk dikirim ulang
+            if ($jenisWo === 'pembelian') {
+                // Kembalikan ke divisi pengaju (biasanya Logistik)
+                $divisiPengaju = $workOrder->divisi_pengaju;
+                
+                $workOrder->update([
+                    'ditujukan' => $divisiPengaju, // Kembalikan ke divisi pengaju
+                    'id_verifikator' => 1, // 1 = Menunggu (reset untuk dikirim ulang)
+                    'status' => 'Ditolak Purchasing - Perlu Diajukan Ulang'
+                ]);
+                
+                Session::flash('success', "Work Order ditolak dan dikembalikan ke {$divisiPengaju} untuk diajukan ulang.");
+                $message = "Work Order ditolak dan dikembalikan ke {$divisiPengaju} untuk diajukan ulang.";
+            } else {
+                // Untuk jenis WO lainnya, langsung ditolak
+                $workOrder->update([
+                    'id_verifikator' => 3, // 3 = Ditolak
+                    'status' => 'Ditolak Purchasing'
+                ]);
+                
+                Session::flash('success', 'Work Order berhasil ditolak!');
+                $message = 'Work Order berhasil ditolak!';
+            }
             
-            // Return JSON untuk AJAX dengan redirect URL yang sudah include from=crud
+            // Return JSON untuk AJAX dengan redirect URL
             $redirectUrl = route('purchasing.daftar-work-order', ['from' => 'crud']);
             
             return response()->json([
                 'success' => true,
-                'message' => 'Work Order berhasil ditolak!',
+                'message' => $message,
                 'redirect' => $redirectUrl
             ]);
         } catch (\Exception $e) {
@@ -943,5 +1074,55 @@ class PurchasingController extends Controller
         }
 
         return "{$sequence}/{$prefix}/KCE/{$year}";
+    }
+
+    /**
+     * Resend work order yang ditolak Atasan kembali ke Atasan.
+     */
+    public function resendWorkOrderToAtasan(Request $request, $id)
+    {
+        try {
+            $workOrder = SuratPengajuan::with('permintaanBarang')->findOrFail($id);
+            $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi');
+            
+            // Validasi: hanya WO yang statusnya "Ditolak Atasan" yang bisa dikirim ulang
+            if (strpos($workOrder->status, 'Ditolak Atasan') === false) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hanya work order yang ditolak Atasan yang dapat dikirim ulang.'
+                ], 403);
+            }
+            
+            // Update work order: kirim ke Atasan
+            $workOrder->update([
+                'ditujukan' => 'Atasan',
+                'id_verifikator' => 1, // Reset ke menunggu
+                'status' => 'Menunggu Approval Atasan (Dikirim Ulang)',
+                'catatan_penolakan' => null, // Reset catatan penolakan
+            ]);
+            
+            // Update status permintaan barang jika ada
+            if ($workOrder->permintaanBarang) {
+                $statusMenungguId = StatusWo::where('nama_status', 'Menunggu Approval Atasan')->value('id_status_wo');
+                
+                $workOrder->permintaanBarang->update([
+                    'status' => 'Menunggu Approval Atasan',
+                    'id_status_wo' => $statusMenungguId,
+                    'catatan_atasan' => null,
+                ]);
+            }
+            
+            Session::flash('success', 'Work Order berhasil dikirim ulang ke Atasan!');
+            return response()->json([
+                'success' => true,
+                'message' => 'Work Order berhasil dikirim ulang ke Atasan!',
+                'redirect' => route('purchasing.work-order', ['from' => 'crud'])
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengirim work order: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

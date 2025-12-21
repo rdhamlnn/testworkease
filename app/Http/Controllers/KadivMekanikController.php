@@ -232,8 +232,10 @@ class KadivMekanikController extends Controller
 
         try {
             $workOrder = SuratPengajuan::findOrFail($id);
-            if (in_array($workOrder->id_verifikator, [2, 3])) {
-                return redirect()->back()->with('error', 'Work Order sudah diproses.');
+            // Hanya cegah edit untuk work order yang sudah Disetujui (2)
+            // Work order yang Ditolak (3) boleh diedit untuk diperbaiki dan dikirim ulang
+            if ($workOrder->id_verifikator == 2) {
+                return redirect()->back()->with('error', 'Work Order sudah disetujui dan tidak dapat diedit.');
             }
 
             $dokumentasiPath = $workOrder->dokumentasi;

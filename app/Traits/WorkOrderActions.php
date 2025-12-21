@@ -23,6 +23,15 @@ trait WorkOrderActions
     {
         $workOrder = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])->findOrFail($id);
         
+        // Prioritas: Jika status mengandung "Ditolak Atasan", gunakan kolom status langsung
+        // karena saat ditolak oleh Atasan, id_verifikator direset ke 1 (Menunggu)
+        $statusValue = $workOrder->status;
+        if ($statusValue && strpos($statusValue, 'Ditolak Atasan') !== false) {
+            $status = $statusValue;
+        } else {
+            $status = $workOrder->verifikator ? $workOrder->verifikator->nama_status : ($workOrder->status ?? 'Menunggu');
+        }
+        
         $data = [
             'id_surat_pengajuan' => $workOrder->id_surat_pengajuan,
             'no_surat_pengajuan' => $workOrder->no_surat_pengajuan,
@@ -37,8 +46,9 @@ trait WorkOrderActions
             'uraian' => $workOrder->uraian,
             'dokumentasi' => $workOrder->dokumentasi,
             'dokumentasi_url' => $workOrder->dokumentasi ? asset('storage/' . $workOrder->dokumentasi) : null,
-            'status' => $workOrder->verifikator ? $workOrder->verifikator->nama_status : ($workOrder->status ?? 'Menunggu'),
+            'status' => $status,
             'id_verifikator' => $workOrder->id_verifikator,
+            'catatan_penolakan' => $workOrder->catatan_penolakan,
         ];
 
         return response()->json($data);
@@ -147,6 +157,71 @@ trait WorkOrderActions
             ], 500);
         }
     }
+
+    /**
+     * Resend work order that was rejected.
+     * Changes status from Ditolak (3) back to Menunggu (1) so it can be resubmitted.
+     */
+    public function resendWorkOrder($id)
+    {
+        try {
+            $workOrder = SuratPengajuan::findOrFail($id);
+            $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi');
+            
+            // Validasi: Hanya divisi pengaju yang bisa resend
+            if ($workOrder->divisi_pengaju !== $userDivisiNama) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki akses untuk mengirim ulang work order ini.'
+                ], 403);
+            }
+            
+            // Validasi: Hanya work order yang ditolak yang bisa di-resend
+            if ($workOrder->id_verifikator != 3) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hanya work order yang ditolak yang dapat dikirim ulang.'
+                ], 400);
+            }
+            
+            // Update status dari Ditolak (3) ke Menunggu (1)
+            $workOrder->update([
+                'id_verifikator' => 1, // 1 = Menunggu
+                'status' => 'Menunggu',
+                'catatan_penolakan' => null // Hapus catatan penolakan sebelumnya
+            ]);
+            
+            Session::flash('success', 'Work Order berhasil dikirim ulang!');
+            Session::flash('from_crud', true);
+            
+            // Deteksi route berdasarkan divisi
+            $redirectRoute = 'kadivqc.work-order'; // Default
+            $divisiLower = strtolower($userDivisiNama);
+            
+            if (strpos($divisiLower, 'mekanik') !== false) {
+                $redirectRoute = 'kadivmekanik.work-order';
+            } elseif (strpos($divisiLower, 'plasma') !== false) {
+                $redirectRoute = 'kadivplasma.work-order';
+            } elseif (strpos($divisiLower, 'produksi') !== false) {
+                $redirectRoute = 'kadivproduksi.work-order';
+            } elseif (strpos($divisiLower, 'quality') !== false || strpos($divisiLower, 'qc') !== false) {
+                $redirectRoute = 'kadivqc.work-order';
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Work Order berhasil dikirim ulang ke divisi tujuan!',
+                'redirect' => route($redirectRoute, ['from' => 'crud'])
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengirim ulang work order: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
 
     /**
      * Cek stok barang for work order.

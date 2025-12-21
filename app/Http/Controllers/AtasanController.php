@@ -175,12 +175,73 @@ class AtasanController extends Controller
     {
         $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Atasan';
         
-        $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])
+        $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent', 'permintaanBarang.daftarBarang.masterBarang'])
             ->toDivisi($userDivisiNama)
             ->where('divisi_pengaju', '!=', $userDivisiNama)
             ->byVerifikator(1)
             ->orderBy('created_at', 'desc')
             ->get();
+        
+        // Preload semua harga barang untuk efisiensi
+        $masterBarangPrices = DB::table('daftar_barang')
+            ->whereNotNull('harga_barang')
+            ->where('harga_barang', '>', 0)
+            ->pluck('harga_barang', 'nama_barang')
+            ->toArray();
+        
+        // Hitung total harga untuk setiap work order
+        $workOrders->each(function ($wo) use ($masterBarangPrices) {
+            $totalHarga = 0;
+            
+            // Prioritas 1: Hitung dari detail_barang_permintaan
+            if ($wo->permintaanBarang && $wo->permintaanBarang->daftarBarang && $wo->permintaanBarang->daftarBarang->count() > 0) {
+                foreach ($wo->permintaanBarang->daftarBarang as $detail) {
+                    $jumlah = $detail->jumlah ?? 1;
+                    
+                    if ($detail->estimasi_harga && $detail->estimasi_harga > 0) {
+                        $totalHarga += $detail->estimasi_harga;
+                    } elseif ($detail->masterBarang && $detail->masterBarang->harga_barang && $detail->masterBarang->harga_barang > 0) {
+                        $totalHarga += $detail->masterBarang->harga_barang * $jumlah;
+                    }
+                }
+            }
+            
+            // Prioritas 2: Fallback ke total_estimasi_harga
+            if ($totalHarga == 0 && $wo->permintaanBarang && $wo->permintaanBarang->total_estimasi_harga > 0) {
+                $totalHarga = $wo->permintaanBarang->total_estimasi_harga;
+            }
+            
+            // Prioritas 3: Parse dari field unit jika masih 0
+            // Format: "Filter Oli (qty: 1), Belt Alternator (qty: 2)"
+            if ($totalHarga == 0 && $wo->unit) {
+                $unitString = is_object($wo->unit) ? ($wo->unit->nama_unit ?? '') : $wo->unit;
+                
+                // Parse items dari string unit
+                preg_match_all('/([^,]+?)(?:\s*\(qty:\s*(\d+)\))?(?:,|$)/i', $unitString, $matches, PREG_SET_ORDER);
+                
+                foreach ($matches as $match) {
+                    $namaBarang = trim($match[1]);
+                    $qty = isset($match[2]) ? (int)$match[2] : 1;
+                    
+                    if (empty($namaBarang)) continue;
+                    
+                    // Cari harga dari master barang
+                    $harga = 0;
+                    foreach ($masterBarangPrices as $nama => $price) {
+                        if (stripos($namaBarang, $nama) !== false || stripos($nama, $namaBarang) !== false) {
+                            $harga = $price;
+                            break;
+                        }
+                    }
+                    
+                    if ($harga > 0) {
+                        $totalHarga += $harga * $qty;
+                    }
+                }
+            }
+            
+            $wo->calculated_total_harga = $totalHarga;
+        });
         
         return view('atasan.work_order_masuk', compact('workOrders'));
     }
@@ -239,5 +300,107 @@ class AtasanController extends Controller
         $filename = "WorkOrder_{$cleanNo}.pdf";
 
         return $pdf->stream($filename);
+    }
+
+    /**
+     * Approve work order dari Atasan.
+     * Work order yang disetujui akan menambah status permintaan barang ke 'Disetujui Atasan'
+     * sehingga akan tampil di halaman Beli Barang Purchasing.
+     */
+    public function approveWorkOrder($id)
+    {
+        try {
+            $workOrder = SuratPengajuan::with('permintaanBarang')->findOrFail($id);
+            $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi');
+            
+            // Validasi akses
+            if ($workOrder->ditujukan !== $userDivisiNama) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki akses untuk menyetujui work order ini.'
+                ], 403);
+            }
+            
+            // Update status work order
+            $workOrder->update([
+                'id_verifikator' => 2, // 2 = Disetujui
+                'status' => 'Disetujui Atasan'
+            ]);
+            
+            // Update status permintaan barang jika ada
+            if ($workOrder->permintaanBarang) {
+                $statusDisetujuiAtasanId = StatusWo::where('nama_status', 'Disetujui Atasan')->value('id_status_wo');
+                
+                $workOrder->permintaanBarang->update([
+                    'status' => 'Disetujui Atasan',
+                    'id_status_wo' => $statusDisetujuiAtasanId,
+                    'id_atasan' => Session::get('user_id'),
+                ]);
+            }
+            
+            Session::flash('success', 'Work Order berhasil disetujui! Data akan muncul di halaman Beli Barang.');
+            return response()->json([
+                'success' => true,
+                'message' => 'Work Order berhasil disetujui! Data akan muncul di halaman Beli Barang.',
+                'redirect' => route('atasan.work-order-masuk', ['from' => 'crud'])
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyetujui work order: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Reject work order dari Atasan.
+     * Work order yang ditolak akan dikembalikan ke Purchasing untuk dikirim ulang.
+     */
+    public function rejectWorkOrder(Request $request, $id)
+    {
+        try {
+            $workOrder = SuratPengajuan::with('permintaanBarang')->findOrFail($id);
+            $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi');
+            
+            // Validasi akses
+            if ($workOrder->ditujukan !== $userDivisiNama) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki akses untuk menolak work order ini.'
+                ], 403);
+            }
+            
+            // Kembalikan ke Purchasing untuk dikirim ulang
+            $workOrder->update([
+                'ditujukan' => 'Purchasing', // Kembalikan ke Purchasing
+                'id_verifikator' => 1, // Reset ke menunggu
+                'status' => 'Ditolak Atasan - Perlu Dikirim Ulang',
+                'catatan_penolakan' => $request->catatan_penolakan ?? null,
+            ]);
+            
+            // Update status permintaan barang jika ada
+            if ($workOrder->permintaanBarang) {
+                $statusDitolakId = StatusWo::where('nama_status', 'Ditolak Atasan')->value('id_status_wo');
+                
+                $workOrder->permintaanBarang->update([
+                    'status' => 'Ditolak Atasan',
+                    'id_status_wo' => $statusDitolakId,
+                    'id_atasan' => Session::get('user_id'),
+                    'catatan_atasan' => $request->catatan_penolakan ?? null,
+                ]);
+            }
+            
+            Session::flash('success', 'Work Order ditolak dan dikembalikan ke Purchasing untuk dikirim ulang.');
+            return response()->json([
+                'success' => true,
+                'message' => 'Work Order ditolak dan dikembalikan ke Purchasing untuk dikirim ulang.',
+                'redirect' => route('atasan.work-order-masuk', ['from' => 'crud'])
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menolak work order: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

@@ -173,7 +173,14 @@
                                 <tbody>
                                     @forelse($workOrders as $i => $wo)
                                         @php
-                                            $status = $wo->verifikator->nama_status ?? $wo->status ?? 'Menunggu';
+                                            // Prioritas: cek kolom status terlebih dahulu jika mengandung "Ditolak Atasan"
+                                            // karena saat ditolak oleh Atasan, id_verifikator direset ke 1 (Menunggu)
+                                            // tapi kolom status berisi "Ditolak Atasan - Perlu Dikirim Ulang"
+                                            if ($wo->status && strpos($wo->status, 'Ditolak Atasan') !== false) {
+                                                $status = $wo->status;
+                                            } else {
+                                                $status = $wo->verifikator->nama_status ?? $wo->status ?? 'Menunggu';
+                                            }
                                         @endphp
                                         <tr>
                                             <td>{{ $i + 1 }}</td>
@@ -189,10 +196,12 @@
                                             <td>{{ \Carbon\Carbon::parse($wo->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
                                             <td>{{ $wo->unit_code ?? $wo->unit }}</td>
                                             <td>{{ Str::limit($wo->uraian, 30) }}</td>
-                                            <td>Rp {{ number_format($wo->total_harga ?? 0, 0, ',', '.') }}</td>
+                                            <td>Rp {{ number_format($wo->calculated_total_harga ?? 0, 0, ',', '.') }}</td>
                                             <td>
                                                 @if($status == 'Disetujui' || $status == 'Selesai')
                                                     <span class="badge badge-success">{{ $status }}</span>
+                                                @elseif(strpos($status, 'Ditolak Atasan') !== false)
+                                                    <span class="badge badge-danger">Ditolak Atasan</span>
                                                 @elseif($status == 'Ditolak')
                                                     <span class="badge badge-danger">{{ $status }}</span>
                                                 @else
@@ -276,20 +285,8 @@
                             <p id="view_no_wo" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label><strong>No. WO Parent:</strong></label>
-                            <p id="view_no_wo_parent" class="form-control-plaintext border p-2 rounded"></p>
-                        </div>
-                    </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label><strong>Tanggal:</strong></label>
-                            <p id="view_tanggal" class="form-control-plaintext border p-2 rounded"></p>
-                        </div>
-                    </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             <label><strong>Divisi Pengaju:</strong></label>
@@ -300,14 +297,16 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label><strong>Unit:</strong></label>
-                            <p id="view_unit" class="form-control-plaintext border p-2 rounded"></p>
+                            <label><strong>Tanggal:</strong></label>
+                            <p id="view_tanggal" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
+                </div>
+                <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label><strong>Total Harga:</strong></label>
-                            <p id="view_total_harga" class="form-control-plaintext border p-2 rounded font-weight-bold text-success"></p>
+                            <label><strong>Unit:</strong></label>
+                            <p id="view_unit" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
                 </div>
@@ -401,7 +400,7 @@
 
         $(document).on('click', '.btn-reject', function() {
             var id = $(this).data('id');
-            $('#rejectWorkOrderForm').attr('action', '{{ url("atasan/work-order") }}/' + id + '/reject');
+            $('#rejectWorkOrderForm').attr('action', '{{ url("atasan/work-order/reject") }}/' + id);
             $('#catatan_penolakan').val('');
             $('#rejectWorkOrderModal').modal('show');
         });

@@ -181,7 +181,7 @@
                                             <td>{{ \Carbon\Carbon::parse($wo->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
                                             <td>{{ $wo->unit_code ?? $wo->unit }}</td>
                                             <td>{{ Str::limit($wo->uraian, 30) }}</td>
-                                            <td>Rp {{ number_format($wo->total_harga ?? 0, 0, ',', '.') }}</td>
+                                            <td>Rp {{ number_format($wo->calculated_total_harga ?? 0, 0, ',', '.') }}</td>
                                             <td>
                                                 @if($status == 'Disetujui' || $status == 'Selesai')
                                                     <span class="badge badge-success">{{ $status }}</span>

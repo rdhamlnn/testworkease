@@ -612,7 +612,14 @@
                         <tbody>
                             @forelse($workOrders as $i => $wo)
                                 @php
-                                    $status = $wo->verifikator->nama_status ?? $wo->status ?? 'Menunggu';
+                                    // Prioritas: cek kolom status terlebih dahulu jika mengandung "Ditolak Atasan"
+                                    // karena saat ditolak oleh Atasan, id_verifikator direset ke 1 (Menunggu)
+                                    // tapi kolom status berisi "Ditolak Atasan - Perlu Dikirim Ulang"
+                                    if ($wo->status && strpos($wo->status, 'Ditolak Atasan') !== false) {
+                                        $status = $wo->status;
+                                    } else {
+                                        $status = $wo->verifikator->nama_status ?? $wo->status ?? 'Menunggu';
+                                    }
                                     $statusLabel = $status ?? 'Menunggu';
                                     $statusLower = strtolower($statusLabel);
                                     $isLocked = in_array($wo->id_verifikator, [2, 3]);
@@ -634,6 +641,8 @@
                                     <td>
                                         @if($status == 'Disetujui' || $status == 'Selesai')
                                             <span class="badge badge-success">{{ $status }}</span>
+                                        @elseif(strpos($status, 'Ditolak Atasan') !== false)
+                                            <span class="badge badge-danger">Ditolak Atasan</span>
                                         @elseif($status == 'Ditolak')
                                             <span class="badge badge-danger">{{ $status }}</span>
                                         @else
@@ -646,7 +655,27 @@
                                                 data-id="{{ $wo->id_surat_pengajuan }}" title="Lihat Detail">
                                                 <i class="fas fa-eye"></i>
                                             </button>
-                                            @if($status == 'Menunggu')
+                                            @if(strpos($status, 'Ditolak Atasan') !== false)
+                                            {{-- Button lihat alasan penolakan --}}
+                                            @if($wo->catatan_penolakan)
+                                            <button type="button" class="btn btn-secondary btn-sm btn-view-penolakan" 
+                                                data-catatan="{{ e($wo->catatan_penolakan) }}"
+                                                title="Lihat Alasan Penolakan">
+                                                <i class="fas fa-comment-alt"></i>
+                                            </button>
+                                            @endif
+                                            {{-- Button kirim ulang ke Atasan untuk WO yang ditolak --}}
+                                            <button type="button" class="btn btn-primary btn-sm btn-resend-atasan" 
+                                                data-id="{{ $wo->id_surat_pengajuan }}"
+                                                data-url="{{ route('purchasing.work-order.resend-to-atasan', $wo->id_surat_pengajuan) }}"
+                                                title="Kirim Ulang ke Atasan">
+                                                <i class="fas fa-paper-plane"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-warning btn-sm btn-edit" 
+                                                data-id="{{ $wo->id_surat_pengajuan }}" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            @elseif($status == 'Menunggu')
                                             <button type="button" class="btn btn-warning btn-sm btn-edit" 
                                                 data-id="{{ $wo->id_surat_pengajuan }}" title="Edit"
                                                 data-locked="{{ $isLocked ? 'true' : 'false' }}"
@@ -927,8 +956,8 @@
                                         <label for="edit_ditujukan">Ditujukan <span class="text-danger">*</span></label>
                                         <select class="form-control" name="ditujukan" id="edit_ditujukan" required disabled>
                                             <option value="">-- Pilih Jenis Work Order terlebih dahulu --</option>
-                                            <!-- Options untuk Pembelian: purchasing → Logistik -->
-                                            <option value="Logistik" data-jenis-wo="pembelian" style="display: none;">Logistik</option>
+                                            <!-- Options untuk Pembelian: purchasing → Atasan (untuk approval) -->
+                                            <option value="Atasan" data-jenis-wo="pembelian" style="display: none;">Atasan</option>
                                             <!-- Options untuk Perbaikan: ditujukan ke Mekanik -->
                                             <option value="Mekanik" data-jenis-wo="perbaikan" style="display: none;">Mekanik</option>
                                             <!-- Options untuk Permintaan: semua kecuali Atasan, Purchasing, Admin, dan Mekanik sendiri -->
@@ -1087,9 +1116,9 @@
 
 @section('scripts')
 <script>
-    // Tutup otomatis alert setelah 3 detik
+    // Tutup otomatis alert setelah 3 detik (kecuali alert di dalam modal)
     setTimeout(() => {
-        $('.alert').fadeOut();
+        $('.alert:not(.modal .alert)').fadeOut();
     }, 3000);
 
     function isLockedAction(element) {
@@ -2736,8 +2765,15 @@
                 }
                 
                 // Set nilai ditujukan setelah filter diterapkan
+                // Jika WO ini ditolak oleh Atasan, set tujuan ke Atasan untuk kirim ulang
                 setTimeout(function() {
-                    $('#edit_ditujukan').val(data.ditujukan);
+                    var ditujukanValue = data.ditujukan;
+                    // Jika status mengandung "Ditolak Atasan", set ditujukan ke Atasan
+                    if (data.status && data.status.indexOf('Ditolak Atasan') !== -1) {
+                        ditujukanValue = 'Atasan';
+                    }
+                    $('#edit_ditujukan').val(ditujukanValue);
+                    console.log('Set ditujukan to:', ditujukanValue, 'Original:', data.ditujukan, 'Status:', data.status);
                 }, 200);
                 
                 // Toggle section barang berdasarkan jenis WO
@@ -3054,8 +3090,399 @@
         }
     }
 
+    // Handler untuk tombol Kirim Ulang ke Atasan - menggunakan pola yang sama dengan approve/reject
+    $(document).on('click', '.btn-resend-atasan', function(e) {
+        e.preventDefault();
+        var url = $(this).data('url');
+        var woId = $(this).data('id');
+        
+        showResendConfirm(url, 'Apakah ingin mengirim ulang ke atasan?');
+    });
+
+    // Handler untuk tombol Lihat Catatan Penolakan
+    $(document).on('click', '.btn-view-penolakan', function(e) {
+        e.preventDefault();
+        var catatan = $(this).data('catatan');
+        
+        // Set catatan ke modal
+        $('#catatanPenolakanText').text(catatan);
+        
+        // Tampilkan modal
+        $('#catatanPenolakanModal').modal('show');
+    });
+
+    // Fungsi untuk menampilkan konfirmasi kirim ulang
+    function showResendConfirm(url, message) {
+        const modal = $('#resendConfirmModal');
+        const messageEl = $('#resendConfirmMessage');
+        
+        // Set pesan konfirmasi
+        messageEl.text(message || 'Apakah ingin mengirim ulang ke atasan?');
+        
+        // Simpan URL di data attribute modal
+        modal.data('resendUrl', url);
+        
+        // Tampilkan modal
+        modal.modal('show');
+    }
+
+    // Handler untuk klik button konfirmasi kirim ulang
+    function handleResendConfirm() {
+        const modal = $('#resendConfirmModal');
+        const url = modal.data('resendUrl');
+        const submitBtn = $('#resendConfirmBtn');
+        const originalHtml = submitBtn.html();
+        
+        if (!url) {
+            alert('URL tidak ditemukan. Silakan coba lagi.');
+            return false;
+        }
+        
+        // Tutup modal
+        modal.modal('hide');
+        
+        // Tampilkan animasi loading setelah modal tertutup
+        modal.one('hidden.bs.modal', function() {
+            if (typeof showPageTransition === 'function') {
+                showPageTransition('Memproses data...');
+            }
+        });
+        
+        // Disable button dan tampilkan loading
+        submitBtn.prop('disabled', true);
+        submitBtn.html('<i class="fas fa-spinner fa-spin mr-2"></i>Memproses...');
+        
+        // Submit via AJAX
+        $.ajax({
+            url: url,
+            type: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            data: {
+                _token: '{{ csrf_token() }}'
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (typeof hidePageTransition === 'function') {
+                    hidePageTransition();
+                }
+                
+                if (response && response.success) {
+                    // Redirect dengan URL yang sudah include from=crud untuk trigger notifikasi toast
+                    if (response.redirect) {
+                        window.location.href = response.redirect;
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    // Re-enable button on error
+                    submitBtn.prop('disabled', false);
+                    submitBtn.html(originalHtml);
+                    
+                    if (response.redirect) {
+                        window.location.href = response.redirect;
+                    } else {
+                        location.reload();
+                    }
+                }
+            },
+            error: function(xhr) {
+                if (typeof hidePageTransition === 'function') {
+                    hidePageTransition();
+                }
+                
+                // Re-enable button on error
+                submitBtn.prop('disabled', false);
+                submitBtn.html(originalHtml);
+                
+                // Redirect dengan error untuk trigger notifikasi toast
+                let redirectUrl = null;
+                if (xhr.responseJSON && xhr.responseJSON.redirect) {
+                    redirectUrl = xhr.responseJSON.redirect;
+                } else {
+                    const errorUrl = new URL(window.location.href);
+                    errorUrl.searchParams.set('from', 'crud');
+                    redirectUrl = errorUrl.toString();
+                }
+                
+                if (redirectUrl) {
+                    window.location.href = redirectUrl;
+                } else {
+                    location.reload();
+                }
+            }
+        });
+        
+        return false;
+    }
+
 </script>
 @include('components.delete-confirm-modal')
+
+<!-- Modal Konfirmasi Kirim Ulang ke Atasan -->
+<div class="modal fade" id="resendConfirmModal" tabindex="-1" role="dialog" aria-labelledby="resendConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #1B3C88;">
+                <h5 class="modal-title" id="resendConfirmModalLabel">
+                    <i class="fas fa-paper-plane mr-2"></i>Konfirmasi
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-paper-plane text-primary" style="font-size: 3.5rem;"></i>
+                </div>
+                <h5 class="text-center mb-3" id="resendConfirmMessage">
+                    Apakah ingin mengirim ulang ke atasan?
+                </h5>
+                <p class="text-center text-muted mb-0">
+                    Work order akan dikirim ulang ke Atasan untuk approval.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-2"></i>Batal
+                </button>
+                <button type="button" class="btn btn-primary" id="resendConfirmBtn" onclick="handleResendConfirm()">
+                    <i class="fas fa-paper-plane mr-2"></i>Ya, Kirim Ulang
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Catatan Penolakan -->
+<div class="modal fade" id="catatanPenolakanModal" tabindex="-1" role="dialog" aria-labelledby="catatanPenolakanModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #1B3C88 !important;">
+                <h5 class="modal-title text-white" id="catatanPenolakanModalLabel">
+                    <i class="fas fa-exclamation-circle mr-2"></i>Catatan Penolakan
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 1;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="style="font-size: 3.5rem; color: #1B3C88;"></i>
+                </div>
+                <div class="alert" role="alert" style="border-left: 4px solid #1B3C88; background-color: #e8f0fe; border-color: #1B3C88; border-radius: 8px; padding: 20px;">
+                    <h6 class="alert-heading mb-2" style="color: #1B3C88; font-weight: 600;">
+                        <i class="fas fa-info-circle mr-2"></i>Catatan dari Atasan:
+                    </h6>
+                    <hr style="border-top-color: #1B3C88;">
+                    <p class="mb-0" id="catatanPenolakanText" style="white-space: pre-wrap; line-height: 1.6; color: #2c3e50;"></p>
+                </div>
+            </div>
+            <div class="modal-footer" style="background-color: #f8f9fa;">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-2"></i>Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Modal Konfirmasi Kirim Ulang */
+#resendConfirmModal .modal-dialog {
+    max-width: 420px;
+}
+
+#resendConfirmModal .modal-content {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+}
+
+#resendConfirmModal .modal-header {
+    color: #fff;
+    padding: 20px 25px;
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+}
+
+#resendConfirmModal .modal-header .modal-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+}
+
+#resendConfirmModal .modal-header .close {
+    color: #fff;
+    opacity: 1;
+    font-size: 1.4rem;
+    transition: opacity 0.2s ease;
+}
+
+#resendConfirmModal .modal-header .close:hover {
+    opacity: 0.8;
+}
+
+#resendConfirmModal .modal-body {
+    padding: 35px 25px;
+    text-align: center;
+}
+
+#resendConfirmModal .modal-body i {
+    margin-bottom: 20px;
+    opacity: 0.9;
+}
+
+#resendConfirmModal .modal-body h5 {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 12px;
+    font-size: 1.15rem;
+}
+
+#resendConfirmModal .modal-body p {
+    font-size: 0.9rem;
+    color: #6c757d;
+    line-height: 1.5;
+}
+
+#resendConfirmModal .modal-footer {
+    padding: 18px 25px;
+    border-top: 1px solid #e9ecef;
+    background-color: #f8f9fa;
+    border-radius: 0 0 10px 10px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+#resendConfirmModal .modal-footer .btn {
+    padding: 8px 20px;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+#resendConfirmModal .modal-footer .btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+#resendConfirmModal .modal-footer .btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+#resendConfirmModal .modal-footer .btn-primary {
+    background-color: #1B3C88;
+    border-color: #1B3C88;
+}
+
+#resendConfirmModal .modal-footer .btn-primary:hover {
+    background-color: #0f2a5a;
+    border-color: #0f2a5a;
+}
+
+#resendConfirmModal .modal-footer .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Modal Catatan Penolakan */
+#catatanPenolakanModal .modal-dialog {
+    max-width: 500px;
+}
+
+#catatanPenolakanModal .modal-content {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+}
+
+#catatanPenolakanModal .modal-header {
+    background-color: #1B3C88 !important;
+    color: #fff !important;
+    padding: 20px 25px;
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+}
+
+#catatanPenolakanModal .modal-header .modal-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    color: #fff !important;
+}
+
+#catatanPenolakanModal .modal-header .close {
+    color: #fff !important;
+    opacity: 1 !important;
+    font-size: 1.4rem;
+    transition: opacity 0.2s ease;
+}
+
+#catatanPenolakanModal .modal-header .close:hover {
+    opacity: 0.8 !important;
+}
+
+#catatanPenolakanModal .modal-body {
+    padding: 35px 25px;
+}
+
+#catatanPenolakanModal .modal-body i {
+    margin-bottom: 20px;
+    opacity: 0.9;
+}
+
+#catatanPenolakanModal .alert {
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 0;
+    background-color: #e8f0fe !important;
+    border-color: #1B3C88 !important;
+}
+
+#catatanPenolakanModal .alert-heading {
+    font-weight: 600;
+    color: #1B3C88 !important;
+    margin-bottom: 10px;
+}
+
+#catatanPenolakanModal .alert p {
+    color: #2c3e50 !important;
+}
+
+#catatanPenolakanModal .modal-footer {
+    padding: 18px 25px;
+    border-top: 1px solid #e9ecef;
+    background-color: #f8f9fa !important;
+    border-radius: 0 0 10px 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+#catatanPenolakanModal .modal-footer .btn {
+    padding: 8px 20px;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+#catatanPenolakanModal .modal-footer .btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+#catatanPenolakanModal .modal-footer .btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+</style>
 
 <!-- Modal View Dokumentasi -->
 <div class="modal fade" id="modalViewDokumentasiKadiv" tabindex="-1" role="dialog" aria-labelledby="modalViewDokumentasiKadivLabel" aria-hidden="true">
