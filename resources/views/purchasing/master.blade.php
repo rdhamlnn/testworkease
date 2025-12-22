@@ -287,15 +287,24 @@
                         </li> --}}
 
                         <li class="menu-header">Pembelian</li>
-                        <li class="{{ request()->is('purchasing/beli-barang*') ? 'active' : '' }}">
-                            <a href="{{ url('/purchasing/beli-barang') }}" class="nav-link">
-                                <i class="fas fa-shopping-basket"></i> <span>Beli Barang</span>
+                        <li class="dropdown {{ request()->is('purchasing/beli-barang*') || request()->is('purchasing/kirim-barang*') ? 'active' : '' }}">
+                            <a href="#" class="nav-link has-dropdown" data-toggle="dropdown">
+                                <i class="fas fa-shopping-cart"></i> <span>Pembelian</span>
                             </a>
-                        </li>
-                        <li class="{{ request()->is('purchasing/kirim-barang*') ? 'active' : '' }}">
-                            <a href="{{ url('/purchasing/kirim-barang') }}" class="nav-link">
-                                <i class="fas fa-truck"></i> <span>Kirim Barang</span>
-                            </a>
+                            <ul class="dropdown-menu">
+                                <li class="{{ request()->is('purchasing/beli-barang*') ? 'active' : '' }}">
+                                    <a class="nav-link" href="{{ url('/purchasing/beli-barang') }}">
+                                        <i class="fas fa-shopping-basket"></i>
+                                        <span>Beli Barang</span>
+                                    </a>
+                                </li>
+                                <li class="{{ request()->is('purchasing/kirim-barang*') ? 'active' : '' }}">
+                                    <a class="nav-link" href="{{ url('/purchasing/kirim-barang') }}">
+                                        <i class="fas fa-truck"></i>
+                                        <span>Kirim Barang</span>
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                         <li class="menu-header"></li>
                     </ul>
