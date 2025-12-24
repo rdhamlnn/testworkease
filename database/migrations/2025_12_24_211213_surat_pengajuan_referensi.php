@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('surat_pengajuan_referensi', function (Blueprint $table) {
             $table->id('id_surat_pengajuan_referensi');
             $table->unsignedBigInteger('id_surat_pengajuan');
-            $table->unsignedBigInteger('id_surat_pengajuan_referensi');
+            $table->unsignedBigInteger('id_referensi');
             $table->timestamps();
 
             // Foreign key ke surat_pengajuan (surat utama)
@@ -25,7 +25,7 @@ return new class extends Migration
                   ->onUpdate('cascade');
 
             // Foreign key ke surat_pengajuan (surat referensi)
-            $table->foreign('id_surat_pengajuan_referensi')
+            $table->foreign('id_referensi')
                   ->references('id_surat_pengajuan')
                   ->on('surat_pengajuan')
                   ->onDelete('cascade')
@@ -38,6 +38,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('surat_pengajuan_refrensi');
+        Schema::dropIfExists('surat_pengajuan_referensi');
     }
 };
