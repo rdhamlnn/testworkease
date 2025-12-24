@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('surat_pengajuan_refrensi', function (Blueprint $table) {
-            $table->id('id_surat_pengajuan_refrensi');
+        Schema::create('surat_pengajuan_referensi', function (Blueprint $table) {
+            $table->id('id_surat_pengajuan_referensi');
             $table->unsignedBigInteger('id_surat_pengajuan');
             $table->unsignedBigInteger('id_surat_pengajuan_referensi');
             $table->timestamps();
