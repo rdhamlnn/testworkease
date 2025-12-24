@@ -157,4 +157,32 @@ class SuratPengajuan extends Model
     {
         return $this->hasOne(PermintaanBarang::class, 'id_surat_pengajuan');
     }
+
+    /**
+     * Relasi many-to-many ke surat pengajuan yang menjadi referensi
+     * Contoh: $surat->referensi untuk mendapatkan semua surat yang dijadikan referensi
+     */
+    public function referensi()
+    {
+        return $this->belongsToMany(
+            SuratPengajuan::class,
+            'surat_pengajuan_refrensi',
+            'id_surat_pengajuan',
+            'id_surat_pengajuan_referensi'
+        )->withTimestamps();
+    }
+
+    /**
+     * Relasi many-to-many ke surat pengajuan yang mereferensikan surat ini
+     * Contoh: $surat->direferensiOleh untuk mendapatkan semua surat yang mereferensikan surat ini
+     */
+    public function direferensiOleh()
+    {
+        return $this->belongsToMany(
+            SuratPengajuan::class,
+            'surat_pengajuan_refrensi',
+            'id_surat_pengajuan_referensi',
+            'id_surat_pengajuan'
+        )->withTimestamps();
+    }
 }

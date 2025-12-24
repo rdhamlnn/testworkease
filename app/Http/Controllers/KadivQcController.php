@@ -84,7 +84,7 @@ class KadivQcController extends Controller
     {
         $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Quality Control';
         
-        $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])
+        $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'permintaanBarang.daftarBarang'])
             ->fromDivisi($userDivisiNama)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -256,6 +256,7 @@ class KadivQcController extends Controller
                     'id_surat_pengajuan' => $workOrder->id_surat_pengajuan,
                     'tanggal_permintaan' => $request->tanggal,
                     'status' => 'Menunggu Logistik',
+                    'id_status_wo' => 1,
                     'total_estimasi_harga' => $totalHarga,
                     'id_akun' => Session::get('user_id', 1),
                 ]);

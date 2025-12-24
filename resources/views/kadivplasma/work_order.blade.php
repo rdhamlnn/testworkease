@@ -344,9 +344,11 @@
     
     .tab-content-scrollable {
         max-height: 450px;
-        overflow-y: auto;
+        overflow-y: auto !important;
         overflow-x: hidden;
-        padding-right: 5px;
+        padding-right: 10px;
+        position: relative;
+        -webkit-overflow-scrolling: touch;
     }
     
     .tab-content-scrollable::-webkit-scrollbar {
@@ -365,6 +367,22 @@
     
     .tab-content-scrollable::-webkit-scrollbar-thumb:hover {
         background: #0f2a5a;
+    }
+    
+    /* Fix scrollbar interactivity dalam modal */
+    #tambahWorkOrderModal .tab-content-scrollable,
+    #editWorkOrderModal .tab-content-scrollable {
+        max-height: calc(80vh - 200px);
+        overflow-y: scroll !important;
+        overflow-x: hidden;
+        display: block;
+        pointer-events: auto;
+    }
+    
+    #tambahWorkOrderModal .modal-body,
+    #editWorkOrderModal .modal-body {
+        overflow: visible;
+        max-height: none;
     }
     
     /* Qty Input Styles */
@@ -604,6 +622,8 @@
                                 <th>Divisi Pengaju</th>
                                 <th>Hari/Tanggal</th>
                                 <th>Unit/Code</th>
+                                <th>Barang</th>
+                                <th>Qty</th>
                                 <th>Uraian</th>
                                 <th>Status</th>
                                 <th>Aksi</th>
@@ -629,7 +649,56 @@
                                     </td>
                                     <td>{{ $wo->divisi_pengaju }}</td>
                                     <td>{{ \Carbon\Carbon::parse($wo->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
-                                    <td>{{ $wo->unit }}</td>
+                                    @php
+                                        $jenisWo = $wo->jenisWorkOrder ? strtolower($wo->jenisWorkOrder->nama_jenis_wo) : '';
+                                        $isPembelian = $jenisWo === 'pembelian';
+                                        $isPermintaan = $jenisWo === 'permintaan';
+                                        $isPerbaikan = $jenisWo === 'perbaikan';
+                                        
+                                        $barangItems = [];
+                                        $qtyItems = [];
+                                        
+                                        if ($isPembelian && $wo->unit && $wo->unit !== '-') {
+                                            $parts = explode(', ', $wo->unit);
+                                            foreach ($parts as $part) {
+                                                if (preg_match('/^(.+?)\s*\(qty:\s*(\d+)\)$/i', trim($part), $matches)) {
+                                                    $barangItems[] = trim($matches[1]);
+                                                    $qtyItems[] = (int)$matches[2];
+                                                } elseif (!empty(trim($part))) {
+                                                    $barangItems[] = trim($part);
+                                                    $qtyItems[] = 1;
+                                                }
+                                            }
+                                        }
+                                    @endphp
+                                    
+                                    <td>
+                                        @if($isPembelian)
+                                            <span class="text-muted">-</span>
+                                        @elseif($isPermintaan)
+                                            <span class="text-muted">-</span>
+                                        @elseif($isPerbaikan)
+                                            {{ $wo->unit && $wo->unit !== '-' ? $wo->unit : '-' }}
+                                        @else
+                                            {{ $wo->unit ?? '-' }}
+                                        @endif
+                                    </td>
+                                    
+                                    <td>
+                                        @if($isPembelian && count($barangItems) > 0)
+                                            {{ implode(', ', $barangItems) }}
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    
+                                    <td>
+                                        @if($isPembelian && count($qtyItems) > 0)
+                                            {{ implode(', ', $qtyItems) }}
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
                                     <td>{{ Str::limit($wo->uraian, 30) }}</td>
                                     <td>
                                         @if($status == 'Disetujui' || $status == 'Selesai')
@@ -785,7 +854,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="row">
+                            <div class="row" id="unit_row">
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label for="unit" id="label_unit">Nama Unit / Code <span class="text-danger">*</span></label>
@@ -949,7 +1018,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="row">
+                            <div class="row" id="edit_unit_row">
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label for="edit_unit" id="edit_label_unit">Nama Unit / Code <span class="text-danger">*</span></label>
@@ -1155,10 +1224,38 @@
         const jenisWoSelect = $(`#${prefix}id_jenis_wo`);
         const selectedJenisWo = jenisWoSelect.find('option:selected').data('nama-jenis') || jenisWoSelect.find('option:selected').text();
         const isPerbaikan = selectedJenisWo && selectedJenisWo.toLowerCase() === 'perbaikan';
+        const isPermintaan = selectedJenisWo && selectedJenisWo.toLowerCase() === 'permintaan';
+        const isPembelian = selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian';
         
         const toggle = $(`#${prefix}perbaikan_unit_toggle`);
         const unitSelect = $(`#${prefix}unit_select`);
         const unitInput = $(`#${prefix}unit`);
+        const unitRow = $(`#${prefix}unit_row`);
+        
+        // Sembunyikan seluruh row unit jika jenis WO = Permintaan
+        if (isPermintaan) {
+            unitRow.hide();
+            unitInput.val('').removeAttr('name').removeAttr('required');
+            unitSelect.val('').removeAttr('name').removeAttr('required');
+            $(`#${prefix}unit_pembelian_container`).hide().html('');
+            toggle.hide();
+            if (unitSelect.hasClass('select2-hidden-accessible')) {
+                unitSelect.select2('destroy');
+            }
+            
+            // Tambahkan hidden input untuk mengirim nilai default "-" ke server
+            const hiddenInputId = `${prefix}unit_hidden`;
+            if ($(`#${hiddenInputId}`).length === 0) {
+                unitRow.after(`<input type="hidden" id="${hiddenInputId}" name="unit" value="-">`);
+            }
+            return;
+        }
+        
+        // Hapus hidden input jika ada (untuk jenis WO selain Permintaan)
+        $(`#${prefix}unit_hidden`).remove();
+        
+        // Tampilkan row unit untuk jenis WO lainnya
+        unitRow.show();
         
         if (isPerbaikan) {
             // Hide pembelian container
@@ -1172,7 +1269,6 @@
             $(`#${prefix}is_perbaikan_unit_yes`).prop('checked', false).parent().removeClass('active');
             
             // Hanya tampilkan unit input jika bukan Pembelian
-            const isPembelian = selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian';
             if (!isPembelian) {
                 unitInput.show().attr('name', 'unit').attr('required', 'required');
             }

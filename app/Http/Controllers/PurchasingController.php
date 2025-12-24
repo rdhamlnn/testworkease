@@ -397,6 +397,7 @@ class PurchasingController extends Controller
                     'id_surat_pengajuan' => $workOrder->id_surat_pengajuan,
                     'tanggal_permintaan' => $request->tanggal,
                     'status' => 'Menunggu Logistik',
+                    'id_status_wo' => 1,
                     'total_estimasi_harga' => $totalHarga,
                     'id_akun' => Session::get('user_id', 1),
                 ]);
