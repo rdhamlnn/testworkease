@@ -456,18 +456,23 @@
                     $('#view_harga_barang_container').hide();
                 }
                 
-                // Dokumentasi
-                if (data.dokumentasi && data.dokumentasi !== '-') {
+                // Dokumentasi - tampilkan button lihat foto
+                if (data.dokumentasi && data.dokumentasi !== '-' && data.dokumentasi.trim() !== '') {
                     const fileExt = data.dokumentasi.split('.').pop().toLowerCase();
                     const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(fileExt);
+                    const dokumentasiUrl = data.dokumentasi_url || '/storage/' + data.dokumentasi;
                     
                     if (isImage) {
                         $('#view_dokumentasi').html(
-                            '<img src="/storage/' + data.dokumentasi + '" alt="Dokumentasi" style="max-width: 100%; max-height: 300px; object-fit: contain; border-radius: 8px;">'
+                            '<button type="button" class="btn btn-sm btn-outline-primary btn-view-dokumentasi-modal" ' +
+                            'data-foto="' + dokumentasiUrl + '" ' +
+                            'data-nama="' + (data.no_surat_pengajuan || data.no_work_order || '') + '">' +
+                            '<i class="fas fa-image"></i> Lihat Foto' +
+                            '</button>'
                         );
                     } else {
                         $('#view_dokumentasi').html(
-                            '<a href="/storage/' + data.dokumentasi + '" target="_blank" class="btn btn-sm btn-outline-primary">' +
+                            '<a href="' + dokumentasiUrl + '" target="_blank" class="btn btn-sm btn-outline-primary">' +
                             '<i class="fas fa-file"></i> Lihat Dokumentasi' +
                             '</a>'
                         );
@@ -483,6 +488,51 @@
                 alert('Gagal mengambil data work order');
             });
     }
+
+    // View Dokumentasi Modal Handler
+    $(document).on('click', '.btn-view-dokumentasi-modal', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const fotoUrl = $(this).data('foto');
+        const namaWo = $(this).data('nama');
+        
+        // Set data foto
+        $('#dokumentasiViewAtasan').attr('src', fotoUrl);
+        $('#dokumentasiViewAtasan').attr('alt', 'Dokumentasi ' + namaWo);
+        $('#namaWoViewAtasan').text('Dokumentasi Work Order: ' + namaWo);
+        
+        // Tutup modal work order terlebih dahulu
+        $('#viewWorkOrderModal').modal('hide');
+        
+        // Setelah modal work order tertutup, buka modal dokumentasi
+        $('#viewWorkOrderModal').on('hidden.bs.modal', function() {
+            $('#modalViewDokumentasiAtasan').modal('show');
+            // Hapus event listener setelah digunakan
+            $('#viewWorkOrderModal').off('hidden.bs.modal');
+        });
+    });
 </script>
+
+<!-- Modal View Dokumentasi -->
+<div class="modal fade" id="modalViewDokumentasiAtasan" tabindex="-1" role="dialog" aria-labelledby="modalViewDokumentasiAtasanLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalViewDokumentasiAtasanLabel">Dokumentasi Work Order</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="dokumentasiViewAtasan" src="" alt="Dokumentasi" style="max-width: 100%; max-height: 500px; object-fit: contain; border-radius: 8px;">
+                <p class="mt-3 mb-0" id="namaWoViewAtasan"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 

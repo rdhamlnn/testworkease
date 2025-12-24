@@ -824,8 +824,11 @@
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label for="dokumentasi">Dokumentasi</label>
-                                        <input type="file" class="form-control" id="dokumentasi" name="dokumentasi" accept=".pdf,.jpg,.jpeg,.png">
+                                        <input type="file" class="form-control" id="dokumentasi" name="dokumentasi" accept=".pdf,.jpg,.jpeg,.png" onchange="previewDokumentasiAdd(this)">
                                         <small class="form-text text-muted">Format: JPG, PNG, PDF. Maksimal 2MB.</small>
+                                        <div id="previewDokumentasiContainerAdd" class="mt-2" style="display: none;">
+                                            <img id="previewDokumentasiAdd" src="" alt="Preview Dokumentasi" style="max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 8px; border: 1px solid #ddd;">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -3043,6 +3046,28 @@
         } else {
             // Jika file dihapus, tampilkan kembali file saat ini
             $('#previewDokumentasiContainerKadiv').hide();
+        }
+    }
+
+    // Preview dokumentasi saat tambah WO
+    function previewDokumentasiAdd(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            const fileExt = file.name.split('.').pop().toLowerCase();
+            const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(fileExt);
+            
+            if (isImage) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#previewDokumentasiAdd').attr('src', e.target.result);
+                    $('#previewDokumentasiContainerAdd').show();
+                };
+                reader.readAsDataURL(file);
+            } else {
+                $('#previewDokumentasiContainerAdd').hide();
+            }
+        } else {
+            $('#previewDokumentasiContainerAdd').hide();
         }
     }
 

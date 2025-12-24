@@ -215,10 +215,18 @@
     <!-- DOKUMENTASI -->
     <div class="section-title">DOKUMENTASI :</div>
     <div class="dokumentasi-box">
-        @if($wo->dokumentasi)
-          <img src="{{ public_path('storage/'.$wo->dokumentasi) }}">
+        @if($wo->dokumentasi && !empty($wo->dokumentasi))
+            @php
+                $imagePath = storage_path('app/public/' . $wo->dokumentasi);
+                $imageExists = file_exists($imagePath);
+            @endphp
+            @if($imageExists)
+                <img src="{{ $imagePath }}">
+            @else
+                <p style="text-align: center; font-size: 24px; margin: 0; padding-top: 60px;">-</p>
+            @endif
         @else
-            <p><em>Foto Dokumentasi</em></p>
+            <p style="text-align: center; font-size: 24px; margin: 0; padding-top: 60px;">-</p>
         @endif
     </div>
 
