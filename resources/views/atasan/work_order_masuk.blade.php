@@ -132,6 +132,104 @@
         overflow-y: auto !important;
         overflow-x: hidden !important;
         padding: 20px 30px;
+        scrollbar-width: thin;
+        scrollbar-color: #1B3C88 #f1f1f1;
+    }
+    
+    #viewWorkOrderModal .modal-body::-webkit-scrollbar {
+        width: 10px;
+        -webkit-appearance: none;
+    }
+    
+    #viewWorkOrderModal .modal-body::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 5px;
+        -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.1);
+    }
+    
+    #viewWorkOrderModal .modal-body::-webkit-scrollbar-thumb {
+        background: #1B3C88;
+        border-radius: 5px;
+        -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+    }
+    
+    #viewWorkOrderModal .modal-body::-webkit-scrollbar-thumb:hover {
+        background: #0f2a5a;
+    }
+    
+    #view_barang_container {
+        width: 100%;
+        overflow: hidden;
+    }
+    
+    #view_barang_table {
+        max-height: 400px;
+        overflow-y: auto;
+        overflow-x: auto;
+        width: 100%;
+        position: relative;
+        display: block;
+    }
+    
+    #view_barang_table table {
+        width: 100% !important;
+        margin-bottom: 0;
+        min-width: 100% !important;
+        table-layout: fixed;
+        border-collapse: collapse;
+    }
+    
+    #view_barang_table table thead {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+    }
+    
+    #view_barang_table table tbody {
+        display: block;
+        max-height: 350px;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+    
+    #view_barang_table table tbody tr {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+    }
+    
+    #view_barang_table table th,
+    #view_barang_table table td {
+        padding: 8px 12px;
+        font-size: 14px;
+        word-wrap: break-word;
+    }
+    
+    #view_barang_table table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    #view_barang_table table tbody::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    #view_barang_table table tbody::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    #view_barang_table table tbody::-webkit-scrollbar-thumb {
+        background: #1B3C88;
+        border-radius: 4px;
+    }
+    
+    #view_barang_table table tbody::-webkit-scrollbar-thumb:hover {
+        background: #0f2a5a;
     }
 </style>
 @endsection
@@ -332,20 +430,10 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label><strong>No. Work Order:</strong></label>
+                            <label><strong>No. Surat Pengajuan:</strong></label>
                             <p id="view_no_wo" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label><strong>Divisi Pengaju:</strong></label>
-                            <p id="view_divisi_pengaju" class="form-control-plaintext border p-2 rounded"></p>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
                             <label><strong>Tanggal:</strong></label>
@@ -356,10 +444,34 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label><strong>Unit:</strong></label>
+                            <label><strong>Divisi Pengaju:</strong></label>
+                            <p id="view_divisi_pengaju" class="form-control-plaintext border p-2 rounded"></p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label><strong>Ditujukan:</strong></label>
+                            <p id="view_ditujukan" class="form-control-plaintext border p-2 rounded"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label><strong>Jenis Work Order:</strong></label>
+                            <p id="view_jenis_wo" class="form-control-plaintext border p-2 rounded"></p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group" id="view_unit_container">
+                            <label id="view_label_unit"><strong>Unit:</strong></label>
                             <p id="view_unit" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
+                </div>
+                <div class="form-group" id="view_barang_container" style="display: none;">
+                    <label><strong>Barang:</strong></label>
+                    <div id="view_barang_table" class="border rounded" style="padding: 0; overflow: hidden;"></div>
                 </div>
                 <div class="form-group">
                     <label><strong>Uraian:</strong></label>
@@ -487,11 +599,98 @@
             .then(response => response.json())
             .then(data => {
                 $('#view_no_wo').text(data.no_surat_pengajuan || data.no_work_order || '-');
-                $('#view_no_wo_parent').text(data.no_wo_parent || '-');
                 $('#view_tanggal').text(new Date(data.tanggal).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
                 $('#view_divisi_pengaju').text(data.divisi_pengaju || '-');
-                $('#view_unit').text(data.unit_code || data.unit || '-');
-                $('#view_total_harga').text('Rp ' + (data.total_harga ? new Intl.NumberFormat('id-ID').format(data.total_harga) : '0'));
+                $('#view_ditujukan').text(data.ditujukan || '-');
+                $('#view_jenis_wo').text(data.jenis_wo || '-');
+                
+                // Cek jenis work order
+                const jenisWo = data.jenis_wo ? data.jenis_wo.toLowerCase() : '';
+                const isPembelian = jenisWo === 'pembelian';
+                
+                // Parse format dengan qty dan tampilkan dalam table
+                let unitDisplay = '-';
+                let barangTable = '';
+                
+                if (isPembelian) {
+                    // Jika jenis WO adalah Pembelian, tampilkan tabel di div baru
+                    if (Array.isArray(data.unit)) {
+                        // Jika array, buat table dengan qty
+                        if (data.unit.length > 0) {
+                            barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
+                            barangTable += '<thead><tr><th style="width: 10%;">No</th><th style="width: 60%;">Nama Barang</th><th style="width: 30%;" class="text-center">Qty</th></tr></thead><tbody>';
+                            data.unit.forEach(function(item, index) {
+                                const qtyMatch = item.match(/\(qty:\s*(\d+)\)/);
+                                if (qtyMatch) {
+                                    const qty = qtyMatch[1];
+                                    const barangName = item.replace(/\s*\(qty:\s*\d+\)/, '').trim();
+                                    barangTable += `<tr><td style="width: 10%;">${index + 1}</td><td style="width: 60%;">${barangName}</td><td style="width: 30%;" class="text-center"><strong>${qty}</strong></td></tr>`;
+                                } else {
+                                    barangTable += `<tr><td style="width: 10%;">${index + 1}</td><td style="width: 60%;">${item}</td><td style="width: 30%;" class="text-center"><strong>-</strong></td></tr>`;
+                                }
+                            });
+                            barangTable += '</tbody></table>';
+                        }
+                    } else if (data.unit && typeof data.unit === 'string') {
+                        // Parse string dengan format "Barang1 (qty: 5), Barang2 (qty: 3)"
+                        if (data.unit.includes(',')) {
+                            const parts = data.unit.split(',').map(v => v.trim()).filter(v => v);
+                            if (parts.length > 0) {
+                                barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
+                                barangTable += '<thead><tr><th style="width: 10%;">No</th><th style="width: 60%;">Nama Barang</th><th style="width: 30%;" class="text-center">Qty</th></tr></thead><tbody>';
+                                parts.forEach(function(part, index) {
+                                    const qtyMatch = part.match(/\(qty:\s*(\d+)\)/);
+                                    if (qtyMatch) {
+                                        const qty = qtyMatch[1];
+                                        const barangName = part.replace(/\s*\(qty:\s*\d+\)/, '').trim();
+                                        barangTable += `<tr><td style="width: 10%;">${index + 1}</td><td style="width: 60%;">${barangName}</td><td style="width: 30%;" class="text-center"><strong>${qty}</strong></td></tr>`;
+                                    } else {
+                                        barangTable += `<tr><td style="width: 10%;">${index + 1}</td><td style="width: 60%;">${part}</td><td style="width: 30%;" class="text-center"><strong>-</strong></td></tr>`;
+                                    }
+                                });
+                                barangTable += '</tbody></table>';
+                            }
+                        } else {
+                            // Single value dengan atau tanpa qty
+                            const qtyMatch = data.unit.match(/\(qty:\s*(\d+)\)/);
+                            if (qtyMatch) {
+                                const qty = qtyMatch[1];
+                                const barangName = data.unit.replace(/\s*\(qty:\s*\d+\)/, '').trim();
+                                barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
+                                barangTable += '<thead><tr><th style="width: 10%;">No</th><th style="width: 60%;">Nama Barang</th><th style="width: 30%;" class="text-center">Qty</th></tr></thead><tbody>';
+                                barangTable += `<tr><td style="width: 10%;">1</td><td style="width: 60%;">${barangName}</td><td style="width: 30%;" class="text-center"><strong>${qty}</strong></td></tr>`;
+                                barangTable += '</tbody></table>';
+                            }
+                        }
+                    }
+                    
+                    // Tampilkan tabel di div baru dan sembunyikan field Unit
+                    if (barangTable) {
+                        $('#view_barang_table').html(barangTable);
+                        $('#view_barang_container').show();
+                    } else {
+                        $('#view_barang_container').hide();
+                    }
+                    $('#view_unit_container').hide();
+                } else {
+                    // Jika bukan Pembelian, tampilkan di field Unit seperti biasa
+                    if (Array.isArray(data.unit)) {
+                        if (data.unit.length > 0) {
+                            unitDisplay = data.unit.join(', ');
+                        }
+                    } else if (data.unit && typeof data.unit === 'string') {
+                        unitDisplay = data.unit.replace(/\s*\(qty:\s*\d+\)/g, '');
+                    } else if (data.unit && data.unit.nama_unit) {
+                        unitDisplay = data.unit.nama_unit;
+                    } else if (data.unit_code) {
+                        unitDisplay = data.unit_code;
+                    }
+                    $('#view_unit').html(unitDisplay);
+                    $('#view_label_unit').html('<strong>Unit:</strong>');
+                    $('#view_unit_container').show();
+                    $('#view_barang_container').hide();
+                }
+                
                 $('#view_uraian').text(data.uraian || '-');
                 
                 // Tampilkan detail harga barang jika ada

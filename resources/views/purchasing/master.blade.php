@@ -128,6 +128,48 @@
         .modal.fade .modal-dialog {
             transition: transform 0.3s ease-out;
         }
+        
+        /* Modal scrolling fix - pastikan scrollbar berfungsi */
+        .modal {
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+        }
+        
+        .modal-body {
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+            max-height: calc(100vh - 210px);
+        }
+        
+        .modal-open .modal {
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        
+        /* Scrollbar styling untuk modal */
+        .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .modal-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        .modal-body::-webkit-scrollbar-thumb {
+            background: #1B3C88;
+            border-radius: 4px;
+        }
+        
+        .modal-body::-webkit-scrollbar-thumb:hover {
+            background: #0f2a5a;
+        }
+        
+        /* Firefox scrollbar */
+        .modal-body {
+            scrollbar-width: thin;
+            scrollbar-color: #1B3C88 #f1f1f1;
+        }
 
         /* Fix untuk text dropdown tidak wrap */
         .dropdown-menu .nav-link {

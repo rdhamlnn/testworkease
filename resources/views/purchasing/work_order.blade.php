@@ -344,9 +344,10 @@
     
     .tab-content-scrollable {
         max-height: 450px;
-        overflow-y: auto;
-        overflow-x: hidden;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
         padding-right: 5px;
+        -webkit-overflow-scrolling: touch;
     }
     
     .tab-content-scrollable::-webkit-scrollbar {
@@ -365,6 +366,14 @@
     
     .tab-content-scrollable::-webkit-scrollbar-thumb:hover {
         background: #0f2a5a;
+    }
+    
+    /* Fix scroll interactivity dalam modal */
+    #tambahWorkOrderModal .tab-content-scrollable,
+    #editWorkOrderModal .tab-content-scrollable {
+        position: relative;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
     }
     
     /* Qty Input Styles */

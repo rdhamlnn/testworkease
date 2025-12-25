@@ -293,6 +293,7 @@ Route::middleware(['role:kadiv'])->prefix('logistik')->name('logistik.')->group(
     Route::put('/work-order/{id}/reject', [LogistikController::class, 'rejectWorkOrder'])->name('work-order.reject');
     Route::post('/work-order/reject/{id}', [LogistikController::class, 'rejectWorkOrder'])->name('reject-work-order');
     Route::post('/proses-serahkan-barang-langsung/{id}', [LogistikController::class, 'prosesSerahkanBarangLangsung'])->name('proses-serahkan-barang-langsung');
+    Route::get('/work-order/{id}/cek-stok', [LogistikController::class, 'cekStokBarang'])->name('cek-stok-barang');
     
     // Work Order Forward
     Route::post('/work-order/{id}/forward-to-purchasing', [LogistikController::class, 'forwardWorkOrderToPurchasing'])->name('work-order.forward-to-purchasing');
@@ -334,6 +335,7 @@ Route::middleware(['role:kadiv'])->prefix('purchasing')->name('purchasing.')->gr
     Route::get('/work-order', [PurchasingController::class, 'workOrder'])->name('work-order');
     Route::get('/daftar-work-order', [PurchasingController::class, 'daftarWorkOrder'])->name('daftar-work-order');
     Route::get('/riwayat-work-order', [PurchasingController::class, 'riwayatWorkOrder'])->name('riwayat-work-order');
+    Route::get('/work-order/detail/{id}', [PurchasingController::class, 'detailWorkOrder'])->name('work-order.detail');
     Route::get('/api/work-order/{id}', [PurchasingController::class, 'showWorkOrder'])->name('api.work-order');
     Route::get('/api/units/search', [PurchasingController::class, 'searchUnits'])->name('api.units.search');
     Route::post('/work-order', [PurchasingController::class, 'storeWorkOrder'])->name('work-order.store');

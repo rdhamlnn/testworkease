@@ -156,6 +156,199 @@
     #viewWorkOrderModal .modal-body::-webkit-scrollbar-thumb:hover {
         background: #0f2a5a;
     }
+    
+    /* Modal Preview Stok Barang Styles */
+    #modalPreviewStok .modal-dialog {
+        max-width: 1110px !important;
+        width: 95% !important;
+        margin: 1.75rem auto;
+    }
+    
+    #modalPreviewStok .modal-content {
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 5px 30px rgba(0,0,0,0.15);
+    }
+    
+    #modalPreviewStok .modal-header {
+        background-color: #fff !important;
+        border-bottom: none;
+        padding: 20px 25px 10px 25px;
+    }
+    
+    #modalPreviewStok .modal-header .modal-title {
+        color: #333;
+        font-size: 20px;
+        font-weight: 600;
+    }
+    
+    #modalPreviewStok .modal-header .close {
+        color: #999 !important;
+        opacity: 1;
+    }
+    
+    #modalPreviewStok .modal-body {
+        padding: 10px 25px 20px 25px;
+        overflow-x: auto;
+    }
+    
+    #modalPreviewStok.stok-kurang .modal-header {
+        background-color: #fff !important;
+    }
+    
+    /* Table Title Style */
+    .table-title-section {
+        border-bottom: 1px solid #e0e0e0;
+        padding-bottom: 12px;
+        margin-bottom: 10px;
+    }
+    
+    .table-title-section h6 {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 3px;
+        font-size: 14px;
+    }
+    
+    .table-title-section p {
+        color: #888;
+        margin-bottom: 0;
+        font-size: 13px;
+    }
+    
+    /* Table Container */
+    #modalPreviewStok .table-responsive {
+        overflow-x: auto;
+        margin: 0 -25px;
+        padding: 0 25px;
+        width: calc(100% + 50px);
+    }
+    
+    /* Clean Minimalist Table */
+    .stok-info-table {
+        width: 100%;
+        margin: 0;
+        font-size: 13px;
+        border-collapse: collapse;
+        background: #fff;
+    }
+    
+    .stok-info-table thead th {
+        background-color: transparent;
+        color: #888;
+        font-weight: 500;
+        padding: 12px 10px;
+        text-align: left;
+        font-size: 12px;
+        border-bottom: 1px solid #e0e0e0;
+        white-space: nowrap;
+    }
+    
+    /* Column alignment */
+    .stok-info-table thead th:nth-child(1) { width: 40px; text-align: center; }
+    .stok-info-table thead th:nth-child(2) { }
+    .stok-info-table thead th:nth-child(3) { width: 60px; text-align: center; }
+    .stok-info-table thead th:nth-child(4) { width: 60px; text-align: center; }
+    .stok-info-table thead th:nth-child(5) { width: 70px; text-align: center; }
+    .stok-info-table thead th:nth-child(6) { width: 80px; text-align: center; }
+    
+    .stok-info-table tbody td {
+        padding: 14px 10px;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 13px;
+        color: #333;
+        vertical-align: middle;
+    }
+    
+    .stok-info-table tbody td:nth-child(1) { text-align: center; color: #888; }
+    .stok-info-table tbody td:nth-child(3) { text-align: center; }
+    .stok-info-table tbody td:nth-child(4) { text-align: center; }
+    .stok-info-table tbody td:nth-child(5) { text-align: center; }
+    .stok-info-table tbody td:nth-child(6) { text-align: center; }
+    
+    .stok-info-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .stok-info-table tbody tr:hover {
+        background-color: #fafafa;
+    }
+    
+    .stok-cukup {
+        color: #28a745;
+        font-weight: 600;
+    }
+    
+    .stok-kurang {
+        color: #e67e22;
+        font-weight: 600;
+    }
+    
+    .stok-habis {
+        color: #dc3545;
+        font-weight: 600;
+    }
+    
+    .badge-stok-cukup {
+        background-color: #e8f5e9;
+        color: #28a745;
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+    
+    .badge-stok-kurang {
+        background-color: #fff8e1;
+        color: #e67e22;
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+    
+    .badge-stok-habis {
+        background-color: #ffebee;
+        color: #dc3545;
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+    
+    /* Modal Footer */
+    #modalPreviewStok .modal-footer {
+        border-top: 1px solid #e0e0e0;
+        padding: 15px 25px;
+    }
+    
+    .info-summary {
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        font-size: 13px;
+    }
+    
+    .info-summary.success {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+    }
+    
+    .info-summary.warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffeeba;
+        color: #856404;
+    }
+    
+    .info-summary.danger {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
 </style>
 @endsection
 
@@ -280,17 +473,15 @@
                                                         <i class="fas fa-eye"></i>
                                                     </button>
                                                     @if($status == 'Menunggu')
-                                                        <form action="{{ route('logistik.approve-work-order', $wo->id_surat_pengajuan) }}" method="POST" class="approve-form btn-approve-wo-{{ $wo->id_surat_pengajuan }}" style="display:inline;" 
-                                                            data-message="Yakin ingin menyetujui work order ini?"
-                                                            data-wo-id="{{ $wo->id_surat_pengajuan }}">
-                                                            @csrf
-                                                            <button type="submit" 
-                                                                    class="btn btn-success btn-sm btn-icon approve-btn" 
-                                                                    data-wo-id="{{ $wo->id_surat_pengajuan }}"
-                                                                    title="Setujui">
-                                                                <i class="fas fa-check"></i>
-                                                            </button>
-                                                        </form>
+                                                        {{-- Tombol Setujui - Cek Stok dulu sebelum approve --}}
+                                                        <button type="button" 
+                                                                class="btn btn-success btn-sm btn-icon btn-cek-stok" 
+                                                                data-wo-id="{{ $wo->id_surat_pengajuan }}"
+                                                                data-no-wo="{{ $wo->no_surat_pengajuan }}"
+                                                                data-jenis-wo="{{ $wo->jenisWorkOrder ? strtolower($wo->jenisWorkOrder->nama_jenis_wo) : '' }}"
+                                                                title="Setujui">
+                                                            <i class="fas fa-check"></i>
+                                                        </button>
                                                         <form action="{{ route('logistik.reject-work-order', $wo->id_surat_pengajuan) }}" method="POST" class="reject-form" style="display:inline;" 
                                                             data-message="Yakin ingin menolak work order ini?"
                                                             data-wo-id="{{ $wo->id_surat_pengajuan }}">
@@ -402,6 +593,69 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Preview Stok Barang -->
+<div class="modal fade" id="modalPreviewStok" tabindex="-1" role="dialog" aria-labelledby="modalPreviewStokLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalPreviewStokLabel">Preview Stok Barang</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Info Summary -->
+                <div id="stokSummary" class="info-summary">
+                    <i id="stokSummaryIcon" class="fas fa-info-circle mr-2"></i>
+                    <span id="stokSummaryText"></span>
+                </div>
+                
+                <!-- Table Title Section -->
+                <div class="table-title-section">
+                    <h6>No. Work Order</h6>
+                    <p id="previewNoWo"></p>
+                </div>
+                
+                <!-- Tabel Stok Barang -->
+                <div class="table-responsive">
+                    <table class="table stok-info-table" id="tabelStokPreview">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Nama Barang</th>
+                                <th>Qty</th>
+                                <th>Stok</th>
+                                <th>Satuan</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stokPreviewBody">
+                            <!-- Data akan diisi via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Info Kekurangan (jika ada) -->
+                <div id="infoKekurangan" class="alert alert-warning" style="display: none; margin-top: 15px;">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    <span id="infoKekuranganText"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i> Batal
+                </button>
+                <button type="button" class="btn btn-success" id="btnConfirmApprove" style="display: none;">
+                    <i class="fas fa-check mr-1"></i> Setujui & Serahkan Barang
+                </button>
+                <button type="button" class="btn btn-warning" id="btnForwardPurchasing" style="display: none;">
+                    <i class="fas fa-shopping-cart mr-1"></i> Teruskan ke Purchasing
+                </button>
             </div>
         </div>
     </div>
@@ -553,6 +807,294 @@
             $('#viewWorkOrderModal').off('hidden.bs.modal');
         });
     });
+
+    // =============================
+    // CEK STOK BARANG SEBELUM APPROVE
+    // =============================
+    var currentWoId = null;
+    var currentStokInfo = [];
+    var allStokCukup = false;
+
+    // Handler untuk tombol cek stok (setujui)
+    $(document).on('click', '.btn-cek-stok', function() {
+        const btn = $(this);
+        const woId = btn.data('wo-id');
+        const noWo = btn.data('no-wo');
+        const jenisWo = btn.data('jenis-wo');
+        
+        currentWoId = woId;
+        
+        // Tampilkan loading
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+        
+        // Cek stok barang via API
+        $.ajax({
+            url: `/logistik/work-order/${woId}/cek-stok`,
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                btn.prop('disabled', false).html('<i class="fas fa-check"></i>');
+                
+                if (response.success) {
+                    if (!response.has_barang) {
+                        // Work order tidak memiliki daftar barang (bukan jenis pembelian)
+                        // Langsung approve tanpa cek stok
+                        showSimpleApproveConfirm(woId, noWo);
+                    } else {
+                        // Tampilkan modal preview stok
+                        showModalPreviewStok(response, noWo, woId);
+                    }
+                } else {
+                    alert('Gagal mengecek stok: ' + (response.message || 'Error tidak diketahui'));
+                }
+            },
+            error: function(xhr) {
+                btn.prop('disabled', false).html('<i class="fas fa-check"></i>');
+                console.error('Error:', xhr);
+                
+                // Fallback: jika API tidak tersedia, langsung approve
+                showSimpleApproveConfirm(woId, noWo);
+            }
+        });
+    });
+
+    // Fungsi untuk menampilkan modal preview stok
+    function showModalPreviewStok(response, noWo, woId) {
+        currentStokInfo = response.stok_info || [];
+        allStokCukup = response.all_stok_cukup;
+        
+        // Set No WO
+        $('#previewNoWo').text(noWo);
+        
+        // Build tabel stok
+        let tableHtml = '';
+        let totalKekurangan = 0;
+        
+        if (currentStokInfo.length > 0) {
+            currentStokInfo.forEach(function(item, index) {
+                let statusClass = 'stok-cukup';
+                let badgeClass = 'badge-stok-cukup';
+                let statusText = 'Cukup';
+                
+                if (item.status_stok === 'kurang') {
+                    statusClass = 'stok-kurang';
+                    badgeClass = 'badge-stok-kurang';
+                    statusText = 'Kurang ' + item.kekurangan;
+                    totalKekurangan += item.kekurangan;
+                } else if (item.status_stok === 'habis') {
+                    statusClass = 'stok-habis';
+                    badgeClass = 'badge-stok-habis';
+                    statusText = 'Habis';
+                    totalKekurangan += item.jumlah_diminta;
+                }
+                
+                tableHtml += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${item.nama_barang}</td>
+                        <td>${item.jumlah_diminta}</td>
+                        <td class="${statusClass}">${item.stok_tersedia}</td>
+                        <td>${item.satuan || '-'}</td>
+                        <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                    </tr>
+                `;
+            });
+        } else {
+            tableHtml = '<tr><td colspan="6" class="text-center text-muted">Tidak ada data barang</td></tr>';
+        }
+        
+        $('#stokPreviewBody').html(tableHtml);
+        
+        // Set summary info
+        if (allStokCukup) {
+            $('#stokSummary').removeClass('warning danger').addClass('success');
+            $('#stokSummaryIcon').removeClass('fa-exclamation-triangle fa-times-circle').addClass('fa-check-circle');
+            $('#stokSummaryText').html('<strong>Semua stok barang mencukupi!</strong> Barang siap diserahkan ke divisi pengaju.');
+            $('#modalPreviewStok').removeClass('stok-kurang');
+            
+            // Tampilkan tombol approve
+            $('#btnConfirmApprove').show();
+            $('#btnForwardPurchasing').hide();
+            $('#infoKekurangan').hide();
+        } else {
+            if (response.ada_barang_habis) {
+                $('#stokSummary').removeClass('success warning').addClass('danger');
+                $('#stokSummaryIcon').removeClass('fa-check-circle fa-exclamation-triangle').addClass('fa-times-circle');
+                $('#stokSummaryText').html('<strong>Ada barang yang stoknya habis!</strong> Silakan teruskan ke Purchasing untuk pembelian.');
+            } else {
+                $('#stokSummary').removeClass('success danger').addClass('warning');
+                $('#stokSummaryIcon').removeClass('fa-check-circle fa-times-circle').addClass('fa-exclamation-triangle');
+                $('#stokSummaryText').html('<strong>Stok beberapa barang tidak mencukupi!</strong> Silakan teruskan ke Purchasing untuk pembelian.');
+            }
+            
+            $('#modalPreviewStok').addClass('stok-kurang');
+            
+            // Tampilkan info kekurangan
+            $('#infoKekuranganText').text('Total kekurangan: ' + totalKekurangan + ' item perlu dibeli.');
+            $('#infoKekurangan').show();
+            
+            // Tampilkan tombol forward ke purchasing
+            $('#btnConfirmApprove').hide();
+            $('#btnForwardPurchasing').show();
+        }
+        
+        // Simpan woId untuk digunakan saat konfirmasi
+        $('#btnConfirmApprove').data('wo-id', woId);
+        $('#btnForwardPurchasing').data('wo-id', woId);
+        
+        // Tampilkan modal
+        $('#modalPreviewStok').modal('show');
+    }
+
+    // Fungsi untuk konfirmasi approve sederhana (untuk WO non-pembelian)
+    function showSimpleApproveConfirm(woId, noWo) {
+        if (typeof showApproveRejectConfirm === 'function') {
+            showApproveRejectConfirm(`/logistik/work-order/approve/${woId}`, 'approve', 'Yakin ingin menyetujui work order ' + noWo + '?');
+        } else {
+            if (confirm('Yakin ingin menyetujui work order ' + noWo + '?')) {
+                prosesApproveWorkOrder(woId);
+            }
+        }
+    }
+
+    // Handler untuk tombol konfirmasi approve di modal preview
+    $(document).on('click', '#btnConfirmApprove', function() {
+        const woId = $(this).data('wo-id');
+        
+        // Tutup modal preview
+        $('#modalPreviewStok').modal('hide');
+        
+        // Proses serahkan barang langsung
+        prosesSerahkanBarangLangsung(woId);
+    });
+
+    // Handler untuk tombol forward ke purchasing
+    $(document).on('click', '#btnForwardPurchasing', function() {
+        const woId = $(this).data('wo-id');
+        
+        // Tutup modal preview
+        $('#modalPreviewStok').modal('hide');
+        
+        // Proses forward ke purchasing
+        prosesForwardToPurchasing(woId);
+    });
+
+    // Fungsi untuk proses serahkan barang langsung
+    function prosesSerahkanBarangLangsung(woId) {
+        // Tampilkan loading
+        const btn = $('#btnConfirmApprove');
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Memproses...');
+        
+        $.ajax({
+            url: `/logistik/proses-serahkan-barang-langsung/${woId}`,
+            type: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            data: {
+                hasil_cek: JSON.stringify(currentStokInfo)
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    // Redirect ke halaman serahkan barang
+                    if (response.redirect) {
+                        window.location.href = response.redirect;
+                    } else {
+                        window.location.href = '/logistik/serahkan-barang?from=crud';
+                    }
+                } else {
+                    btn.prop('disabled', false).html('<i class="fas fa-check mr-1"></i> Setujui & Serahkan Barang');
+                    alert('Gagal memproses: ' + (response.message || 'Error tidak diketahui'));
+                }
+            },
+            error: function(xhr) {
+                btn.prop('disabled', false).html('<i class="fas fa-check mr-1"></i> Setujui & Serahkan Barang');
+                console.error('Error:', xhr);
+                let errorMessage = 'Gagal memproses. Silakan coba lagi.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                alert(errorMessage);
+            }
+        });
+    }
+
+    // Fungsi untuk proses approve work order
+    function prosesApproveWorkOrder(woId) {
+        $.ajax({
+            url: `/logistik/work-order/approve/${woId}`,
+            type: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    if (response.redirect) {
+                        window.location.href = response.redirect;
+                    } else {
+                        window.location.reload();
+                    }
+                } else {
+                    alert('Gagal menyetujui: ' + (response.message || 'Error tidak diketahui'));
+                }
+            },
+            error: function(xhr) {
+                console.error('Error:', xhr);
+                let errorMessage = 'Gagal menyetujui. Silakan coba lagi.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                alert(errorMessage);
+            }
+        });
+    }
+
+    // Fungsi untuk forward ke purchasing
+    function prosesForwardToPurchasing(woId) {
+        const btn = $('#btnForwardPurchasing');
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Memproses...');
+        
+        $.ajax({
+            url: `/logistik/work-order/${woId}/forward-to-purchasing`,
+            type: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            data: {
+                stok_info: JSON.stringify(currentStokInfo)
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    if (response.redirect) {
+                        window.location.href = response.redirect;
+                    } else {
+                        window.location.reload();
+                    }
+                } else {
+                    btn.prop('disabled', false).html('<i class="fas fa-shopping-cart mr-1"></i> Teruskan ke Purchasing');
+                    alert('Gagal meneruskan: ' + (response.message || 'Error tidak diketahui'));
+                }
+            },
+            error: function(xhr) {
+                btn.prop('disabled', false).html('<i class="fas fa-shopping-cart mr-1"></i> Teruskan ke Purchasing');
+                console.error('Error:', xhr);
+                let errorMessage = 'Gagal meneruskan ke Purchasing. Silakan coba lagi.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                alert(errorMessage);
+            }
+        });
+    }
 
 
 </script>

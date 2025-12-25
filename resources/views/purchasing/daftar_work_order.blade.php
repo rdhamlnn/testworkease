@@ -243,25 +243,12 @@
                                             </td>
                                             <td>
                                                 <div class="d-flex gap-2">
-                                                    <button type="button" class="btn btn-info btn-sm btn-view" 
-                                                        data-id="{{ $wo->id_surat_pengajuan }}" 
-                                                        data-toggle="modal" 
-                                                        data-target="#viewPengajuanModal"
+                                                    <a href="{{ route('purchasing.work-order.detail', $wo->id_surat_pengajuan) }}" 
+                                                        class="btn btn-info btn-sm btn-view" 
                                                         title="Lihat Detail">
                                                         <i class="fas fa-eye"></i>
-                                                    </button>
+                                                    </a>
                                                     @if($status == 'Menunggu')
-                                                        <form action="{{ route('purchasing.approve-work-order', $wo->id_surat_pengajuan) }}" method="POST" class="approve-form" style="display:inline;" 
-                                                            data-message="Yakin ingin menyetujui work order ini?"
-                                                            data-wo-id="{{ $wo->id_surat_pengajuan }}">
-                                                            @csrf
-                                                            <button type="submit" 
-                                                                    class="btn btn-success btn-sm btn-icon approve-btn" 
-                                                                    data-wo-id="{{ $wo->id_surat_pengajuan }}"
-                                                                    title="Setujui">
-                                                                <i class="fas fa-check"></i>
-                                                            </button>
-                                                        </form>
                                                         <form action="{{ route('purchasing.reject-work-order', $wo->id_surat_pengajuan) }}" method="POST" class="reject-form" style="display:inline;" 
                                                             data-message="Yakin ingin menolak work order ini?"
                                                             data-wo-id="{{ $wo->id_surat_pengajuan }}">
@@ -273,17 +260,6 @@
                                                                 <i class="fas fa-times"></i>
                                                             </button>
                                                         </form>
-                                                    @else
-                                                        <button class="btn btn-success btn-sm btn-icon" 
-                                                                style="background-color: #6c757d !important; border-color: #6c757d !important; cursor: not-allowed;" 
-                                                                disabled>
-                                                            <i class="fas fa-check"></i>
-                                                        </button>
-                                                        <button class="btn btn-danger btn-sm btn-icon" 
-                                                                style="background-color: #6c757d !important; border-color: #6c757d !important; cursor: not-allowed;" 
-                                                                disabled>
-                                                            <i class="fas fa-times"></i>
-                                                        </button>
                                                     @endif
                                                 </div>
                                             </td>
@@ -302,69 +278,6 @@
         </div>
     </div>
 </section>
-
-<!-- Modal View Pengajuan -->
-<div class="modal fade" id="viewPengajuanModal" tabindex="-1" role="dialog" aria-labelledby="viewPengajuanModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="viewPengajuanModalLabel">Detail Pengajuan Work Order</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label><strong>No. Surat Pengajuan:</strong></label>
-                            <p id="view_pengajuan_no_wo" class="form-control-plaintext border p-2 rounded"></p>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label><strong>Tanggal:</strong></label>
-                            <p id="view_pengajuan_tanggal" class="form-control-plaintext border p-2 rounded"></p>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label><strong>Divisi Pengaju:</strong></label>
-                            <p id="view_pengajuan_divisi_pengaju" class="form-control-plaintext border p-2 rounded"></p>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label><strong>Ditujukan:</strong></label>
-                            <p id="view_pengajuan_ditujukan" class="form-control-plaintext border p-2 rounded"></p>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label><strong>Unit:</strong></label>
-                            <p id="view_pengajuan_unit" class="form-control-plaintext border p-2 rounded"></p>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label><strong>Uraian:</strong></label>
-                    <p id="view_pengajuan_uraian" class="form-control-plaintext border p-2 rounded"></p>
-                </div>
-                <div class="form-group">
-                    <label><strong>Dokumentasi:</strong></label>
-                    <div id="view_pengajuan_dokumentasi" class="form-control-plaintext border p-2 rounded"></div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
-            </div>
-        </div>
-    </div>
-</div>
 @endsection
 
 @section('scripts')
@@ -394,19 +307,7 @@
             }
         });
 
-        $(document).on('click', '.btn-view', function() {
-            var id = $(this).data('id');
-            viewPengajuan(id);
-        });
-
-        $(document).on('submit', '.approve-form', function(e) {
-            e.preventDefault();
-            const form = $(this);
-            const url = form.attr('action');
-            const message = form.data('message') || 'Yakin ingin menyetujui work order ini?';
-            showApproveRejectConfirm(url, 'approve', message);
-        });
-
+        // Handler untuk tombol Tolak
         $(document).on('submit', '.reject-form', function(e) {
             e.preventDefault();
             const form = $(this);
@@ -415,110 +316,6 @@
             showApproveRejectConfirm(url, 'reject', message);
         });
     });
-
-    function viewPengajuan(id) {
-        fetch(`/purchasing/api/work-order/${id}`)
-            .then(response => response.json())
-            .then(data => {
-                $('#view_pengajuan_no_wo').text(data.no_surat_pengajuan || data.no_work_order);
-                $('#view_pengajuan_tanggal').text(new Date(data.tanggal).toLocaleDateString('id-ID'));
-                $('#view_pengajuan_divisi_pengaju').text(data.divisi_pengaju);
-                $('#view_pengajuan_ditujukan').text(data.ditujukan);
-                $('#view_pengajuan_unit').text(data.unit || data.unit_code);
-                
-                // Set status dengan badge berwarna sesuai status
-                var statusText = data.status || 'Menunggu';
-                var badgeClass = 'badge-secondary';
-                if (statusText === 'Disetujui' || statusText === 'Selesai' || statusText === 'Disetujui Atasan' || statusText === 'Diterima Logistik' || statusText === 'Diserahkan ke Divisi' || statusText === 'Dibeli Purchasing' || statusText === 'Dikirim Purchasing') {
-                    badgeClass = 'badge-success'; // Hijau untuk status sukses
-                } else if (statusText === 'Ditolak' || statusText === 'Ditolak Atasan') {
-                    badgeClass = 'badge-danger'; // Merah untuk status ditolak
-                } else if (statusText === 'Menunggu' || statusText === 'Menunggu Approval Atasan' || statusText === 'Menunggu Pembelian' || statusText === 'Menunggu Pengiriman') {
-                    badgeClass = 'badge-warning'; // Kuning untuk status menunggu
-                } else {
-                    badgeClass = 'badge-info'; // Biru untuk status lainnya
-                }
-                $('#view_pengajuan_status').html('<span class="badge ' + badgeClass + '">' + statusText + '</span>');
-                
-                $('#view_pengajuan_uraian').text(data.uraian);
-                if (data.dokumentasi && data.dokumentasi !== '-') {
-                    // Cek apakah file adalah gambar
-                    const fileExt = data.dokumentasi.split('.').pop().toLowerCase();
-                    const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(fileExt);
-                    
-                    if (isImage) {
-                        // Tampilkan button lihat foto
-                        $('#view_pengajuan_dokumentasi').html(
-                            '<button type="button" class="btn btn-sm btn-outline-primary btn-view-dokumentasi-modal" ' +
-                            'data-foto="/storage/' + data.dokumentasi + '" ' +
-                            'data-nama="' + (data.no_surat_pengajuan || data.no_work_order) + '">' +
-                            '<i class="fas fa-image"></i> Lihat Foto' +
-                            '</button>'
-                        );
-                    } else {
-                        // Untuk file non-gambar, tampilkan button download
-                        $('#view_pengajuan_dokumentasi').html(
-                            '<a href="/storage/' + data.dokumentasi + '" target="_blank" class="btn btn-sm btn-outline-primary">' +
-                            '<i class="fas fa-file"></i> Lihat Dokumentasi' +
-                            '</a>'
-                        );
-                    }
-                } else {
-                    $('#view_pengajuan_dokumentasi').html('<span class="text-muted">-</span>');
-                }
-                $('#viewPengajuanModal').modal('show');
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Gagal mengambil data pengajuan work order');
-            });
-    }
-
-    // View Dokumentasi (dari modal view pengajuan - tutup modal detail dulu, lalu buka modal foto)
-    $(document).on('click', '.btn-view-dokumentasi-modal', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const fotoUrl = $(this).data('foto');
-        const namaWo = $(this).data('nama');
-        
-        // Set data foto
-        $('#dokumentasiViewPurchasing').attr('src', fotoUrl);
-        $('#dokumentasiViewPurchasing').attr('alt', 'Dokumentasi ' + namaWo);
-        $('#namaWoViewPurchasing').text('Dokumentasi Work Order: ' + namaWo);
-        
-        // Tutup modal pengajuan terlebih dahulu
-        $('#viewPengajuanModal').modal('hide');
-        
-        // Setelah modal pengajuan tertutup, buka modal dokumentasi
-        $('#viewPengajuanModal').on('hidden.bs.modal', function() {
-            $('#modalViewDokumentasiPurchasing').modal('show');
-            // Hapus event listener setelah digunakan
-            $('#viewPengajuanModal').off('hidden.bs.modal');
-        });
-    });
-
 </script>
-
-<!-- Modal View Dokumentasi -->
-<div class="modal fade" id="modalViewDokumentasiPurchasing" tabindex="-1" role="dialog" aria-labelledby="modalViewDokumentasiPurchasingLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalViewDokumentasiPurchasingLabel">Dokumentasi Work Order</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body text-center">
-                <img id="dokumentasiViewPurchasing" src="" alt="Dokumentasi" style="max-width: 100%; max-height: 500px; object-fit: contain; border-radius: 8px;">
-                <p class="mt-3 mb-0" id="namaWoViewPurchasing"></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
-            </div>
-        </div>
-    </div>
-</div>
 @endsection
 

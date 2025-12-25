@@ -245,9 +245,73 @@ trait WorkOrderActions
     public function cekStokBarang($id)
     {
         try {
+            $workOrder = SuratPengajuan::with('jenisWorkOrder')->findOrFail($id);
             $permintaanBarang = PermintaanBarang::where('id_surat_pengajuan', $id)->first();
             
-            if (!$permintaanBarang) {
+            $barangList = [];
+            
+            // Cek apakah ada data di PermintaanBarang
+            if ($permintaanBarang) {
+                $detailBarang = DetailBarangPermintaan::where('id_permintaan_barang', $permintaanBarang->id_permintaan_barang)
+                    ->with('masterBarang')
+                    ->get();
+                
+                foreach ($detailBarang as $detail) {
+                    $barangList[] = [
+                        'nama_barang' => $detail->nama_barang,
+                        'jumlah' => $detail->jumlah,
+                        'satuan' => $detail->satuan ?? '-',
+                        'id_master' => $detail->id_daftar_barang_master
+                    ];
+                }
+            }
+            
+            // Jika tidak ada data di PermintaanBarang, coba parse dari field unit (untuk jenis Pembelian/Permintaan)
+            if (empty($barangList) && $workOrder->unit && $workOrder->unit !== '-') {
+                $jenisWo = $workOrder->jenisWorkOrder ? strtolower($workOrder->jenisWorkOrder->nama_jenis_wo) : '';
+                
+                // Parse jika jenis WO adalah Pembelian atau Permintaan
+                if ($jenisWo === 'pembelian' || $jenisWo === 'permintaan') {
+                    $unitData = $workOrder->unit;
+                    
+                    if (is_string($unitData)) {
+                        // Parse format: "Barang1 (qty: 5), Barang2 (qty: 10)"
+                        if (strpos($unitData, ',') !== false) {
+                            $parts = explode(',', $unitData);
+                        } else {
+                            $parts = [$unitData];
+                        }
+                        
+                        foreach ($parts as $part) {
+                            $part = trim($part);
+                            if (empty($part)) continue;
+                            
+                            $qtyMatch = [];
+                            preg_match('/\(qty:\s*(\d+)\)/i', $part, $qtyMatch);
+                            
+                            if (!empty($qtyMatch)) {
+                                $qty = (int)$qtyMatch[1];
+                                $namaBarang = trim(preg_replace('/\s*\(qty:\s*\d+\)/i', '', $part));
+                            } else {
+                                $qty = 1;
+                                $namaBarang = $part;
+                            }
+                            
+                            if (!empty($namaBarang)) {
+                                $barangList[] = [
+                                    'nama_barang' => $namaBarang,
+                                    'jumlah' => $qty,
+                                    'satuan' => '-',
+                                    'id_master' => null
+                                ];
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Jika tidak ada barang ditemukan
+            if (empty($barangList)) {
                 return response()->json([
                     'success' => true,
                     'has_barang' => false,
@@ -256,31 +320,45 @@ trait WorkOrderActions
                 ]);
             }
             
-            $detailBarang = DetailBarangPermintaan::where('id_permintaan_barang', $permintaanBarang->id_permintaan_barang)
-                ->with('masterBarang')
-                ->get();
-            
+            // Cek stok untuk setiap barang
             $stokInfo = [];
             $allStokCukup = true;
             $adaBarangHabis = false;
             
-            foreach ($detailBarang as $detail) {
-                $masterBarang = $detail->id_daftar_barang_master ? DaftarBarang::find($detail->id_daftar_barang_master) : DaftarBarang::where('nama_barang', $detail->nama_barang)->first();
+            foreach ($barangList as $barang) {
+                // Cari master barang berdasarkan id atau nama
+                $masterBarang = null;
+                if (!empty($barang['id_master'])) {
+                    $masterBarang = DaftarBarang::find($barang['id_master']);
+                }
+                if (!$masterBarang) {
+                    $masterBarang = DaftarBarang::where('nama_barang', $barang['nama_barang'])->first();
+                }
+                
                 $stokTersedia = $masterBarang ? ($masterBarang->stok ?? 0) : 0;
-                $stokCukup = $stokTersedia >= $detail->jumlah;
-                $statusStok = $stokTersedia == 0 ? 'habis' : ($stokTersedia < $detail->jumlah ? 'kurang' : 'cukup');
+                $stokCukup = $stokTersedia >= $barang['jumlah'];
+                $statusStok = $stokTersedia == 0 ? 'habis' : ($stokTersedia < $barang['jumlah'] ? 'kurang' : 'cukup');
                 
                 if ($statusStok !== 'cukup') $allStokCukup = false;
                 if ($statusStok === 'habis') $adaBarangHabis = true;
                 
+                // Ambil satuan dari master barang jika tersedia, fallback ke data barang
+                $satuan = '-';
+                if ($masterBarang && !empty($masterBarang->satuan)) {
+                    $satuan = $masterBarang->satuan;
+                } elseif (!empty($barang['satuan']) && $barang['satuan'] !== '-') {
+                    $satuan = $barang['satuan'];
+                }
+                
                 $stokInfo[] = [
-                    'nama_barang' => $detail->nama_barang,
-                    'jumlah_diminta' => $detail->jumlah,
-                    'satuan' => $detail->satuan ?? '-',
+                    'id_barang' => $masterBarang ? $masterBarang->id_daftar_barang : null,
+                    'nama_barang' => $masterBarang ? $masterBarang->nama_barang : $barang['nama_barang'],
+                    'jumlah_diminta' => $barang['jumlah'],
+                    'satuan' => $satuan,
                     'stok_tersedia' => $stokTersedia,
                     'status_stok' => $statusStok,
                     'stok_cukup' => $stokCukup,
-                    'kekurangan' => max(0, $detail->jumlah - $stokTersedia)
+                    'kekurangan' => max(0, $barang['jumlah'] - $stokTersedia)
                 ];
             }
             

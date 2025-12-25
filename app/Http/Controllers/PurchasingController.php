@@ -224,6 +224,65 @@ class PurchasingController extends Controller
         return view('purchasing.riwayat_work_order', compact('workOrders'));
     }
 
+    /**
+     * Display detail work order page.
+     */
+    public function detailWorkOrder($id)
+    {
+        $workOrder = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'permintaanBarang.daftarBarang.masterBarang'])
+            ->findOrFail($id);
+        
+        // Parse barang dan qty dari field unit untuk jenis Pembelian
+        $jenisWo = $workOrder->jenisWorkOrder ? strtolower($workOrder->jenisWorkOrder->nama_jenis_wo) : '';
+        $isPembelian = $jenisWo === 'pembelian';
+        
+        $barangItems = [];
+        
+        if ($isPembelian && $workOrder->unit && $workOrder->unit !== '-') {
+            $parts = explode(', ', $workOrder->unit);
+            foreach ($parts as $part) {
+                if (preg_match('/^(.+?)\s*\(qty:\s*(\d+)\)$/i', trim($part), $matches)) {
+                    $barangItems[] = [
+                        'nama_barang' => trim($matches[1]),
+                        'jumlah' => (int)$matches[2],
+                        'satuan' => '-',
+                        'estimasi_harga' => 0,
+                    ];
+                } elseif (!empty(trim($part))) {
+                    $barangItems[] = [
+                        'nama_barang' => trim($part),
+                        'jumlah' => 1,
+                        'satuan' => '-',
+                        'estimasi_harga' => 0,
+                    ];
+                }
+            }
+        }
+        
+        // Jika ada data dari detail_barang_permintaan, gunakan itu sebagai prioritas
+        if ($workOrder->permintaanBarang && $workOrder->permintaanBarang->daftarBarang && $workOrder->permintaanBarang->daftarBarang->count() > 0) {
+            $barangItems = $workOrder->permintaanBarang->daftarBarang->map(function($detail) {
+                return [
+                    'nama_barang' => $detail->nama_barang,
+                    'jumlah' => $detail->jumlah,
+                    'satuan' => $detail->satuan ?? '-',
+                    'estimasi_harga' => $detail->estimasi_harga ?? 0,
+                ];
+            })->toArray();
+        }
+        
+        // Hitung total harga
+        $totalHarga = 0;
+        foreach ($barangItems as $item) {
+            $totalHarga += $item['estimasi_harga'];
+        }
+        
+        // Get status
+        $status = $workOrder->verifikator->nama_status ?? $workOrder->status ?? 'Menunggu';
+        
+        return view('purchasing.detail_work_order', compact('workOrder', 'barangItems', 'totalHarga', 'status', 'isPembelian'));
+    }
+
 
     /**
      * Store new work order submission.
