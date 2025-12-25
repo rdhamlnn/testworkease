@@ -47,8 +47,18 @@ class PurchasingController extends Controller
         // Ambil id status dari master status_wo
         $statusMenungguPurchasingId = $this->getStatusId('Menunggu Purchasing');
         $statusMenungguApprovalId = $this->getStatusId('Menunggu Approval Atasan');
+        $statusDisetujuiId = $this->getStatusId('Disetujui Atasan');
         $statusDibeliId = $this->getStatusId('Dibeli Purchasing');
         $statusDikirimId = $this->getStatusId('Dikirim Purchasing');
+        
+        // Status yang relevan untuk Purchasing
+        $purchasingStatusIds = array_filter([
+            $statusMenungguPurchasingId,
+            $statusMenungguApprovalId,
+            $statusDisetujuiId,
+            $statusDibeliId,
+            $statusDikirimId,
+        ]);
 
         // Statistik
         $totalPermintaan = PermintaanBarang::where('id_status_wo', $statusMenungguPurchasingId)->count();
@@ -56,12 +66,13 @@ class PurchasingController extends Controller
         $dibeli = PermintaanBarang::where('id_status_wo', $statusDibeliId)->count();
         $dikirim = PermintaanBarang::where('id_status_wo', $statusDikirimId)->count();
         
-        // Chart data
+        // Chart data - Trend permintaan yang diproses Purchasing
         $monthlyPermintaanTrend = PermintaanBarang::select(
                 DB::raw('MONTH(tanggal_permintaan) as month'),
                 DB::raw('YEAR(tanggal_permintaan) as year'),
                 DB::raw('count(*) as total')
             )
+            ->whereIn('id_status_wo', $purchasingStatusIds)
             ->where('tanggal_permintaan', '>=', DB::raw('DATE_SUB(NOW(), INTERVAL 6 MONTH)'))
             ->groupBy('year', 'month')
             ->orderBy('year', 'asc')
@@ -87,9 +98,10 @@ class PurchasingController extends Controller
             })
             ->toArray();
         
-        // Recent activities
-        $recentActivities = PermintaanBarang::with(['suratPengajuan', 'akun.karyawan'])
-            ->orderBy('created_at', 'desc')
+        // Recent activities - permintaan yang relevan untuk Purchasing
+        $recentActivities = PermintaanBarang::with(['suratPengajuan', 'akun.karyawan', 'statusWo'])
+            ->whereIn('id_status_wo', $purchasingStatusIds)
+            ->orderBy('updated_at', 'desc')
             ->limit(5)
             ->get();
         

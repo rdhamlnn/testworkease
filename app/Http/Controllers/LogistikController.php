@@ -40,39 +40,54 @@ class LogistikController extends Controller
         $userDivisi = Session::get('user_divisi');
         $userDivisiNama = DB::table('divisi')->where('id_divisi', $userDivisi)->value('nama_divisi') ?? 'Logistik';
         
-        // Statistik
-        $totalWODicek = SuratPengajuan::count();
-        $totalPermintaan = PermintaanBarang::count();
-        $barangMasuk = PermintaanBarang::forStatus('Diterima Logistik')->count();
-        $barangKeluar = PermintaanBarang::forStatus('Diserahkan ke Divisi')->count();
+        // Statistik - data yang relevan untuk Logistik
+        // WO yang diterima Logistik (ditujukan ke Logistik)
+        $totalWODiterima = SuratPengajuan::where('ditujukan', $userDivisiNama)->count();
         
-        // Chart data
+        // Barang yang perlu diproses (menunggu diterima atau diserahkan)
+        $statusDikirimId = StatusWo::where('nama_status', 'Dikirim Purchasing')->value('id_status_wo');
+        $statusDiterimaId = StatusWo::where('nama_status', 'Diterima Logistik')->value('id_status_wo');
+        $perluDiproses = PermintaanBarang::whereIn('id_status_wo', [$statusDikirimId, $statusDiterimaId])->count();
+        
+        // Barang masuk (status Diterima Logistik) dan keluar (Diserahkan ke Divisi)
+        $barangMasuk = PermintaanBarang::where('id_status_wo', $statusDiterimaId)->count();
+        $statusDiserahkanId = StatusWo::where('nama_status', 'Diserahkan ke Divisi')->value('id_status_wo');
+        $barangKeluar = PermintaanBarang::where('id_status_wo', $statusDiserahkanId)->count();
+        
+        // Chart data - Trend WO yang diterima Logistik per bulan
         $monthlyWOTrend = SuratPengajuan::select(
                 DB::raw('MONTH(tanggal) as month'),
                 DB::raw('YEAR(tanggal) as year'),
                 DB::raw('count(*) as total')
             )
+            ->where('ditujukan', $userDivisiNama)
             ->where('tanggal', '>=', DB::raw('DATE_SUB(NOW(), INTERVAL 6 MONTH)'))
             ->groupBy('year', 'month')
             ->orderBy('year', 'asc')
             ->orderBy('month', 'asc')
             ->get();
         
-        $statusPermintaan = PermintaanBarang::select('status', DB::raw('count(*) as total'))
+        // Status WO yang diterima Logistik
+        $statusWO = SuratPengajuan::select('status', DB::raw('count(*) as total'))
+            ->where('ditujukan', $userDivisiNama)
             ->groupBy('status')
             ->get()
             ->pluck('total', 'status')
             ->toArray();
         
-        // Recent activities
-        $recentActivities = SuratPengajuan::with('akun.karyawan')
-            ->orderBy('created_at', 'desc')
+        // Recent activities - WO yang diterima atau dibuat oleh Logistik
+        $recentActivities = SuratPengajuan::with(['akun.karyawan', 'unit', 'jenisWorkOrder'])
+            ->where(function($query) use ($userDivisiNama) {
+                $query->where('ditujukan', $userDivisiNama)
+                      ->orWhere('divisi_pengaju', $userDivisiNama);
+            })
+            ->orderBy('updated_at', 'desc')
             ->limit(5)
             ->get();
         
         return view('logistik.dashboard', compact(
-            'totalWODicek', 'totalPermintaan', 'barangMasuk', 'barangKeluar',
-            'monthlyWOTrend', 'statusPermintaan', 'recentActivities'
+            'totalWODiterima', 'perluDiproses', 'barangMasuk', 'barangKeluar',
+            'monthlyWOTrend', 'statusWO', 'recentActivities'
         ));
     }
 
