@@ -316,17 +316,11 @@ class LogistikController extends Controller
     
     /**
      * Display permintaan barang page.
+     * @deprecated View file has been removed. This route is no longer available.
      */
     public function permintaanBarang()
     {
-        $userId = Session::get('user_id');
-        
-        $permintaanBarang = PermintaanBarang::with(['suratPengajuan', 'akun', 'daftarBarang'])
-            ->where('id_logistik', $userId)
-            ->orderBy('created_at', 'desc')
-            ->get();
-        
-        return view('logistik.permintaan_barang', compact('permintaanBarang'));
+        abort(404, 'Halaman Permintaan Barang sudah tidak tersedia.');
     }
 
     /**
@@ -512,11 +506,11 @@ class LogistikController extends Controller
     
     /**
      * Create permintaan barang page.
+     * @deprecated View file has been removed. This route is no longer available.
      */
     public function createPermintaanBarang($id)
     {
-        $workOrder = SuratPengajuan::findOrFail($id);
-        return view('logistik.create_permintaan_barang', compact('workOrder'));
+        abort(404, 'Halaman Create Permintaan Barang sudah tidak tersedia.');
     }
     
     /**
@@ -794,30 +788,11 @@ class LogistikController extends Controller
     
     /**
      * Edit permintaan barang page.
+     * @deprecated View file has been removed. This route is no longer available.
      */
     public function editPermintaanBarang($id)
     {
-        $permintaan = PermintaanBarang::with(['suratPengajuan', 'daftarBarang'])->findOrFail($id);
-        $userId = Session::get('user_id');
-        
-        // Validasi: hanya bisa edit jika dibuat oleh user yang sama
-        if ($permintaan->id_logistik != $userId) {
-            abort(403, 'Anda tidak memiliki akses untuk mengubah data ini.');
-        }
-        
-        // Validasi: hanya bisa edit jika status "Menunggu Logistik" atau "Menunggu Purchasing"
-        $statusMenungguLogistikId = StatusWo::where('nama_status', 'Menunggu Logistik')->value('id_status_wo');
-        $statusMenungguPurchasingId = StatusWo::where('nama_status', 'Menunggu Purchasing')->value('id_status_wo');
-        
-        $allowedStatusIds = array_filter([$statusMenungguLogistikId, $statusMenungguPurchasingId]);
-        
-        if (!in_array($permintaan->id_status_wo, $allowedStatusIds)) {
-            return redirect()->route('logistik.permintaan-barang')
-                ->with('error', 'Permintaan barang tidak dapat diedit karena status sudah berubah.');
-        }
-        
-        $workOrder = $permintaan->suratPengajuan;
-        return view('logistik.edit_permintaan_barang', compact('permintaan', 'workOrder'));
+        abort(404, 'Halaman Edit Permintaan Barang sudah tidak tersedia.');
     }
     
     /**

@@ -78,29 +78,20 @@ class AtasanController extends Controller
         ));
     }
     
+    /**
+     * @deprecated View file has been removed. This route is no longer available.
+     */
     public function approvalPermintaan()
     {
-        $statusMenungguApprovalId = $this->getStatusId('Menunggu Approval Atasan');
-
-        $permintaanUntukApproval = PermintaanBarang::with(['suratPengajuan', 'akun', 'statusWo', 'daftarBarang'])
-            ->forStatus($statusMenungguApprovalId)
-            ->orderBy('created_at', 'desc')
-            ->get();
-        
-        return view('atasan.approval_permintaan', compact('permintaanUntukApproval'));
+        abort(404, 'Halaman Approval Permintaan sudah tidak tersedia.');
     }
     
+    /**
+     * @deprecated View file has been removed. This route is no longer available.
+     */
     public function riwayatApproval()
     {
-        $statusDisetujuiId = $this->getStatusId('Disetujui Atasan');
-        $statusDitolakId = $this->getStatusId('Ditolak Atasan');
-
-        $riwayatApproval = PermintaanBarang::with(['suratPengajuan', 'akun', 'statusWo', 'daftarBarang'])
-            ->whereIn('id_status_wo', [$statusDisetujuiId, $statusDitolakId])
-            ->orderBy('updated_at', 'desc')
-            ->get();
-        
-        return view('atasan.riwayat_approval', compact('riwayatApproval'));
+        abort(404, 'Halaman Riwayat Approval sudah tidak tersedia.');
     }
 
     

@@ -107,35 +107,11 @@ class LaporanController extends Controller
 
     /**
      * Display laporan arsip WO page.
+     * @deprecated View file has been removed. This route is no longer available.
      */
     public function arsipWo(Request $request)
     {
-        $query = SuratPengajuan::with(['divisi', 'unit', 'verifikator', 'akun']);
-
-        // Apply filters if provided
-        if ($request->has('kategori') && $request->kategori) {
-            $query->where('id_verifikator', $request->kategori);
-        }
-        if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('no_surat_pengajuan', 'like', "%{$search}%")
-                  ->orWhere('divisi_pengaju', 'like', "%{$search}%")
-                  ->orWhere('ditujukan', 'like', "%{$search}%")
-                  ->orWhere('uraian', 'like', "%{$search}%");
-            });
-        }
-
-        $data = $query->orderBy('created_at', 'desc')->get();
-
-        // Get filter options
-        $kategoriOptions = [
-            '1' => 'Menunggu Verifikasi',
-            '2' => 'Disetujui',
-            '3' => 'Ditolak'
-        ];
-
-        return view('admin.laporan_arsip_wo', compact('data', 'kategoriOptions'));
+        abort(404, 'Halaman Laporan Arsip WO sudah tidak tersedia.');
     }
 
     /**

@@ -419,17 +419,11 @@ class PurchasingController extends Controller
     
     /**
      * Display permintaan barang page.
+     * @deprecated View file has been removed. This route is no longer available.
      */
     public function permintaanBarang()
     {
-        $statusMenungguPurchasingId = StatusWo::where('nama_status', 'Menunggu Purchasing')->value('id_status_wo');
-
-        $permintaanBarang = PermintaanBarang::with(['suratPengajuan', 'akun', 'statusWo', 'daftarBarang'])
-            ->where('id_status_wo', $statusMenungguPurchasingId)
-            ->orderBy('created_at', 'desc')
-            ->get();
-        
-        return view('purchasing.permintaan_barang', compact('permintaanBarang'));
+        abort(404, 'Halaman Permintaan Barang sudah tidak tersedia.');
     }
     
     /**
@@ -498,20 +492,11 @@ class PurchasingController extends Controller
     
     /**
      * Edit harga permintaan barang page.
+     * @deprecated View file has been removed. This route is no longer available.
      */
     public function editHargaPermintaan($id)
     {
-        $permintaan = PermintaanBarang::with(['suratPengajuan', 'statusWo', 'daftarBarang'])->findOrFail($id);
-        
-        // Validasi: hanya bisa edit jika status "Menunggu Purchasing"
-        $statusMenungguPurchasingId = StatusWo::where('nama_status', 'Menunggu Purchasing')->value('id_status_wo');
-        
-        if ($permintaan->id_status_wo != $statusMenungguPurchasingId) {
-            return redirect()->route('purchasing.permintaan-barang')
-                ->with('error', 'Harga hanya dapat diupdate untuk permintaan dengan status Menunggu Purchasing.');
-        }
-        
-        return view('purchasing.edit_harga_permintaan', compact('permintaan'));
+        abort(404, 'Halaman Edit Harga Permintaan sudah tidak tersedia.');
     }
     
     /**

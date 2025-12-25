@@ -428,7 +428,7 @@
                         </li>
 
                         <li class="menu-header">Work Order</li>
-                        <li class="dropdown {{ request()->is('kadivmekanik/work-order*') || request()->is('kadivmekanik/daftar-pengajuan-work-order*') || request()->is('kadivmekanik/riwayat-work-order*') ? 'active' : '' }}">
+                        <li class="dropdown {{ request()->is('kadivmekanik/work-order*') || request()->is('kadivmekanik/daftar-work-order*') || request()->is('kadivmekanik/riwayat-work-order*') ? 'active' : '' }}">
                             <a href="#" class="nav-link has-dropdown" data-toggle="dropdown">
                                 <i class="fas fa-briefcase"></i> <span>Work Order</span>
                             </a>
@@ -439,8 +439,8 @@
                                         <span>Ajukan Work Order</span>
                                     </a>
                                 </li>
-                                <li class="{{ request()->is('kadivmekanik/daftar-pengajuan-work-order*') ? 'active' : '' }}">
-                                    <a class="nav-link" href="{{ url('/kadivmekanik/daftar-pengajuan-work-order') }}">
+                                <li class="{{ request()->is('kadivmekanik/daftar-work-order*') ? 'active' : '' }}">
+                                    <a class="nav-link" href="{{ url('/kadivmekanik/daftar-work-order') }}">
                                         <i class="fas fa-inbox"></i>
                                         <span>Work Order Masuk</span>
                                     </a>

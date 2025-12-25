@@ -141,7 +141,7 @@ class KadivMekanikController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('kadivmekanik.daftar_pengajuan_work_order', compact('submissionWorkOrders'));
+        return view('kadivmekanik.daftar_work_order', compact('submissionWorkOrders'));
     }
 
     /**

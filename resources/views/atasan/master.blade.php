@@ -270,19 +270,8 @@
                             </ul>
                         </li>
                         
-                        {{-- Hidden menu Permintaan (kept for backward compatibility but not shown) --}}
-                        {{-- <li class="menu-header">Permintaan</li>
-                        <li class="{{ request()->is('atasan/approval-permintaan*') ? 'active' : '' }}">
-                            <a href="{{ url('/atasan/approval-permintaan') }}" class="nav-link">
-                                <i class="fas fa-check-circle"></i> <span>Daftar Permintaan</span>
-                            </a>
-                        </li>
-                        <li class="{{ request()->is('atasan/riwayat-approval*') ? 'active' : '' }}">
-                            <a href="{{ url('/atasan/riwayat-approval') }}" class="nav-link">
-                                <i class="fas fa-history"></i> <span>Riwayat Permintaan</span>
-                            </a>
-                        </li> --}}
                         <li class="menu-header"></li>
+
                     </ul>
                 </aside>
             </div>

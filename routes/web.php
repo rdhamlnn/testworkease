@@ -98,13 +98,11 @@ Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(functi
     Route::post('/work-order/reject/{id}', [App\Http\Controllers\WorkOrderController::class, 'reject'])->name('reject-work-order');
     Route::get('/work-order/cetak/{id}', [App\Http\Controllers\WorkOrderController::class, 'cetakpdf'])->name('work-order.cetak');
 
-    // 🔹 DAFTAR PENGAJUAN WORK ORDER
-    Route::get('/daftar-pengajuan-work-order', [App\Http\Controllers\WorkOrderController::class, 'daftarPengajuan'])->name('daftar-pengajuan-work-order');
 
     // 🔹 LAPORAN & ARSIP
     Route::get('/laporan-harian-mekanik', [App\Http\Controllers\LaporanController::class, 'harianMekanik'])->name('laporan-harian-mekanik');
     Route::get('/laporan-pemakaian-barang', [App\Http\Controllers\LaporanController::class, 'pemakaianBarang'])->name('laporan-pemakaian-barang');
-    Route::get('/laporan-arsip-wo', [App\Http\Controllers\LaporanController::class, 'arsipWo'])->name('laporan-arsip-wo');
+
 
     // 🔹 PROFILE
     Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'index'])->name('profile');
@@ -116,18 +114,17 @@ Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(functi
     // Laporan Filter Routes
     Route::post('/laporan/harian-mekanik/filter', [App\Http\Controllers\LaporanController::class, 'filterHarianMekanik'])->name('laporan.harian-mekanik.filter');
     Route::post('/laporan/pemakaian-barang/filter', [App\Http\Controllers\LaporanController::class, 'filterPemakaianBarang'])->name('laporan.pemakaian-barang.filter');
-    Route::post('/laporan/arsip-wo/filter', [App\Http\Controllers\LaporanController::class, 'filterArsipWo'])->name('laporan.arsip-wo.filter');
+
 
     // Laporan Print & Export Routes
     Route::get('/laporan/harian-mekanik/print', [App\Http\Controllers\LaporanController::class, 'printHarianMekanik'])->name('laporan.harian-mekanik.print');
     Route::get('/laporan/pemakaian-barang/print', [App\Http\Controllers\LaporanController::class, 'printPemakaianBarang'])->name('laporan.pemakaian-barang.print');
-    Route::get('/laporan/arsip-wo/print', [App\Http\Controllers\LaporanController::class, 'printArsipWo'])->name('laporan.arsip-wo.print');
-    Route::get('/laporan/arsip-wo/print/{id}', [App\Http\Controllers\LaporanController::class, 'printArsipWoById'])->name('laporan.arsip-wo.print-by-id');
+
 
     // Laporan Export Routes
     Route::get('/laporan/harian-mekanik/export', [App\Http\Controllers\LaporanController::class, 'exportHarianMekanik'])->name('laporan.harian-mekanik.export');
     Route::get('/laporan/pemakaian-barang/export', [App\Http\Controllers\LaporanController::class, 'exportPemakaianBarang'])->name('laporan.pemakaian-barang.export');
-    Route::get('/laporan/arsip-wo/export', [App\Http\Controllers\LaporanController::class, 'exportArsipWo'])->name('laporan.arsip-wo.export');
+
 
     // Template Routes
     Route::get('/template/laporan-harian-mekanik', [App\Http\Controllers\LaporanController::class, 'templateHarianMekanik'])->name('template.laporan-harian-mekanik');
@@ -151,7 +148,7 @@ Route::middleware(['role:kadiv'])->prefix('kadivmekanik')->name('kadivmekanik.')
 
     // 🔹 WORK ORDER
     Route::get('/work-order', [KadivMekanikController::class, 'workOrder'])->name('work-order');
-    Route::get('/daftar-pengajuan-work-order', [KadivMekanikController::class, 'daftarPengajuanWorkOrder'])->name('daftar-pengajuan-work-order');
+    Route::get('/daftar-work-order', [KadivMekanikController::class, 'daftarPengajuanWorkOrder'])->name('daftar-work-order');
     Route::get('/riwayat-work-order', [KadivMekanikController::class, 'riwayatWorkOrder'])->name('riwayat-work-order');
 
     // Work Order CRUD
@@ -300,8 +297,6 @@ Route::middleware(['role:kadiv'])->prefix('logistik')->name('logistik.')->group(
     // Work Order Forward
     Route::post('/work-order/{id}/forward-to-purchasing', [LogistikController::class, 'forwardWorkOrderToPurchasing'])->name('work-order.forward-to-purchasing');
 
-    // 🔹 PERMINTAAN BARANG
-    Route::get('/permintaan-barang', [LogistikController::class, 'permintaanBarang'])->name('permintaan-barang');
 
     // 🔹 BARANG
     Route::get('/terima-barang', [LogistikController::class, 'terimaBarang'])->name('terima-barang');
@@ -315,12 +310,7 @@ Route::middleware(['role:kadiv'])->prefix('logistik')->name('logistik.')->group(
     Route::post('/daftar-barang/{id}', [LogistikController::class, 'updateDaftarBarang'])->name('daftar-barang.update');
     Route::delete('/daftar-barang/{id}', [LogistikController::class, 'destroyDaftarBarang'])->name('daftar-barang.destroy');
 
-    // 🔹 PERMINTAAN BARANG
-    Route::get('/permintaan-barang/create/{id}', [LogistikController::class, 'createPermintaanBarang'])->name('permintaan-barang.create');
-    Route::post('/permintaan-barang/store', [LogistikController::class, 'storePermintaanBarang'])->name('permintaan-barang.store');
-    Route::get('/permintaan-barang/{id}/edit', [LogistikController::class, 'editPermintaanBarang'])->name('permintaan-barang.edit');
-    Route::put('/permintaan-barang/{id}', [LogistikController::class, 'updatePermintaanBarang'])->name('permintaan-barang.update');
-    Route::delete('/permintaan-barang/{id}', [LogistikController::class, 'destroyPermintaanBarang'])->name('permintaan-barang.destroy');
+
 
     // API untuk Work Order
     Route::get('/api/work-order/{id}', [LogistikController::class, 'showWorkOrder'])->name('api.work-order');
@@ -345,7 +335,6 @@ Route::middleware(['role:kadiv'])->prefix('purchasing')->name('purchasing.')->gr
     Route::get('/daftar-work-order', [PurchasingController::class, 'daftarWorkOrder'])->name('daftar-work-order');
     Route::get('/riwayat-work-order', [PurchasingController::class, 'riwayatWorkOrder'])->name('riwayat-work-order');
     Route::get('/api/work-order/{id}', [PurchasingController::class, 'showWorkOrder'])->name('api.work-order');
-    Route::get('/api/permintaan-barang/{id}', [PurchasingController::class, 'showPermintaanBarang'])->name('api.permintaan-barang');
     Route::get('/api/units/search', [PurchasingController::class, 'searchUnits'])->name('api.units.search');
     Route::post('/work-order', [PurchasingController::class, 'storeWorkOrder'])->name('work-order.store');
     Route::get('/work-order/{id}', [PurchasingController::class, 'showWorkOrder'])->where('id', '[0-9]+');
@@ -365,10 +354,6 @@ Route::middleware(['role:kadiv'])->prefix('purchasing')->name('purchasing.')->gr
     Route::post('/work-order/{id}/forward-to-atasan', [PurchasingController::class, 'forwardWorkOrderToAtasan'])->name('work-order.forward-to-atasan');
     Route::post('/work-order/{id}/resend-to-atasan', [PurchasingController::class, 'resendWorkOrderToAtasan'])->name('work-order.resend-to-atasan');
 
-    // 🔹 PERMINTAAN BARANG
-    Route::get('/permintaan-barang', [PurchasingController::class, 'permintaanBarang'])->name('permintaan-barang');
-    Route::get('/permintaan-barang/{id}/edit-harga', [PurchasingController::class, 'editHargaPermintaan'])->name('permintaan-barang.edit-harga');
-    Route::put('/permintaan-barang/{id}/update-harga', [PurchasingController::class, 'updateHargaPermintaan'])->name('permintaan-barang.update-harga');
 
     // 🔹 PEMBELIAN
     Route::get('/beli-barang', [PurchasingController::class, 'beliBarang'])->name('beli-barang');
@@ -376,8 +361,6 @@ Route::middleware(['role:kadiv'])->prefix('purchasing')->name('purchasing.')->gr
     Route::get('/kirim-barang', [PurchasingController::class, 'kirimBarang'])->name('kirim-barang');
     Route::post('/kirim-barang/{id}', [PurchasingController::class, 'prosesKirimBarang'])->name('kirim-barang.proses');
 
-    // 🔹 PERMINTAAN BARANG
-    Route::post('/permintaan-barang/{id}/kirim-approval', [PurchasingController::class, 'kirimKeAtasan'])->name('permintaan-barang.kirim-approval');
 
     // 🔹 PROFILE
     Route::get('/profile', [PurchasingController::class, 'profile'])->name('profile');
@@ -392,11 +375,7 @@ Route::middleware(['role:atasan'])->prefix('atasan')->name('atasan.')->group(fun
     // 🔹 DASHBOARD
     Route::get('/dashboard', [AtasanController::class, 'dashboard'])->name('dashboard');
 
-    // 🔹 APPROVAL
-    Route::get('/approval-permintaan', [AtasanController::class, 'approvalPermintaan'])->name('approval-permintaan');
-    Route::post('/approval-permintaan/{id}/approve', [AtasanController::class, 'approvePermintaan'])->name('approval-permintaan.approve');
-    Route::post('/approval-permintaan/{id}/reject', [AtasanController::class, 'rejectPermintaan'])->name('approval-permintaan.reject');
-    Route::get('/riwayat-approval', [AtasanController::class, 'riwayatApproval'])->name('riwayat-approval');
+
 
     // 🔹 WORK ORDER
     Route::get('/work-order-masuk', [AtasanController::class, 'workOrderMasuk'])->name('work-order-masuk');
