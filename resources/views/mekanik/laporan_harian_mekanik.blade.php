@@ -277,13 +277,13 @@
                         <tbody>
                             @forelse($data as $i => $laporan)
                             <tr>
-                                <td>{{ $i + 1 }}</td>
-                                <td>{{ \Carbon\Carbon::parse($laporan->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
+                                <td></td>
+                                <td data-order="{{ \Carbon\Carbon::parse($laporan->tanggal)->format('Ymd') }}">{{ \Carbon\Carbon::parse($laporan->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
                                 <td>{{ $laporan->nama_unit }}</td>
                                 <td>{{ $laporan->keluhan_kerusakan }}</td>
                                 <td>{{ $laporan->penyebab_kerusakan }}</td>
-                                <td>{{ \Carbon\Carbon::parse($laporan->tanggal_mulai)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
-                                <td>{{ \Carbon\Carbon::parse($laporan->tanggal_selesai)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
+                                <td data-order="{{ \Carbon\Carbon::parse($laporan->tanggal_mulai)->format('Ymd') }}">{{ \Carbon\Carbon::parse($laporan->tanggal_mulai)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
+                                <td data-order="{{ \Carbon\Carbon::parse($laporan->tanggal_selesai)->format('Ymd') }}">{{ \Carbon\Carbon::parse($laporan->tanggal_selesai)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
                                 <td>{{ $laporan->tindakan_perbaikan }}</td>
                                 <td>
                                     <div class="d-flex gap-2">
@@ -323,7 +323,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="tanggal">Tanggal <span class="text-danger">*</span></label>
+                                <label for="tanggal">Hari/Tanggal <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="tanggal" name="tanggal" required>
                             </div>
                         </div>
@@ -332,9 +332,9 @@
                                 <label for="nama_unit">Nama Unit <span class="text-danger">*</span></label>
                                 <select class="form-control" id="nama_unit" name="nama_unit" required>
                                     <option value="">-- Pilih Unit --</option>
-                                    <option value="TC 01">TC 01</option>
-                                    <option value="F 02">F 02</option>
-                                    <option value="DA 8012">DA 8012</option>
+                                    @foreach($unitOptions as $unit)
+                                        <option value="{{ $unit->nama_unit }}">{{ $unit->nama_unit }} ({{ $unit->kode_unit }})</option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>
@@ -350,13 +350,13 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="tanggal_mulai">Tanggal Mulai <span class="text-danger">*</span></label>
+                                <label for="tanggal_mulai">Hari/Tanggal Mulai <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="tanggal_mulai" name="tanggal_mulai" required>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="tanggal_selesai">Tanggal Selesai <span class="text-danger">*</span></label>
+                                <label for="tanggal_selesai">Hari/Tanggal Selesai <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="tanggal_selesai" name="tanggal_selesai" required>
                             </div>
                         </div>
@@ -508,6 +508,14 @@
             "paging": true,
             "pageLength": 10,
             "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+            "order": [[1, 'desc']], // Default sort by Hari/Tanggal descending (newest first)
+            "columnDefs": [
+                {
+                    "targets": 0,
+                    "orderable": false,
+                    "searchable": false
+                }
+            ],
             "language": {
                 "search": "Cari:",
                 "lengthMenu": "Tampilkan _MENU_ data per halaman",
@@ -521,6 +529,13 @@
                 "emptyTable": "Tidak ada data laporan harian mekanik"
             }
         });
+
+        // Auto-generate row numbers on every draw (always sequential 1, 2, 3...)
+        table.on('order.dt search.dt draw.dt', function () {
+            table.column(0, {search:'applied', order:'applied'}).nodes().each(function (cell, i) {
+                cell.innerHTML = table.page.info().start + i + 1;
+            });
+        }).draw();
 
         // Show all data by default - no auto-filtering on page load
         // Only filter when user manually changes dropdown values
@@ -584,12 +599,12 @@
         fetch(`/mekanik/laporan-harian-mekanik/${id}`)
             .then(response => response.json())
             .then(data => {
-                $('#view_tanggal').text(new Date(data.tanggal).toLocaleDateString('id-ID'));
+                $('#view_tanggal').text(formatDate(data.tanggal));
                 $('#view_nama_unit').text(data.nama_unit);
                 $('#view_keluhan_kerusakan').text(data.keluhan_kerusakan);
                 $('#view_penyebab_kerusakan').text(data.penyebab_kerusakan);
-                $('#view_tanggal_mulai').text(new Date(data.tanggal_mulai).toLocaleDateString('id-ID'));
-                $('#view_tanggal_selesai').text(new Date(data.tanggal_selesai).toLocaleDateString('id-ID'));
+                $('#view_tanggal_mulai').text(formatDate(data.tanggal_mulai));
+                $('#view_tanggal_selesai').text(formatDate(data.tanggal_selesai));
                 $('#view_tindakan_perbaikan').text(data.tindakan_perbaikan);
                 $('#viewLaporanModal').modal('show');
             })
@@ -614,7 +629,7 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label><strong>Tanggal:</strong></label>
+                            <label><strong>Hari/Tanggal:</strong></label>
                             <p id="view_tanggal" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
@@ -636,13 +651,13 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label><strong>Tanggal Mulai:</strong></label>
+                            <label><strong>Hari/Tanggal Mulai:</strong></label>
                             <p id="view_tanggal_mulai" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label><strong>Tanggal Selesai:</strong></label>
+                            <label><strong>Hari/Tanggal Selesai:</strong></label>
                             <p id="view_tanggal_selesai" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>

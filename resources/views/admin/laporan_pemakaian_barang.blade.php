@@ -355,52 +355,44 @@
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label class="font-weight-bold">Sparepart/Material/Jasa:</label>
-                            <div id="view_nama_barang" class="form-control-plaintext border p-2 rounded"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
                             <label class="font-weight-bold">Kode Unit:</label>
                             <div id="view_kode_unit" class="form-control-plaintext border p-2 rounded"></div>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                </div>
+                <div class="form-group">
+                    <label class="font-weight-bold">Sparepart/Material/Jasa:</label>
+                    <div id="view_nama_barang" class="form-control-plaintext border p-2 rounded"></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label class="font-weight-bold">Jumlah:</label>
                             <div id="view_jumlah" class="form-control-plaintext border p-2 rounded"></div>
                         </div>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label class="font-weight-bold">Bentuk Satuan:</label>
                             <div id="view_bentuk_satuan" class="form-control-plaintext border p-2 rounded"></div>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label class="font-weight-bold">Harga Satuan:</label>
                             <div id="view_harga_satuan" class="form-control-plaintext border p-2 rounded"></div>
                         </div>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label class="font-weight-bold">Total Harga:</label>
                             <div id="view_total_harga" class="form-control-plaintext border p-2 rounded"></div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="font-weight-bold">Keterangan:</label>
-                            <div id="view_keterangan" class="form-control-plaintext border p-2 rounded"></div>
-                        </div>
-                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="font-weight-bold">Keterangan:</label>
+                    <div id="view_keterangan" class="form-control-plaintext border p-2 rounded"></div>
                 </div>
             </div>
             <div class="modal-footer">

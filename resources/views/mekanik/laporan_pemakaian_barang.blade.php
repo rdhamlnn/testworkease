@@ -264,7 +264,7 @@
                         <thead class="thead-dark">
                             <tr>
                                 <th>No</th>
-                                <th>Tanggal</th>
+                                <th>Hari/Tanggal</th>
                                 <th>Kode Unit</th>
                                 <th>Sparepart/Material/Jasa</th>
                                 <th>Jumlah</th>
@@ -278,8 +278,8 @@
                         <tbody>
                             @forelse($data as $i => $laporan)
                             <tr>
-                                <td>{{ $i + 1 }}</td>
-                                <td>{{ \Carbon\Carbon::parse($laporan->tanggal)->format('d/m/Y') }}</td>
+                                <td></td>
+                                <td data-order="{{ \Carbon\Carbon::parse($laporan->tanggal)->format('Ymd') }}">{{ \Carbon\Carbon::parse($laporan->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
                                 <td>{{ $laporan->kode_unit }}</td>
                                 <td>{{ $laporan->nama_barang }}</td>
                                 <td>{{ $laporan->jumlah }}</td>
@@ -325,7 +325,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="tanggal">Tanggal <span class="text-danger">*</span></label>
+                                <label for="tanggal">Hari/Tanggal <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="tanggal" name="tanggal" required>
                             </div>
                         </div>
@@ -334,9 +334,9 @@
                                 <label for="kode_unit">Kode Unit <span class="text-danger">*</span></label>
                                 <select class="form-control" id="kode_unit" name="kode_unit" required>
                                     <option value="">-- Pilih Kode Unit --</option>
-                                    <option value="TC 01">TC 01</option>
-                                    <option value="F 02">F 02</option>
-                                    <option value="DA 8012">DA 8012</option>
+                                    @foreach($unitOptions as $unit)
+                                        <option value="{{ $unit->kode_unit }}">{{ $unit->nama_unit }} ({{ $unit->kode_unit }})</option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>
@@ -543,6 +543,14 @@
             "paging": true,
             "pageLength": 10,
             "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+            "order": [[1, 'desc']], // Default sort by Hari/Tanggal descending (newest first)
+            "columnDefs": [
+                {
+                    "targets": 0,
+                    "orderable": false,
+                    "searchable": false
+                }
+            ],
             "language": {
                 "search": "Cari:",
                 "lengthMenu": "Tampilkan _MENU_ data per halaman",
@@ -556,6 +564,13 @@
                 "emptyTable": "Tidak ada data laporan pemakaian barang"
             }
         });
+
+        // Auto-generate row numbers on every draw (always sequential 1, 2, 3...)
+        table.on('order.dt search.dt draw.dt', function () {
+            table.column(0, {search:'applied', order:'applied'}).nodes().each(function (cell, i) {
+                cell.innerHTML = table.page.info().start + i + 1;
+            });
+        }).draw();
 
         // Auto filter when dropdowns change
         $('#filter-tahun, #filter-bulan, #filter-minggu').on('change', function() {
@@ -612,7 +627,7 @@
         fetch(`/mekanik/laporan-pemakaian-barang/${id}`)
             .then(response => response.json())
             .then(data => {
-                $('#view_tanggal').text(new Date(data.tanggal).toLocaleDateString('id-ID'));
+                $('#view_tanggal').text(formatDate(data.tanggal));
                 $('#view_kode_unit').text(data.kode_unit);
                 $('#view_nama_barang').text(data.nama_barang);
                 $('#view_jumlah').text(data.jumlah);
@@ -643,7 +658,7 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label><strong>Tanggal:</strong></label>
+                            <label><strong>Hari/Tanggal:</strong></label>
                             <p id="view_tanggal" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>

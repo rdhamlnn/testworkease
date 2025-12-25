@@ -694,12 +694,12 @@
         fetch(`/kadivmekanik/laporan-harian-mekanik/${id}`)
             .then(response => response.json())
             .then(data => {
-                $('#view_tanggal').text(new Date(data.tanggal).toLocaleDateString('id-ID'));
+                $('#view_tanggal').text(formatDate(data.tanggal));
                 $('#view_nama_unit').text(data.nama_unit);
                 $('#view_keluhan_kerusakan').text(data.keluhan_kerusakan);
                 $('#view_penyebab_kerusakan').text(data.penyebab_kerusakan);
-                $('#view_tanggal_mulai').text(new Date(data.tanggal_mulai).toLocaleDateString('id-ID'));
-                $('#view_tanggal_selesai').text(new Date(data.tanggal_selesai).toLocaleDateString('id-ID'));
+                $('#view_tanggal_mulai').text(formatDate(data.tanggal_mulai));
+                $('#view_tanggal_selesai').text(formatDate(data.tanggal_selesai));
                 $('#view_tindakan_perbaikan').text(data.tindakan_perbaikan);
                 $('#viewLaporanModal').modal('show');
             })

@@ -399,11 +399,20 @@
                             </div>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label for="keterangan">Keterangan</label>
-                        <textarea class="form-control" id="keterangan" name="keterangan" rows="3" placeholder="Masukkan keterangan tambahan (opsional)"></textarea>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="total_harga">Total Harga</label>
+                                <input type="number" class="form-control" id="total_harga" name="total_harga" min="0" readonly required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="keterangan">Keterangan</label>
+                                <input type="text" class="form-control" id="keterangan" name="keterangan" placeholder="Masukkan keterangan tambahan (opsional)">
+                            </div>
+                        </div>
                     </div>
-                    <input type="hidden" id="total_harga" name="total_harga" value="0">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
@@ -651,12 +660,20 @@
             tanggalBarangField.val(currentTanggal);
         });
 
-        // Kalkulasi total harga otomatis
+        // Kalkulasi total harga otomatis untuk form tambah
         $('#jumlah, #harga_satuan').on('input', function() {
             var jumlah = parseFloat($('#jumlah').val()) || 0;
             var hargaSatuan = parseFloat($('#harga_satuan').val()) || 0;
             var totalHarga = jumlah * hargaSatuan;
-            $('#total_harga').val(totalHarga);
+            $('#total_harga').val(totalHarga.toFixed(2));
+        });
+
+        // Kalkulasi total harga otomatis untuk form edit
+        $('#edit_jumlah, #edit_harga_satuan').on('input', function() {
+            var jumlah = parseFloat($('#edit_jumlah').val()) || 0;
+            var hargaSatuan = parseFloat($('#edit_harga_satuan').val()) || 0;
+            var totalHarga = jumlah * hargaSatuan;
+            $('#edit_total_harga').val(totalHarga.toFixed(2));
         });
     });
 
@@ -722,7 +739,7 @@
         fetch(`/kadivmekanik/laporan-pemakaian-barang/${id}`)
             .then(response => response.json())
             .then(data => {
-                $('#view_tanggal_barang').text(new Date(data.tanggal).toLocaleDateString('id-ID'));
+                $('#view_tanggal_barang').text(formatDate(data.tanggal));
                 $('#view_nama_barang').text(data.nama_barang);
                 $('#view_kode_unit').text(data.kode_unit);
                 $('#view_jumlah').text(data.jumlah);
@@ -786,52 +803,44 @@
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label><strong>Sparepart/Material/Jasa:</strong></label>
-                            <p id="view_nama_barang" class="form-control-plaintext border p-2 rounded"></p>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
                             <label><strong>Kode Unit:</strong></label>
                             <p id="view_kode_unit" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                </div>
+                <div class="form-group">
+                    <label><strong>Sparepart/Material/Jasa:</strong></label>
+                    <p id="view_nama_barang" class="form-control-plaintext border p-2 rounded"></p>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label><strong>Jumlah:</strong></label>
                             <p id="view_jumlah" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label><strong>Bentuk Satuan:</strong></label>
                             <p id="view_bentuk_satuan" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label><strong>Harga Satuan:</strong></label>
                             <p id="view_harga_satuan" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label><strong>Total Harga:</strong></label>
                             <p id="view_total_harga" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label><strong>Keterangan:</strong></label>
-                            <p id="view_keterangan" class="form-control-plaintext border p-2 rounded"></p>
-                        </div>
-                    </div>
+                </div>
+                <div class="form-group">
+                    <label><strong>Keterangan:</strong></label>
+                    <p id="view_keterangan" class="form-control-plaintext border p-2 rounded"></p>
                 </div>
             </div>
             <div class="modal-footer">
@@ -859,42 +868,50 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="edit_tanggal">Hari/Tanggal</label>
+                                <label for="edit_tanggal">Hari/Tanggal <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="edit_tanggal" name="tanggal" required>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="edit_nama_barang">Sparepart/Material/Jasa</label>
-                                <input type="text" class="form-control" id="edit_nama_barang" name="nama_barang" required>
+                                <label for="edit_kode_unit">Kode Unit <span class="text-danger">*</span></label>
+                                <select class="form-control" id="edit_kode_unit" name="kode_unit" required>
+                                    <option value="">-- Pilih Unit --</option>
+                                    @foreach($unitOptions as $unit)
+                                        <option value="{{ $unit->kode_unit }}">{{ $unit->nama_unit }} ({{ $unit->kode_unit }})</option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="edit_kode_unit">Kode Unit</label>
-                                <input type="text" class="form-control" id="edit_kode_unit" name="kode_unit" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="edit_jumlah">Jumlah</label>
-                                <input type="number" class="form-control" id="edit_jumlah" name="jumlah" required>
-                            </div>
-                        </div>
+                    <div class="form-group">
+                        <label for="edit_nama_barang">Sparepart/Material/Jasa <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="edit_nama_barang" name="nama_barang" required placeholder="Masukkan nama sparepart, material, atau jasa">
                     </div>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
-                                <label for="edit_bentuk_satuan">Bentuk Satuan</label>
-                                <input type="text" class="form-control" id="edit_bentuk_satuan" name="bentuk_satuan" required>
+                                <label for="edit_jumlah">Jumlah <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="edit_jumlah" name="jumlah" min="1" required placeholder="Masukkan jumlah">
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
-                                <label for="edit_harga_satuan">Harga Satuan</label>
-                                <input type="number" class="form-control" id="edit_harga_satuan" name="harga_satuan" required>
+                                <label for="edit_bentuk_satuan">Bentuk Satuan <span class="text-danger">*</span></label>
+                                <select class="form-control" id="edit_bentuk_satuan" name="bentuk_satuan" required>
+                                    <option value="">-- Pilih Satuan --</option>
+                                    <option value="Pcs">Pcs</option>
+                                    <option value="Liter">Liter</option>
+                                    <option value="Botol">Botol</option>
+                                    <option value="Kg">Kg</option>
+                                    <option value="Meter">Meter</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="edit_harga_satuan">Harga Satuan <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="edit_harga_satuan" name="harga_satuan" min="0" required placeholder="Masukkan harga satuan">
                             </div>
                         </div>
                     </div>
@@ -902,13 +919,13 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="edit_total_harga">Total Harga</label>
-                                <input type="number" class="form-control" id="edit_total_harga" name="total_harga" required>
+                                <input type="number" class="form-control" id="edit_total_harga" name="total_harga" min="0" readonly required>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="edit_keterangan">Keterangan</label>
-                                <input type="text" class="form-control" id="edit_keterangan" name="keterangan">
+                                <input type="text" class="form-control" id="edit_keterangan" name="keterangan" placeholder="Masukkan keterangan tambahan (opsional)">
                             </div>
                         </div>
                     </div>

@@ -122,6 +122,18 @@ class LaporanPemakaianBarangExport
             $sheet->getStyle("H{$totalRow}")->getNumberFormat()->setFormatCode('#,##0');
         }
         
+        // Apply borders to the entire table (header + data + total row)
+        $lastRow = $sheet->getHighestRow();
+        $borderStyle = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['argb' => 'FF000000'],
+                ],
+            ],
+        ];
+        $sheet->getStyle("A5:I{$lastRow}")->applyFromArray($borderStyle);
+        
         // Set default filename if not provided
         if (!$filename) {
             $filename = 'laporan_pemakaian_barang_' . date('Y-m-d_H-i-s') . '.xlsx';

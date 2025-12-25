@@ -1551,6 +1551,36 @@ class KadivMekanikController extends Controller
                 $sheet->setCellValue('H' . $totalRow, '=SUM(H6:H' . $highestRow . ')');
                 $sheet->getStyle('H' . $totalRow)->getFont()->setBold(true);
                 $sheet->getStyle('H' . $totalRow)->getNumberFormat()->setFormatCode('#,##0');
+                
+                // Border untuk semua cell termasuk baris total
+                $lastRow = $totalRow;
+                $sheet->getStyle('A5:I' . $lastRow)->applyFromArray([
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        ],
+                    ],
+                ]);
+                
+                // Styling header
+                $sheet->getStyle('A5:I5')->applyFromArray([
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'F0F0F0'],
+                    ],
+                    'alignment' => [
+                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                        'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                    ],
+                ]);
+                
+                // Padding untuk data rows
+                $sheet->getStyle('A6:I' . $highestRow)->applyFromArray([
+                    'alignment' => [
+                        'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP,
+                        'wrapText' => true,
+                    ],
+                ]);
             }
 
             // Auto-size kolom
