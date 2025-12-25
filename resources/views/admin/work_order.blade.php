@@ -513,13 +513,7 @@
                                     <td>{{ $i + 1 }}</td>
                                     <td>{{ $wo->no_work_order }}</td>
                                     <td>{{ $wo->divisi_pengaju }}</td>
-                                    <td>
-                                        @if(isset($wo->jenisWorkOrder) && $wo->jenisWorkOrder)
-                                            <span class="badge badge-info">{{ $wo->jenisWorkOrder->nama_jenis_wo }}</span>
-                                        @else
-                                            <span class="badge badge-secondary">-</span>
-                                        @endif
-                                    </td>
+                                    <td>{{ $wo->jenisWorkOrder->nama_jenis_wo ?? '-' }}</td>
                                     <td>{{ \Carbon\Carbon::parse($wo->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
                                     <td>{{ is_object($wo->unit_code) ? $wo->unit_code->nama_unit : $wo->unit_code }}</td>
                                     <td>{{ Str::limit($wo->uraian, 30) }}</td>

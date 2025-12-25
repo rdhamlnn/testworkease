@@ -32,36 +32,52 @@ class MekanikController extends Controller
      */
     public function dashboard()
     {
-        // Get statistics for dashboard
+        // Get statistics for dashboard (real data from database)
         $totalLaporanHarian = LaporanHarianMekanik::count();
         $totalLaporanBarang = LaporanPemakaianBarang::count();
+        
+        // Laporan bulan ini (combined from both tables)
+        $laporanBulanIni = LaporanHarianMekanik::whereMonth('tanggal', date('m'))
+            ->whereYear('tanggal', date('Y'))
+            ->count() 
+            + LaporanPemakaianBarang::whereMonth('tanggal', date('m'))
+            ->whereYear('tanggal', date('Y'))
+            ->count();
 
         // ========== DATA CHART REAL DARI DATABASE ==========
         
-        // 1. Trend Laporan (6 bulan terakhir)
-        $monthlyReportTrend = LaporanHarianMekanik::select(
+        // 1. Trend Laporan (6 bulan terakhir) - Combined from both tables using UNION
+        $laporanHarianTrend = LaporanHarianMekanik::select(
                 DB::raw('MONTH(tanggal) as month'),
                 DB::raw('YEAR(tanggal) as year'),
                 DB::raw('count(*) as total')
             )
             ->where('tanggal', '>=', DB::raw('DATE_SUB(NOW(), INTERVAL 6 MONTH)'))
-            ->groupBy('year', 'month')
-            ->orderBy('year', 'asc')
-            ->orderBy('month', 'asc')
-            ->get();
-
-        $monthlyBarangTrend = LaporanPemakaianBarang::select(
+            ->groupBy('year', 'month');
+            
+        $laporanBarangTrend = LaporanPemakaianBarang::select(
                 DB::raw('MONTH(tanggal) as month'),
                 DB::raw('YEAR(tanggal) as year'),
                 DB::raw('count(*) as total')
             )
             ->where('tanggal', '>=', DB::raw('DATE_SUB(NOW(), INTERVAL 6 MONTH)'))
+            ->groupBy('year', 'month');
+        
+        // Combine and aggregate
+        $monthlyLaporanTrend = DB::table(DB::raw("({$laporanHarianTrend->toSql()} UNION ALL {$laporanBarangTrend->toSql()}) as combined"))
+            ->mergeBindings($laporanHarianTrend->getQuery())
+            ->mergeBindings($laporanBarangTrend->getQuery())
+            ->select(
+                'month',
+                'year',
+                DB::raw('SUM(total) as total')
+            )
             ->groupBy('year', 'month')
             ->orderBy('year', 'asc')
             ->orderBy('month', 'asc')
             ->get();
 
-        // 2. Pemakaian Barang per Unit
+        // 2. Pemakaian Barang per Unit (real data)
         $materialUsagePerUnit = LaporanPemakaianBarang::select('kode_unit', DB::raw('SUM(total_harga) as total'))
             ->whereNotNull('kode_unit')
             ->groupBy('kode_unit')
@@ -69,7 +85,7 @@ class MekanikController extends Controller
             ->pluck('total', 'kode_unit')
             ->toArray();
 
-        // 3. Aktivitas Terbaru (hanya laporan yang dibuat oleh mekanik)
+        // 3. Aktivitas Terbaru (real data from laporan harian mekanik)
         $recentActivities = LaporanHarianMekanik::join('akun', 'laporan_harian_mekanik.id_akun', '=', 'akun.id_akun')
             ->join('karyawan', 'akun.id_karyawan', '=', 'karyawan.id_karyawan')
             ->select('laporan_harian_mekanik.*', 'karyawan.nama_lengkap')
@@ -80,8 +96,8 @@ class MekanikController extends Controller
         return view('mekanik.dashboard', compact(
             'totalLaporanHarian', 
             'totalLaporanBarang',
-            'monthlyReportTrend',
-            'monthlyBarangTrend',
+            'laporanBulanIni',
+            'monthlyLaporanTrend',
             'materialUsagePerUnit',
             'recentActivities'
         ));

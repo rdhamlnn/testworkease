@@ -17,9 +17,21 @@
     </div>
 
     <div class="row">
-        <div class="col-lg-4 col-md-6 col-sm-6 col-12">
+        <div class="col-lg-3 col-md-6 col-sm-6 col-12">
             <div class="card card-statistic-1">
-                <div class="card-icon bg-primary"><i class="fas fa-clock"></i></div>
+                <div class="card-icon bg-primary"><i class="fas fa-briefcase"></i></div>
+                <div class="card-wrap">
+                    <div class="card-header">
+                        <h4>Total Work Order</h4>
+                    </div>
+                    <div class="card-body">{{ $totalWorkOrder ?? 0 }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 col-sm-6 col-12">
+            <div class="card card-statistic-1">
+                <div class="card-icon bg-warning"><i class="fas fa-clock"></i></div>
                 <div class="card-wrap">
                     <div class="card-header">
                         <h4>Menunggu Approval</h4>
@@ -29,7 +41,7 @@
             </div>
         </div>
 
-        <div class="col-lg-4 col-md-6 col-sm-6 col-12">
+        <div class="col-lg-3 col-md-6 col-sm-6 col-12">
             <div class="card card-statistic-1">
                 <div class="card-icon bg-success"><i class="fas fa-check-circle"></i></div>
                 <div class="card-wrap">
@@ -41,7 +53,7 @@
             </div>
         </div>
 
-        <div class="col-lg-4 col-md-6 col-sm-6 col-12">
+        <div class="col-lg-3 col-md-6 col-sm-6 col-12">
             <div class="card card-statistic-1">
                 <div class="card-icon bg-danger"><i class="fas fa-times-circle"></i></div>
                 <div class="card-wrap">
@@ -53,6 +65,7 @@
             </div>
         </div>
     </div>
+
 
     <!-- Charts Section -->
     <div class="row">

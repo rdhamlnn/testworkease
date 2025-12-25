@@ -17,38 +17,50 @@
     </div>
 
     <div class="row">
-        <div class="col-lg-4 col-md-6 col-sm-6 col-12">
+        <div class="col-lg-3 col-md-6 col-sm-6 col-12">
             <div class="card card-statistic-1">
                 <div class="card-icon bg-primary"><i class="far fa-user"></i></div>
                 <div class="card-wrap">
                     <div class="card-header">
                         <h4>Laporan Harian Mekanik</h4>
                     </div>
-                    <div class="card-body">{{ $totalLaporanHarian ?? 20 }}</div>
+                    <div class="card-body">{{ $totalLaporanHarian ?? 0 }}</div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-4 col-md-6 col-sm-6 col-12">
+        <div class="col-lg-3 col-md-6 col-sm-6 col-12">
             <div class="card card-statistic-1">
                 <div class="card-icon bg-danger"><i class="far fa-newspaper"></i></div>
                 <div class="card-wrap">
                     <div class="card-header">
                         <h4>Laporan Pemakaian Barang</h4>
                     </div>
-                    <div class="card-body">{{ $totalLaporanBarang ?? 12 }}</div>
+                    <div class="card-body">{{ $totalLaporanBarang ?? 0 }}</div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-4 col-md-6 col-sm-6 col-12">
+        <div class="col-lg-3 col-md-6 col-sm-6 col-12">
             <div class="card card-statistic-1">
                 <div class="card-icon bg-warning"><i class="far fa-file"></i></div>
                 <div class="card-wrap">
                     <div class="card-header">
                         <h4>Total Semua Laporan</h4>
                     </div>
-                    <div class="card-body">{{ ($totalLaporanHarian ?? 20) + ($totalLaporanBarang ?? 12) }}</div>
+                    <div class="card-body">{{ ($totalLaporanHarian ?? 0) + ($totalLaporanBarang ?? 0) }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 col-sm-6 col-12">
+            <div class="card card-statistic-1">
+                <div class="card-icon bg-success"><i class="fas fa-calendar-alt"></i></div>
+                <div class="card-wrap">
+                    <div class="card-header">
+                        <h4>Laporan Bulan Ini</h4>
+                    </div>
+                    <div class="card-body">{{ $laporanBulanIni ?? 0 }}</div>
                 </div>
             </div>
         </div>
@@ -56,14 +68,26 @@
 
     <!-- Charts Section -->
     <div class="row">
+        <!-- Trend Laporan Chart -->
+        <div class="col-lg-6 col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Trend Laporan per Bulan</h4>
+                </div>
+                <div class="card-body">
+                    <canvas id="trendLaporanChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
         <!-- Material Usage Chart -->
-        <div class="col-lg-12 col-md-12">
+        <div class="col-lg-6 col-md-12">
             <div class="card">
                 <div class="card-header">
                     <h4>Pemakaian Barang per Unit</h4>
                 </div>
                 <div class="card-body">
-                    <canvas id="materialUsageChart" height="150"></canvas>
+                    <canvas id="materialUsageChart" height="200"></canvas>
                 </div>
             </div>
         </div>
@@ -120,7 +144,50 @@
 
 <script>
 // Data dari Controller (Real Database)
-const materialUsagePerUnitData = @json($materialUsagePerUnit);
+const materialUsagePerUnitData = @json($materialUsagePerUnit ?? (object)[]);
+const monthlyLaporanTrendData = @json($monthlyLaporanTrend ?? []);
+
+// Month names for labels
+const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+// Trend Laporan Chart (Line)
+const trendLaporanCtx = document.getElementById('trendLaporanChart').getContext('2d');
+const trendLaporanChart = new Chart(trendLaporanCtx, {
+    type: 'line',
+    data: {
+        labels: monthlyLaporanTrendData.map(item => monthNames[item.month - 1] + ' ' + item.year),
+        datasets: [{
+            label: 'Jumlah Laporan',
+            data: monthlyLaporanTrendData.map(item => item.total),
+            borderColor: '#1B3C88',
+            backgroundColor: 'rgba(27, 60, 136, 0.1)',
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0,0,0,0.1)'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
 
 // Material Usage Chart (Bar)
 const materialUsageCtx = document.getElementById('materialUsageChart').getContext('2d');

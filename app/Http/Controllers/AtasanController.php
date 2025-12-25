@@ -46,6 +46,7 @@ class AtasanController extends Controller
         $statusDitolakId = $this->getStatusId('Ditolak Atasan');
 
         // Statistik
+        $totalWorkOrder = SuratPengajuan::where('ditujukan', 'Atasan')->count();
         $menungguApproval = PermintaanBarang::forStatus($statusMenungguApprovalId)->count();
         $disetujui = PermintaanBarang::forStatus($statusDisetujuiId)->count();
         $ditolak = PermintaanBarang::forStatus($statusDitolakId)->count();
@@ -73,7 +74,7 @@ class AtasanController extends Controller
             ->get();
         
         return view('atasan.dashboard', compact(
-            'menungguApproval', 'disetujui', 'ditolak',
+            'totalWorkOrder', 'menungguApproval', 'disetujui', 'ditolak',
             'monthlyApprovalTrend', 'approvalPercentage', 'recentActivities'
         ));
     }

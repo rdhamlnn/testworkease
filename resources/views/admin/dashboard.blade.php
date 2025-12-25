@@ -101,28 +101,45 @@
                     <h4>Aktivitas Terbaru</h4>
                 </div>
                 <div class="card-body">
-                    <div class="activities">
-                        @forelse($recentActivities as $activity)
-                        <div class="activity">
-                            <div class="activity-icon bg-primary text-white shadow-primary">
-                                <i class="fas fa-briefcase"></i>
-                            </div>
-                            <div class="activity-detail">
-                                <div class="mb-2">
-                                    <span class="text-job">Work Order {{ ucfirst($activity->status) }}</span>
-                                    <span class="bullet"></span>
-                                    <span class="text-job">{{ \Carbon\Carbon::parse($activity->tanggal)->diffForHumans() }}</span>
-                                </div>
-                                <p>Work Order #{{ $activity->no_work_order ?? 'WO-' . date('Y', strtotime($activity->tanggal)) . '-' . str_pad($activity->id_surat_pengajuan, 3, '0', STR_PAD_LEFT) }} - {{ $activity->nama_lengkap }}</p>
-                            </div>
-                        </div>
-                        @empty
-                        <div class="activity">
-                            <div class="activity-detail">
-                                <p class="text-muted text-center">Tidak ada aktivitas terbaru</p>
-                            </div>
-                        </div>
-                        @endforelse
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="activityTable">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>No. Work Order</th>
+                                    <th>Divisi Pengaju</th>
+                                    <th>Unit</th>
+                                    <th>Status</th>
+                                    <th>Tanggal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($recentActivities as $index => $activity)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>{{ $activity->no_surat_pengajuan ?? '-' }}</td>
+                                    <td>{{ $activity->divisi_pengaju ?? '-' }}</td>
+                                    <td>{{ $activity->unit ?? '-' }}</td>
+                                    <td>
+                                        @php
+                                            $statusClass = match(strtolower($activity->status ?? '')) {
+                                                'menunggu' => 'badge-warning',
+                                                'disetujui', 'selesai' => 'badge-success',
+                                                'ditolak' => 'badge-danger',
+                                                default => 'badge-secondary'
+                                            };
+                                        @endphp
+                                        <span class="badge {{ $statusClass }}">{{ $activity->status ?? '-' }}</span>
+                                    </td>
+                                    <td>{{ \Carbon\Carbon::parse($activity->tanggal)->format('d/m/Y') }}</td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">Tidak ada aktivitas terbaru</td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
