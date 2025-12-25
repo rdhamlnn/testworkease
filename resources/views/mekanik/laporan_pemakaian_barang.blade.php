@@ -265,8 +265,8 @@
                             <tr>
                                 <th>No</th>
                                 <th>Hari/Tanggal</th>
-                                <th>Kode Unit</th>
                                 <th>Sparepart/Material/Jasa</th>
+                                <th>Kode Unit</th>
                                 <th>Jumlah</th>
                                 <th>Bentuk Satuan</th>
                                 <th>Harga Satuan</th>
@@ -280,8 +280,8 @@
                             <tr>
                                 <td></td>
                                 <td data-order="{{ \Carbon\Carbon::parse($laporan->tanggal)->format('Ymd') }}">{{ \Carbon\Carbon::parse($laporan->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
-                                <td>{{ $laporan->kode_unit }}</td>
                                 <td>{{ $laporan->nama_barang }}</td>
+                                <td>{{ $laporan->kode_unit }}</td>
                                 <td>{{ $laporan->jumlah }}</td>
                                 <td>{{ $laporan->bentuk_satuan }}</td>
                                 <td>Rp {{ number_format($laporan->harga_satuan, 0, ',', '.') }}</td>
@@ -463,8 +463,8 @@
                     var row = [
                         (index + 1),
                         formatDate(item.tanggal),
-                        (item.kode_unit || '-'),
                         (item.nama_barang || '-'),
+                        (item.kode_unit || '-'),
                         (item.jumlah || '-'),
                         (item.bentuk_satuan || '-'),
                         'Rp ' + formatNumber(item.harga_satuan),
