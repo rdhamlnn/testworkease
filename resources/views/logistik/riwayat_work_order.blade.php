@@ -336,6 +336,8 @@
                                         <th>Divisi Pengaju</th>
                                         <th>Hari/Tanggal</th>
                                         <th>Unit/Code</th>
+                                        <th>Barang</th>
+                                        <th>Qty</th>
                                         <th>Uraian</th>
                                         <th>Status</th>
                                         <th>Aksi</th>
@@ -343,6 +345,29 @@
                                 </thead>
                                 <tbody>
                                     @forelse($workOrders as $i => $wo)
+                                        @php
+                                            $status = $wo->verifikator->nama_status ?? $wo->status ?? 'Menunggu';
+                                            $jenisWo = $wo->jenisWorkOrder ? strtolower($wo->jenisWorkOrder->nama_jenis_wo) : '';
+                                            $isPembelian = $jenisWo === 'pembelian';
+                                            $isPermintaan = $jenisWo === 'permintaan';
+                                            $isPerbaikan = $jenisWo === 'perbaikan';
+                                            
+                                            $barangItems = [];
+                                            $qtyItems = [];
+                                            
+                                            if ($isPembelian && $wo->unit && $wo->unit !== '-') {
+                                                $parts = explode(', ', $wo->unit);
+                                                foreach ($parts as $part) {
+                                                    if (preg_match('/^(.+?)\s*\(qty:\s*(\d+)\)$/i', trim($part), $matches)) {
+                                                        $barangItems[] = trim($matches[1]);
+                                                        $qtyItems[] = (int)$matches[2];
+                                                    } elseif (!empty(trim($part))) {
+                                                        $barangItems[] = trim($part);
+                                                        $qtyItems[] = 1;
+                                                    }
+                                                }
+                                            }
+                                        @endphp
                                         <tr>
                                             <td>{{ $i + 1 }}</td>
                                             <td>{{ $wo->no_surat_pengajuan }}</td>
@@ -355,15 +380,40 @@
                                             </td>
                                             <td>{{ $wo->divisi_pengaju }}</td>
                                             <td data-order="{{ \Carbon\Carbon::parse($wo->tanggal)->format('Y-m-d') }}">{{ \Carbon\Carbon::parse($wo->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
-                                            <td>{{ $wo->unit_code ?? $wo->unit }}</td>
+                                            
+                                            <td>
+                                                @if($isPembelian)
+                                                    <span class="text-muted">-</span>
+                                                @elseif($isPermintaan)
+                                                    <span class="text-muted">-</span>
+                                                @elseif($isPerbaikan)
+                                                    {{ $wo->unit && $wo->unit !== '-' ? $wo->unit : '-' }}
+                                                @else
+                                                    {{ $wo->unit ?? '-' }}
+                                                @endif
+                                            </td>
+                                            
+                                            <td>
+                                                @if($isPembelian && count($barangItems) > 0)
+                                                    {{ implode(', ', $barangItems) }}
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
+                                            </td>
+                                            
+                                            <td>
+                                                @if($isPembelian && count($qtyItems) > 0)
+                                                    {{ implode(', ', $qtyItems) }}
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
+                                            </td>
+                                            
                                             <td>{{ Str::limit($wo->uraian, 30) }}</td>
                                             <td>
-                                                @php
-                                                    $status = $wo->verifikator->nama_status ?? $wo->status ?? 'Menunggu';
-                                                @endphp
                                                 @if($status == 'Disetujui' || $status == 'Selesai')
                                                     <span class="badge badge-success">{{ $status }}</span>
-                                                @elseif($status == 'Ditolak')
+                                                @elseif(Str::contains($status, 'Ditolak'))
                                                     <span class="badge badge-danger">{{ $status }}</span>
                                                 @else
                                                     <span class="badge badge-warning">{{ $status }}</span>
@@ -510,14 +560,13 @@
         // Filter berdasarkan status
         $('#filterStatus').on('change', function() {
             var status = $(this).val();
+            // Kolom Status adalah index 9 (setelah penambahan 2 kolom baru)
             if (status === '') {
-                table.column(7).search('').draw(); // Kolom Status (index 7: No=0, No WO=1, Jenis WO=2, Divisi=3, Tanggal=4, Unit=5, Uraian=6, Status=7, Aksi=8)
+                table.column(9).search('').draw();
             } else if (status === 'Disetujui') {
-                // Filter untuk Disetujui atau Selesai - cari di seluruh text kolom
-                table.column(7).search('(Disetujui|Selesai)', true, false).draw();
+                table.column(9).search('(Disetujui|Selesai)', true, false).draw();
             } else {
-                // Exact match atau contains untuk status lain
-                table.column(7).search(status, true, false).draw();
+                table.column(9).search(status, true, false).draw();
             }
         });
 

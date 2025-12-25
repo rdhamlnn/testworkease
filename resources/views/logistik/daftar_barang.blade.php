@@ -301,12 +301,6 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label class="font-weight-bold">Stok</label>
-                            <p id="detailStok" class="form-control border mb-0" style="background-color: #f8f9fa; padding: 8px 12px; min-height: 38px;">-</p>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
                             <label class="font-weight-bold">Harga Barang</label>
                             <p id="detailHargaBarang" class="form-control border mb-0" style="background-color: #f8f9fa; padding: 8px 12px; min-height: 38px;">-</p>
                         </div>

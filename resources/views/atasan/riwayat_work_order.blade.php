@@ -164,6 +164,8 @@
                                         <th>Divisi Pengaju</th>
                                         <th>Hari/Tanggal</th>
                                         <th>Unit/Code</th>
+                                        <th>Barang</th>
+                                        <th>Qty</th>
                                         <th>Uraian</th>
                                         <th>Total Harga</th>
                                         <th>Status</th>
@@ -174,6 +176,26 @@
                                     @forelse($workOrders as $i => $wo)
                                         @php
                                             $status = $wo->verifikator->nama_status ?? $wo->status ?? 'Menunggu';
+                                            $jenisWo = $wo->jenisWorkOrder ? strtolower($wo->jenisWorkOrder->nama_jenis_wo) : '';
+                                            $isPembelian = $jenisWo === 'pembelian';
+                                            $isPermintaan = $jenisWo === 'permintaan';
+                                            $isPerbaikan = $jenisWo === 'perbaikan';
+                                            
+                                            $barangItems = [];
+                                            $qtyItems = [];
+                                            
+                                            if ($isPembelian && $wo->unit && $wo->unit !== '-') {
+                                                $parts = explode(', ', $wo->unit);
+                                                foreach ($parts as $part) {
+                                                    if (preg_match('/^(.+?)\s*\(qty:\s*(\d+)\)$/i', trim($part), $matches)) {
+                                                        $barangItems[] = trim($matches[1]);
+                                                        $qtyItems[] = (int)$matches[2];
+                                                    } elseif (!empty(trim($part))) {
+                                                        $barangItems[] = trim($part);
+                                                        $qtyItems[] = 1;
+                                                    }
+                                                }
+                                            }
                                         @endphp
                                         <tr>
                                             <td>{{ $i + 1 }}</td>
@@ -187,13 +209,41 @@
                                             </td>
                                             <td>{{ $wo->divisi_pengaju }}</td>
                                             <td>{{ \Carbon\Carbon::parse($wo->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
-                                            <td>{{ $wo->unit_code ?? $wo->unit }}</td>
+                                            
+                                            <td>
+                                                @if($isPembelian)
+                                                    <span class="text-muted">-</span>
+                                                @elseif($isPermintaan)
+                                                    <span class="text-muted">-</span>
+                                                @elseif($isPerbaikan)
+                                                    {{ $wo->unit && $wo->unit !== '-' ? $wo->unit : '-' }}
+                                                @else
+                                                    {{ $wo->unit ?? '-' }}
+                                                @endif
+                                            </td>
+                                            
+                                            <td>
+                                                @if($isPembelian && count($barangItems) > 0)
+                                                    {{ implode(', ', $barangItems) }}
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
+                                            </td>
+                                            
+                                            <td>
+                                                @if($isPembelian && count($qtyItems) > 0)
+                                                    {{ implode(', ', $qtyItems) }}
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
+                                            </td>
+                                            
                                             <td>{{ Str::limit($wo->uraian, 30) }}</td>
                                             <td>Rp {{ number_format($wo->total_harga ?? 0, 0, ',', '.') }}</td>
                                             <td>
                                                 @if($status == 'Disetujui' || $status == 'Selesai')
                                                     <span class="badge badge-success">{{ $status }}</span>
-                                                @elseif($status == 'Ditolak')
+                                                @elseif(Str::contains($status, 'Ditolak'))
                                                     <span class="badge badge-danger">{{ $status }}</span>
                                                 @else
                                                     <span class="badge badge-warning">{{ $status }}</span>
