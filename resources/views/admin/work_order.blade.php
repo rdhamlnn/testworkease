@@ -643,6 +643,7 @@
             "columnDefs": [
                 {
                     "targets": 0,
+                    "orderable": false,
                     "searchable": false
                 }
             ],
@@ -660,15 +661,11 @@
             }
         });
 
-        // Auto-generate row numbers on every draw (except when sorting by No column)
+        // Auto-generate row numbers on every draw (always sequential 1, 2, 3...)
         table.on('order.dt search.dt draw.dt', function () {
-            var order = table.order();
-            // Only regenerate row numbers if NOT sorted by No column (column 0)
-            if (order.length === 0 || order[0][0] !== 0) {
-                table.column(0, {search:'applied', order:'applied'}).nodes().each(function (cell, i) {
-                    cell.innerHTML = table.page.info().start + i + 1;
-                });
-            }
+            table.column(0, {search:'applied', order:'applied'}).nodes().each(function (cell, i) {
+                cell.innerHTML = table.page.info().start + i + 1;
+            });
         }).draw();
     });
 

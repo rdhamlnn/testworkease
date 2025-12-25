@@ -297,7 +297,7 @@
                             @forelse($data as $i => $barang)
                             <tr>
                                 <td data-order="{{ $i + 1 }}">{{ $i + 1 }}</td>
-                                <td data-order="{{ \Carbon\Carbon::parse($barang->tanggal)->format('Ymd') }}">{{ \Carbon\Carbon::parse($barang->tanggal)->format('d/m/Y') }}</td>
+                                <td data-order="{{ \Carbon\Carbon::parse($barang->tanggal)->format('Ymd') }}">{{ \Carbon\Carbon::parse($barang->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
                                 <td>{{ $barang->nama_barang }}</td>
                                 <td>{{ $barang->kode_unit ?: '-' }}</td>
                                 <td>{{ $barang->jumlah }}</td>
@@ -349,13 +349,13 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label class="font-weight-bold">Tanggal:</label>
+                            <label class="font-weight-bold">Hari/Tanggal:</label>
                             <div id="view_tanggal" class="form-control-plaintext border p-2 rounded"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label class="font-weight-bold">Nama Barang:</label>
+                            <label class="font-weight-bold">Sparepart/Material/Jasa:</label>
                             <div id="view_nama_barang" class="form-control-plaintext border p-2 rounded"></div>
                         </div>
                     </div>
@@ -581,6 +581,7 @@
             "columnDefs": [
                 {
                     "targets": 0,
+                    "orderable": false,
                     "searchable": false
                 }
             ],
@@ -611,15 +612,11 @@
             }
         });
 
-        // Auto-generate row numbers on every draw (except when sorting by No column)
+        // Auto-generate row numbers on every draw (always sequential 1, 2, 3...)
         table.on('order.dt search.dt draw.dt', function () {
-            var order = table.order();
-            // Only regenerate row numbers if NOT sorted by No column (column 0)
-            if (order.length === 0 || order[0][0] !== 0) {
-                table.column(0, {search:'applied', order:'applied'}).nodes().each(function (cell, i) {
-                    cell.innerHTML = table.page.info().start + i + 1;
-                });
-            }
+            table.column(0, {search:'applied', order:'applied'}).nodes().each(function (cell, i) {
+                cell.innerHTML = table.page.info().start + i + 1;
+            });
         }).draw();
 
         // Show all data by default - no auto-filtering on page load

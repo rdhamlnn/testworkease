@@ -352,7 +352,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="tanggal">Tanggal <span class="text-danger">*</span></label>
+                                <label for="tanggal">Hari/Tanggal <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="tanggal" name="tanggal" required>
                             </div>
                         </div>
@@ -576,6 +576,7 @@
             "columnDefs": [
                 {
                     "targets": 0,
+                    "orderable": false,
                     "searchable": false
                 }
             ],
@@ -593,15 +594,11 @@
             }
         });
 
-        // Auto-generate row numbers on every draw (except when sorting by No column)
+        // Auto-generate row numbers on every draw (always sequential 1, 2, 3...)
         table.on('order.dt search.dt draw.dt', function () {
-            var order = table.order();
-            // Only regenerate row numbers if NOT sorted by No column (column 0)
-            if (order.length === 0 || order[0][0] !== 0) {
-                table.column(0, {search:'applied', order:'applied'}).nodes().each(function (cell, i) {
-                    cell.innerHTML = table.page.info().start + i + 1;
-                });
-            }
+            table.column(0, {search:'applied', order:'applied'}).nodes().each(function (cell, i) {
+                cell.innerHTML = table.page.info().start + i + 1;
+            });
         }).draw();
 
         // Show all data by default - no auto-filtering on page load
@@ -783,13 +780,13 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label><strong>Tanggal:</strong></label>
+                            <label><strong>Hari/Tanggal:</strong></label>
                             <p id="view_tanggal_barang" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label><strong>Nama Barang:</strong></label>
+                            <label><strong>Sparepart/Material/Jasa:</strong></label>
                             <p id="view_nama_barang" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
@@ -862,13 +859,13 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="edit_tanggal">Tanggal</label>
+                                <label for="edit_tanggal">Hari/Tanggal</label>
                                 <input type="date" class="form-control" id="edit_tanggal" name="tanggal" required>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="edit_nama_barang">Nama Barang</label>
+                                <label for="edit_nama_barang">Sparepart/Material/Jasa</label>
                                 <input type="text" class="form-control" id="edit_nama_barang" name="nama_barang" required>
                             </div>
                         </div>
