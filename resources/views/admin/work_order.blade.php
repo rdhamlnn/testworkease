@@ -510,11 +510,11 @@
                                     $status = $wo->verifikator->nama_status ?? $wo->status ?? 'Menunggu';
                                 @endphp
                                 <tr>
-                                    <td>{{ $i + 1 }}</td>
+                                    <td data-order="{{ $i + 1 }}">{{ $i + 1 }}</td>
                                     <td>{{ $wo->no_work_order }}</td>
                                     <td>{{ $wo->divisi_pengaju }}</td>
                                     <td>{{ $wo->jenisWorkOrder->nama_jenis_wo ?? '-' }}</td>
-                                    <td>{{ \Carbon\Carbon::parse($wo->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
+                                    <td data-order="{{ \Carbon\Carbon::parse($wo->tanggal)->format('Ymd') }}">{{ \Carbon\Carbon::parse($wo->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
                                     <td>{{ is_object($wo->unit_code) ? $wo->unit_code->nama_unit : $wo->unit_code }}</td>
                                     <td>{{ Str::limit($wo->uraian, 30) }}</td>
                                     <td>
@@ -627,10 +627,11 @@
 @section('scripts')
 <script>
     // Initialize DataTable
+    var table;
     $(document).ready(function() {
-        $('#workOrderTable').DataTable({
-            "responsive": false, // NONAKTIFKAN responsive untuk memaksa scroll horizontal
-            "scrollX": false, // PERBAIKAN: Nonaktifkan scrollX, gunakan CSS table-responsive saja
+        table = $('#workOrderTable').DataTable({
+            "responsive": false,
+            "scrollX": false,
             "autoWidth": false,
             "pageLength": 10,
             "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
@@ -638,6 +639,13 @@
             "ordering": true,
             "info": true,
             "paging": true,
+            "order": [[4, 'desc']], // Default sort by Hari/Tanggal column (index 4) descending (newest first)
+            "columnDefs": [
+                {
+                    "targets": 0,
+                    "searchable": false
+                }
+            ],
             "language": {
                 "search": "Cari:",
                 "lengthMenu": "Tampilkan _MENU_ data per halaman",
@@ -651,6 +659,17 @@
                 "emptyTable": "Tidak ada data work order"
             }
         });
+
+        // Auto-generate row numbers on every draw (except when sorting by No column)
+        table.on('order.dt search.dt draw.dt', function () {
+            var order = table.order();
+            // Only regenerate row numbers if NOT sorted by No column (column 0)
+            if (order.length === 0 || order[0][0] !== 0) {
+                table.column(0, {search:'applied', order:'applied'}).nodes().each(function (cell, i) {
+                    cell.innerHTML = table.page.info().start + i + 1;
+                });
+            }
+        }).draw();
     });
 
     // Tutup otomatis alert setelah 3 detik

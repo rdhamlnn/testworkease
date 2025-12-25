@@ -290,13 +290,13 @@
                         <tbody>
                             @forelse($data as $i => $laporan)
                             <tr>
-                                <td>{{ $i + 1 }}</td>
-                                <td>{{ \Carbon\Carbon::parse($laporan->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
+                                <td data-order="{{ $i + 1 }}">{{ $i + 1 }}</td>
+                                <td data-order="{{ \Carbon\Carbon::parse($laporan->tanggal)->format('Ymd') }}">{{ \Carbon\Carbon::parse($laporan->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
                                 <td>{{ $laporan->nama_unit }}</td>
                                 <td>{{ $laporan->keluhan_kerusakan }}</td>
                                 <td>{{ $laporan->penyebab_kerusakan }}</td>
-                                <td>{{ \Carbon\Carbon::parse($laporan->tanggal_mulai)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
-                                <td>{{ \Carbon\Carbon::parse($laporan->tanggal_selesai)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
+                                <td data-order="{{ \Carbon\Carbon::parse($laporan->tanggal_mulai)->format('Ymd') }}">{{ \Carbon\Carbon::parse($laporan->tanggal_mulai)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
+                                <td data-order="{{ \Carbon\Carbon::parse($laporan->tanggal_selesai)->format('Ymd') }}">{{ \Carbon\Carbon::parse($laporan->tanggal_selesai)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
                                 <td>{{ $laporan->tindakan_perbaikan }}</td>
                                 <td>
                                     <button type="button" class="btn btn-info btn-sm btn-view" 
@@ -503,6 +503,23 @@
         }
     }
 
+    // Format date for data-order attribute (YYYYMMDD)
+    function formatDateForOrder(dateString) {
+        if (!dateString) return '';
+        try {
+            var date = new Date(dateString + 'T00:00:00');
+            if (isNaN(date.getTime())) {
+                return '';
+            }
+            var year = date.getFullYear();
+            var month = String(date.getMonth() + 1).padStart(2, '0');
+            var day = String(date.getDate()).padStart(2, '0');
+            return year + month + day;
+        } catch (e) {
+            return '';
+        }
+    }
+
 
         // Initialize DataTable if needed
         var table;
@@ -517,6 +534,13 @@
                 "paging": true,
                 "pageLength": 10,
                 "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+                "order": [[1, 'desc']], // Default sort by Hari/Tanggal descending (newest first)
+                "columnDefs": [
+                    {
+                        "targets": 0,
+                        "searchable": false
+                    }
+                ],
                 "language": {
                     "search": "Cari:",
                     "lengthMenu": "Tampilkan _MENU_ data per halaman",
@@ -543,6 +567,17 @@
                     });
                 }
             });
+
+        // Auto-generate row numbers on every draw (except when sorting by No column)
+        table.on('order.dt search.dt draw.dt', function () {
+            var order = table.order();
+            // Only regenerate row numbers if NOT sorted by No column (column 0)
+            if (order.length === 0 || order[0][0] !== 0) {
+                table.column(0, {search:'applied', order:'applied'}).nodes().each(function (cell, i) {
+                    cell.innerHTML = table.page.info().start + i + 1;
+                });
+            }
+        }).draw();
 
         // Show all data by default - no auto-filtering on page load
         // Only filter when user manually changes dropdown values

@@ -287,7 +287,7 @@
                         <tbody>
                             @forelse($data as $i => $barang)
                             <tr>
-                                <td></td>
+                                <td data-order="{{ $i + 1 }}">{{ $i + 1 }}</td>
                                 <td data-order="{{ \Carbon\Carbon::parse($barang->tanggal)->format('Ymd') }}">{{ \Carbon\Carbon::parse($barang->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
                                 <td>{{ $barang->nama_barang }}</td>
                                 <td>{{ $barang->kode_unit ?: '-' }}</td>
@@ -576,7 +576,6 @@
             "columnDefs": [
                 {
                     "targets": 0,
-                    "orderable": false,
                     "searchable": false
                 }
             ],
@@ -594,11 +593,15 @@
             }
         });
 
-        // Auto-generate row numbers on every draw
+        // Auto-generate row numbers on every draw (except when sorting by No column)
         table.on('order.dt search.dt draw.dt', function () {
-            table.column(0, {search:'applied', order:'applied'}).nodes().each(function (cell, i) {
-                cell.innerHTML = table.page.info().start + i + 1;
-            });
+            var order = table.order();
+            // Only regenerate row numbers if NOT sorted by No column (column 0)
+            if (order.length === 0 || order[0][0] !== 0) {
+                table.column(0, {search:'applied', order:'applied'}).nodes().each(function (cell, i) {
+                    cell.innerHTML = table.page.info().start + i + 1;
+                });
+            }
         }).draw();
 
         // Show all data by default - no auto-filtering on page load

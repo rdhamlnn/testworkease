@@ -282,7 +282,7 @@
                         <thead class="thead-dark">
                             <tr>
                                 <th>No</th>
-                                <th>Tanggal</th>
+                                <th>Hari/Tanggal</th>
                                 <th>Sparepart/Material/Jasa</th>
                                 <th>Kode Unit</th>
                                 <th>Jumlah</th>
@@ -296,8 +296,8 @@
                         <tbody>
                             @forelse($data as $i => $barang)
                             <tr>
-                                <td>{{ $i + 1 }}</td>
-                                <td>{{ \Carbon\Carbon::parse($barang->tanggal)->format('d/m/Y') }}</td>
+                                <td data-order="{{ $i + 1 }}">{{ $i + 1 }}</td>
+                                <td data-order="{{ \Carbon\Carbon::parse($barang->tanggal)->format('Ymd') }}">{{ \Carbon\Carbon::parse($barang->tanggal)->format('d/m/Y') }}</td>
                                 <td>{{ $barang->nama_barang }}</td>
                                 <td>{{ $barang->kode_unit ?: '-' }}</td>
                                 <td>{{ $barang->jumlah }}</td>
@@ -577,32 +577,50 @@
             "paging": true,
             "pageLength": 10,
             "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
-                "language": {
-                    "search": "Cari:",
-                    "lengthMenu": "Tampilkan _MENU_ data per halaman",
-                    "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
-                    "infoEmpty": "Menampilkan 0 sampai 0 dari 0 data",
-                    "infoFiltered": "(disaring dari _MAX_ total data)",
-                    "paginate": {
-                        "next": "Selanjutnya",
-                        "previous": "Sebelumnya"
-                    },
-                    "emptyTable": "Tidak ada data laporan pemakaian barang"
-                },
-                "drawCallback": function(settings) {
-                    // Force empty table message to left align in first column
-                    $('.dataTables_empty').css({
-                        'text-align': 'left !important',
-                        'padding-left': '15px !important',
-                        'padding-right': '0 !important',
-                        'margin': '0 !important',
-                        'float': 'none !important',
-                        'position': 'static !important',
-                        'direction': 'ltr !important',
-                        'width': 'auto !important'
-                    });
+            "order": [[1, 'desc']], // Default sort by Tanggal descending (newest first)
+            "columnDefs": [
+                {
+                    "targets": 0,
+                    "searchable": false
                 }
+            ],
+            "language": {
+                "search": "Cari:",
+                "lengthMenu": "Tampilkan _MENU_ data per halaman",
+                "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                "infoEmpty": "Menampilkan 0 sampai 0 dari 0 data",
+                "infoFiltered": "(disaring dari _MAX_ total data)",
+                "paginate": {
+                    "next": "Selanjutnya",
+                    "previous": "Sebelumnya"
+                },
+                "emptyTable": "Tidak ada data laporan pemakaian barang"
+            },
+            "drawCallback": function(settings) {
+                // Force empty table message to left align in first column
+                $('.dataTables_empty').css({
+                    'text-align': 'left !important',
+                    'padding-left': '15px !important',
+                    'padding-right': '0 !important',
+                    'margin': '0 !important',
+                    'float': 'none !important',
+                    'position': 'static !important',
+                    'direction': 'ltr !important',
+                    'width': 'auto !important'
+                });
+            }
         });
+
+        // Auto-generate row numbers on every draw (except when sorting by No column)
+        table.on('order.dt search.dt draw.dt', function () {
+            var order = table.order();
+            // Only regenerate row numbers if NOT sorted by No column (column 0)
+            if (order.length === 0 || order[0][0] !== 0) {
+                table.column(0, {search:'applied', order:'applied'}).nodes().each(function (cell, i) {
+                    cell.innerHTML = table.page.info().start + i + 1;
+                });
+            }
+        }).draw();
 
         // Show all data by default - no auto-filtering on page load
         // Only filter when user manually changes dropdown values
