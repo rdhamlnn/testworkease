@@ -6,7 +6,7 @@
     <title>Preview Laporan Harian Mekanik</title>
     @if(($format ?? 'preview') !== 'pdf')
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     @endif
     <style>
         * {
@@ -16,142 +16,199 @@
         }
 
         body {
-            background-color: #ffffff;
-            font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
+            background-color: #f0f0f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow-x: hidden;
-            color: #000000;
+            color: #1a1a1a;
         }
 
-        /* Header Bar seperti Google Drive */
-        .preview-header-bar {
-            background-color: #fff;
-            border-bottom: 1px solid #e0e0e0;
-            padding: 12px 24px;
+        /* ===== WINDOWS 11 HEADER BAR ===== */
+        .win11-header {
+            background: linear-gradient(180deg, #f9f9f9 0%, #f3f3f3 100%);
+            border-bottom: 1px solid #e5e5e5;
+            padding: 8px 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
         }
 
-        .preview-header-bar .title {
-            font-size: 18px;
-            font-weight: 500;
-            color: #202124;
+        .win11-header .title-section {
             display: flex;
             align-items: center;
             gap: 12px;
         }
 
-        .preview-header-bar .title i {
-            color: #5f6368;
+        .win11-header .file-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #0078D4 0%, #106EBE 100%);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
         }
 
-        .preview-header-bar .actions {
+        .win11-header .title-text {
             display: flex;
-            gap: 8px;
+            flex-direction: column;
+        }
+
+        .win11-header .title-text h1 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 0;
+            line-height: 1.3;
+        }
+
+        .win11-header .title-text span {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .win11-header .actions {
+            display: flex;
+            gap: 6px;
             align-items: center;
         }
 
-        .preview-header-bar .btn {
+        /* Windows 11 Fluent Buttons */
+        .win11-btn {
             padding: 8px 16px;
-            border-radius: 4px;
-            font-size: 14px;
+            border-radius: 6px;
+            font-size: 13px;
             font-weight: 500;
             border: none;
             cursor: pointer;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
-            transition: background-color 0.2s;
+            transition: all 0.15s ease;
+            text-decoration: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .win11-btn:hover {
             text-decoration: none;
         }
 
-        .preview-header-bar .btn-primary {
-            background-color: #1a73e8;
+        .win11-btn-primary {
+            background: linear-gradient(180deg, #0078D4 0%, #006CBD 100%);
+            color: white;
+            box-shadow: 0 1px 3px rgba(0, 120, 212, 0.3);
+        }
+
+        .win11-btn-primary:hover {
+            background: linear-gradient(180deg, #106EBE 0%, #005A9E 100%);
+            color: white;
+            box-shadow: 0 2px 6px rgba(0, 120, 212, 0.4);
+        }
+
+        .win11-btn-danger {
+            background: linear-gradient(180deg, #D13438 0%, #C42B30 100%);
+            color: white;
+            box-shadow: 0 1px 3px rgba(209, 52, 56, 0.3);
+        }
+
+        .win11-btn-danger:hover {
+            background: linear-gradient(180deg, #C42B30 0%, #A4262C 100%);
             color: white;
         }
 
-        .preview-header-bar .btn-primary:hover {
-            background-color: #1557b0;
+        .win11-btn-success {
+            background: linear-gradient(180deg, #107C10 0%, #0E6E0E 100%);
+            color: white;
+            box-shadow: 0 1px 3px rgba(16, 124, 16, 0.3);
         }
 
-        .preview-header-bar .btn-secondary {
-            background-color: #f1f3f4;
-            color: #202124;
-        }
-
-        .preview-header-bar .btn-secondary:hover {
-            background-color: #e8eaed;
-        }
-
-        .preview-header-bar .btn-danger {
-            background-color: #dc3545;
+        .win11-btn-success:hover {
+            background: linear-gradient(180deg, #0E6E0E 0%, #0C5E0C 100%);
             color: white;
         }
 
-        .preview-header-bar .btn-danger:hover {
-            background-color: #c82333;
+        .win11-btn-secondary {
+            background: #ffffff;
+            color: #1a1a1a;
+            border: 1px solid #d1d1d1;
         }
 
-        .preview-header-bar .btn-success {
-            background-color: #28a745;
+        .win11-btn-secondary:hover {
+            background: #f5f5f5;
+            border-color: #c1c1c1;
+            color: #1a1a1a;
+        }
+
+        .win11-btn-close {
+            background: transparent;
+            color: #666;
+            padding: 8px 12px;
+        }
+
+        .win11-btn-close:hover {
+            background: #e81123;
             color: white;
         }
 
-        .preview-header-bar .btn-success:hover {
-            background-color: #218838;
+        /* Separator */
+        .win11-separator {
+            width: 1px;
+            height: 24px;
+            background: #d1d1d1;
+            margin: 0 4px;
         }
 
-        /* Main Container */
+        /* ===== PREVIEW CONTAINER ===== */
         .preview-container {
             display: flex;
+            justify-content: center;
+            padding: 24px;
             min-height: calc(100vh - 60px);
-            background-color: #ffffff;
-            padding: 15px;
+            background: linear-gradient(180deg, #e8e8e8 0%, #f0f0f0 100%);
         }
 
-        /* Document Preview Area */
+        /* ===== DOCUMENT PREVIEW ===== */
         .document-preview {
-            flex: 1;
-            background-color: #ffffff;
-            border: none;
-            border-radius: 0;
-            box-shadow: none;
-            overflow: auto;
-            position: relative;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
+            max-width: 1200px;
+            width: 100%;
+            overflow: hidden;
         }
 
         .document-content {
-            padding: 20px;
+            padding: 32px;
             background-color: #ffffff;
         }
 
-        /* Header Document */
+        /* ===== DOCUMENT HEADER ===== */
         .preview-header {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
             width: 100%;
             text-align: center;
-            border-bottom: 2px solid #000000;
-            padding-bottom: 15px;
+            border-bottom: 2px solid #1a1a1a;
+            padding-bottom: 16px;
         }
 
         .preview-header-wrapper {
             display: inline-flex;
             align-items: flex-start;
-            gap: 15px;
+            gap: 16px;
             vertical-align: top;
         }
 
         .preview-header .company-logo {
-            width: 60px;
-            height: 60px;
+            width: 64px;
+            height: 64px;
             object-fit: contain;
             flex-shrink: 0;
-            margin-top: 0;
-            align-self: flex-start;
         }
 
         .preview-header .header-content {
@@ -161,168 +218,142 @@
         }
 
         .preview-header .company-name {
-            font-size: 14px;
-            font-weight: bold;
+            font-size: 15px;
+            font-weight: 700;
             margin-bottom: 4px;
-            margin-top: 0;
             text-transform: uppercase;
-            color: #000;
-            line-height: 1.3;
+            color: #1a1a1a;
             letter-spacing: 0.5px;
         }
 
         .preview-header .report-title {
-            font-size: 12px;
-            font-weight: bold;
+            font-size: 13px;
+            font-weight: 600;
             margin-bottom: 4px;
             text-transform: uppercase;
-            color: #000;
-            letter-spacing: 0.5px;
+            color: #1a1a1a;
         }
 
         .preview-header .period {
-            font-size: 11px;
-            font-weight: normal;
-            color: #000;
+            font-size: 12px;
+            font-weight: 400;
+            color: #666;
         }
 
-        /* Table Styles - Windows Log Format */
+        /* ===== TABLE STYLES ===== */
         .preview-table {
             width: 100%;
             border-collapse: collapse;
-            border-spacing: 0;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
             background-color: #ffffff;
-            border: 1px solid #000000;
-            font-size: 10px;
+            border: 2px solid #1a1a1a;
+            font-size: 11px;
+            border-radius: 6px;
+            overflow: hidden;
         }
 
         .preview-table th,
         .preview-table td {
-            border: 1px solid #000000;
-            padding: 8px 10px;
+            border: 2px solid #1a1a1a;
+            padding: 10px 12px;
             vertical-align: top;
-            line-height: 1.4;
+            line-height: 1.5;
         }
 
         .preview-table th {
-            background-color: #e8e8e8;
-            color: #000000;
-            font-weight: bold;
+            background: linear-gradient(180deg, #f8f8f8 0%, #f0f0f0 100%);
+            color: #1a1a1a;
+            font-weight: 600;
             text-align: center;
             font-size: 11px;
-            padding: 10px 12px;
-            white-space: nowrap;
+            padding: 12px;
+            border-bottom: 3px solid #1a1a1a;
         }
 
         .preview-table td {
             text-align: left;
             font-size: 10px;
             background-color: #ffffff;
-            padding: 8px 10px;
-            word-wrap: break-word;
         }
 
         .preview-table tbody tr:nth-child(even) {
-            background-color: #f9f9f9;
+            background-color: #fafafa;
         }
 
         .preview-table tbody tr:hover {
-            background-color: #f0f0f0;
+            background-color: #f5f9ff;
         }
 
-        .date-cell {
-            width: 15%;
-            text-align: center;
-            font-weight: bold;
-            vertical-align: middle;
-        }
+        .date-cell { width: 15%; text-align: center; font-weight: 600; vertical-align: middle; }
+        .unit-cell { width: 12%; }
+        .complaint-cell { width: 15%; }
+        .cause-cell { width: 15%; }
+        .start-date-cell { width: 15%; }
+        .end-date-cell { width: 15%; }
+        .action-cell { width: 25%; }
 
-        .unit-cell {
-            width: 12%;
-        }
-
-        .complaint-cell {
-            width: 15%;
-        }
-
-        .cause-cell {
-            width: 15%;
-        }
-
-        .start-date-cell {
-            width: 15%;
-            word-wrap: break-word;
-        }
-
-        .end-date-cell {
-            width: 15%;
-            word-wrap: break-word;
-        }
-
-        .action-cell {
-            width: 25%;
-        }
-
-        /* Signature Section */
+        /* ===== SIGNATURE SECTION ===== */
         .signature-section {
-            margin-top: 30px;
-            width: 100%;
-            border-top: none;
-            padding-top: 20px;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #e0e0e0;
         }
 
         .signature-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
         }
 
         .signature-table td {
             width: 50%;
             text-align: center;
-            padding: 10px;
+            padding: 12px;
             vertical-align: top;
         }
 
-        .signature-table .signature-label {
-            font-weight: bold;
+        .signature-label {
+            font-weight: 600;
             text-decoration: underline;
-            margin-bottom: 15px;
-            font-size: 10px;
+            margin-bottom: 16px;
+            font-size: 11px;
+            color: #1a1a1a;
         }
 
-        .signature-table .signature-space {
-            height: 50px;
-            border-bottom: 1px solid #000000;
+        .signature-space {
+            height: 60px;
+            border-bottom: 1px solid #1a1a1a;
             margin: 0 auto;
             width: 200px;
         }
 
-        .signature-table .signature-name {
-            font-weight: bold;
+        .signature-name {
+            font-weight: 600;
+            font-size: 11px;
+            margin-top: 12px;
+            color: #1a1a1a;
+        }
+
+        .signature-title {
             font-size: 10px;
-            margin-top: 10px;
+            margin-top: 4px;
+            color: #666;
         }
 
-        .signature-table .signature-title {
-            font-size: 9px;
-            margin-top: 5px;
-        }
-
-        /* PDF Specific Styles - Ensure 1 page */
+        /* ===== PDF EXPORT STYLES ===== */
         body.pdf-export {
+            background: #ffffff;
             margin: 0;
             padding: 0;
         }
 
-        body.pdf-export .preview-header-bar {
+        body.pdf-export .win11-header {
             display: none;
         }
 
         body.pdf-export .preview-container {
             padding: 0;
             min-height: auto;
+            background: #ffffff;
         }
 
         body.pdf-export .document-preview {
@@ -335,268 +366,57 @@
             padding: 10mm;
         }
 
-        body.pdf-export .preview-header {
-            margin-bottom: 8mm;
-        }
+        body.pdf-export .preview-header { margin-bottom: 8mm; }
+        body.pdf-export .preview-header .company-logo { width: 50px; height: 50px; }
+        body.pdf-export .preview-header .company-name { font-size: 11px; }
+        body.pdf-export .preview-header .report-title { font-size: 10px; }
+        body.pdf-export .preview-header .period { font-size: 9px; }
+        body.pdf-export .preview-table { margin-bottom: 8mm; font-size: 8px; }
+        body.pdf-export .preview-table th, body.pdf-export .preview-table td { padding: 6px 8px; font-size: 8px; }
+        body.pdf-export .signature-section { margin-top: 8mm; }
+        body.pdf-export .signature-label { font-size: 9px; }
+        body.pdf-export .signature-space { height: 40px; }
+        body.pdf-export .signature-name { font-size: 9px; }
+        body.pdf-export .signature-title { font-size: 8px; }
 
-        body.pdf-export .preview-header-wrapper {
-            gap: 8px;
-            align-items: flex-start;
-        }
-
-        body.pdf-export .preview-header .company-logo {
-            width: 50px;
-            height: 50px;
-            flex-shrink: 0;
-            align-self: flex-start;
-        }
-
-        body.pdf-export .preview-header .company-name {
-            font-size: 11px;
-        }
-
-        body.pdf-export .preview-header .report-title {
-            font-size: 10px;
-        }
-
-        body.pdf-export .preview-header .period {
-            font-size: 9px;
-        }
-
-        body.pdf-export .preview-table {
-            margin-bottom: 8mm;
-            border-collapse: separate;
-            border-spacing: 0;
-            page-break-inside: avoid;
-        }
-
-        body.pdf-export .preview-table th,
-        body.pdf-export .preview-table td {
-            padding: 6px 8px;
-            font-size: 8px;
-            line-height: 1.4;
-        }
-
-        body.pdf-export .preview-table th {
-            font-size: 8px;
-            padding: 8px 10px;
-        }
-
-        body.pdf-export .preview-table tbody tr {
-            page-break-inside: avoid;
-        }
-
-        body.pdf-export .signature-section {
-            margin-top: 8mm;
-            page-break-inside: avoid;
-        }
-
-        body.pdf-export .signature-table {
-            margin-top: 5mm;
-        }
-
-        body.pdf-export .signature-table td {
-            padding: 4px;
-        }
-
-        body.pdf-export .signature-table .signature-label {
-            font-size: 9px;
-        }
-
-        body.pdf-export .signature-table .signature-space {
-            height: 40px;
-        }
-
-        body.pdf-export .signature-table .signature-name {
-            font-size: 9px;
-        }
-
-        body.pdf-export .signature-table .signature-title {
-            font-size: 8px;
-        }
-
-        body.pdf-export .signature-table td {
-            padding: 4px;
-        }
-
-        body.pdf-export .signature-table .signature-label {
-            font-size: 9px;
-        }
-
-        body.pdf-export .signature-table .signature-space {
-            height: 40px;
-        }
-
-        body.pdf-export .signature-table .signature-name {
-            font-size: 9px;
-        }
-
-        body.pdf-export .signature-table .signature-title {
-            font-size: 8px;
-        }
-
-        /* Print Styles - Windows Log Format */
+        /* ===== PRINT STYLES ===== */
         @media print {
-            @page {
-                size: A4 landscape;
-                margin: 10mm;
-            }
-
-            * {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color-adjust: exact !important;
-            }
-
-            body {
-                background-color: #ffffff !important;
-                font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif !important;
-                color: #000000 !important;
-            }
-
-            .preview-header-bar {
-                display: none !important;
-            }
-
-            .preview-container {
-                padding: 0 !important;
-                display: block !important;
-                background-color: #ffffff !important;
-            }
-
-            .document-preview {
-                margin: 0 !important;
-                box-shadow: none !important;
-                border-radius: 0 !important;
-                border: none !important;
-                background-color: #ffffff !important;
-            }
-
-            .document-content {
-                padding: 10mm !important;
-                background-color: #ffffff !important;
-            }
-
-            .preview-header {
-                margin-bottom: 8mm !important;
-                border-bottom: 2px solid #000000 !important;
-                padding-bottom: 10px !important;
-            }
-
-            .preview-header-wrapper {
-                gap: 8px !important;
-                align-items: flex-start !important;
-            }
-
-            .preview-header .company-logo {
-                width: 45px !important;
-                height: 45px !important;
-                flex-shrink: 0 !important;
-                align-self: flex-start !important;
-            }
-
-            .preview-header .company-name {
-                font-size: 11px !important;
-            }
-
-            .preview-header .report-title {
-                font-size: 10px !important;
-            }
-
-            .preview-header .period {
-                font-size: 9px !important;
-            }
-
-            .preview-table {
-                margin-bottom: 8mm !important;
-                border-collapse: collapse !important;
-                border: 1px solid #000000 !important;
-                background-color: #ffffff !important;
-            }
-
-            .preview-table th,
-            .preview-table td {
-                padding: 6px 8px !important;
-                font-size: 9px !important;
-                line-height: 1.4 !important;
-                border: 1px solid #000000 !important;
-            }
-
-            .preview-table th {
-                font-size: 9px !important;
-                padding: 8px 10px !important;
-                background-color: #e8e8e8 !important;
-                color: #000000 !important;
-            }
-
-            .preview-table td {
-                background-color: #ffffff !important;
-                color: #000000 !important;
-            }
-
-            .preview-table tbody tr:nth-child(even) {
-                background-color: #f9f9f9 !important;
-            }
-
-            .signature-section {
-                margin-top: 8mm !important;
-                border-top: 1px solid #000000 !important;
-                padding-top: 10px !important;
-            }
-
-            .signature-table {
-                margin-top: 5mm !important;
-            }
-
-            .signature-table td {
-                padding: 8px !important;
-            }
-
-            .signature-table .signature-label {
-                font-size: 9px !important;
-            }
-
-            .signature-table .signature-space {
-                height: 40px !important;
-                border-bottom: 1px solid #000000 !important;
-            }
-
-            .signature-table .signature-name {
-                font-size: 9px !important;
-            }
-
-            .signature-table .signature-title {
-                font-size: 8px !important;
-            }
-
-            html, body {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color-adjust: exact !important;
-            }
+            @page { size: A4 landscape; margin: 10mm; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            body { background: #ffffff !important; }
+            .win11-header { display: none !important; }
+            .preview-container { padding: 0 !important; background: #ffffff !important; }
+            .document-preview { margin: 0 !important; box-shadow: none !important; border-radius: 0 !important; }
+            .document-content { padding: 10mm !important; }
         }
     </style>
 </head>
 <body class="{{ ($format ?? 'preview') === 'pdf' ? 'pdf-export' : '' }}">
     @if(($format ?? 'preview') !== 'pdf')
-    <!-- Header Bar seperti Google Drive -->
-    <div class="preview-header-bar">
-        <div class="title">
-            <i class="fa fa-file-text-o"></i>
-            <span>Preview Laporan Harian Mekanik</span>
+    <!-- Windows 11 Header Bar -->
+    <div class="win11-header">
+        <div class="title-section">
+            <div class="file-icon">
+                <i class="fas fa-file-lines"></i>
+            </div>
+            <div class="title-text">
+                <h1>Laporan Harian Mekanik</h1>
+                <span>Periode: {{ $periode ?? 'Semua Data' }}</span>
+            </div>
         </div>
         <div class="actions">
-            <a href="{{ route('kadivmekanik.laporan-harian-mekanik.download.pdf') }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="btn btn-danger">
-                <i class="fa fa-file-pdf"></i> Download PDF
+            <a href="{{ route('kadivmekanik.laporan-harian-mekanik.download.pdf') }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="win11-btn win11-btn-danger">
+                <i class="fas fa-file-pdf"></i> PDF
             </a>
-            <a href="{{ route('kadivmekanik.laporan-harian-mekanik.download.excel') }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="btn btn-success">
-                <i class="fa fa-file-excel"></i> Download Excel
+            <a href="{{ route('kadivmekanik.laporan-harian-mekanik.download.excel') }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="win11-btn win11-btn-success">
+                <i class="fas fa-file-excel"></i> Excel
             </a>
-            <button class="btn btn-secondary" onclick="window.print()">
-                <i class="fa fa-print"></i> Print
+            <div class="win11-separator"></div>
+            <button class="win11-btn win11-btn-secondary" onclick="window.print()">
+                <i class="fas fa-print"></i> Print
             </button>
-            <button class="btn btn-secondary" onclick="window.close()">
-                <i class="fa fa-times"></i> Tutup
+            <button class="win11-btn win11-btn-close" onclick="window.close()">
+                <i class="fas fa-xmark"></i>
             </button>
         </div>
     </div>
@@ -637,9 +457,9 @@
                             <th class="unit-cell">Nama Unit</th>
                             <th class="complaint-cell">Keluhan/Kerusakan</th>
                             <th class="cause-cell">Penyebab Kerusakan</th>
-                            <th class="start-date-cell">Mulai Reparasi Hari/Tanggal</th>
-                            <th class="end-date-cell">Selesai Reparasi Hari/Tanggal</th>
-                            <th class="action-cell">Tindakan Perbaikan dari Mekanik</th>
+                            <th class="start-date-cell">Mulai Reparasi</th>
+                            <th class="end-date-cell">Selesai Reparasi</th>
+                            <th class="action-cell">Tindakan Perbaikan</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -659,7 +479,6 @@
                                 @endphp
                                 
                                 @if($rowCount > 1)
-                                    {{-- Multiple entries for the same date --}}
                                     @foreach($reports as $index => $report)
                                         <tr>
                                             @if($index === 0)
@@ -670,25 +489,18 @@
                                             <td class="cause-cell">{{ $report['penyebab_kerusakan'] ?? '' }}</td>
                                             <td class="start-date-cell">
                                                 @if(!empty($report['tanggal_mulai']))
-                                                    @php
-                                                        $startCarbon = \Carbon\Carbon::parse($report['tanggal_mulai'])->locale('id');
-                                                        echo $startCarbon->isoFormat('dddd, DD/MM/YYYY');
-                                                    @endphp
+                                                    {{ \Carbon\Carbon::parse($report['tanggal_mulai'])->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}
                                                 @endif
                                             </td>
                                             <td class="end-date-cell">
                                                 @if(!empty($report['tanggal_selesai']))
-                                                    @php
-                                                        $endCarbon = \Carbon\Carbon::parse($report['tanggal_selesai'])->locale('id');
-                                                        echo $endCarbon->isoFormat('dddd, DD/MM/YYYY');
-                                                    @endphp
+                                                    {{ \Carbon\Carbon::parse($report['tanggal_selesai'])->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}
                                                 @endif
                                             </td>
                                             <td class="action-cell">{{ $report['tindakan_perbaikan'] ?? '' }}</td>
                                         </tr>
                                     @endforeach
                                 @else
-                                    {{-- Single entry for the date --}}
                                     @foreach($reports as $report)
                                         <tr>
                                             <td class="date-cell">{{ $dateFormatted }}</td>
@@ -697,18 +509,12 @@
                                             <td class="cause-cell">{{ $report['penyebab_kerusakan'] ?? '' }}</td>
                                             <td class="start-date-cell">
                                                 @if(!empty($report['tanggal_mulai']))
-                                                    @php
-                                                        $startCarbon = \Carbon\Carbon::parse($report['tanggal_mulai'])->locale('id');
-                                                        echo $startCarbon->isoFormat('dddd, DD/MM/YYYY');
-                                                    @endphp
+                                                    {{ \Carbon\Carbon::parse($report['tanggal_mulai'])->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}
                                                 @endif
                                             </td>
                                             <td class="end-date-cell">
                                                 @if(!empty($report['tanggal_selesai']))
-                                                    @php
-                                                        $endCarbon = \Carbon\Carbon::parse($report['tanggal_selesai'])->locale('id');
-                                                        echo $endCarbon->isoFormat('dddd, DD/MM/YYYY');
-                                                    @endphp
+                                                    {{ \Carbon\Carbon::parse($report['tanggal_selesai'])->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}
                                                 @endif
                                             </td>
                                             <td class="action-cell">{{ $report['tindakan_perbaikan'] ?? '' }}</td>
@@ -718,7 +524,8 @@
                             @endforeach
                         @else
                             <tr>
-                                <td colspan="7" style="text-align: center; padding: 20px; font-style: italic; color: #666;">
+                                <td colspan="7" style="text-align: center; padding: 32px; color: #666; font-style: italic;">
+                                    <i class="fas fa-inbox" style="font-size: 24px; margin-bottom: 8px; display: block; color: #ccc;"></i>
                                     Tidak ada data laporan untuk periode yang dipilih
                                 </td>
                             </tr>

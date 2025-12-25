@@ -273,7 +273,7 @@
                         <thead class="thead-dark">
                             <tr>
                                 <th>No</th>
-                                <th>Tanggal</th>
+                                <th>Hari/Tanggal</th>
                                 <th>Sparepart/Material/Jasa</th>
                                 <th>Kode Unit</th>
                                 <th>Jumlah</th>
@@ -287,8 +287,8 @@
                         <tbody>
                             @forelse($data as $i => $barang)
                             <tr>
-                                <td>{{ $i + 1 }}</td>
-                                <td>{{ \Carbon\Carbon::parse($barang->tanggal)->format('d/m/Y') }}</td>
+                                <td></td>
+                                <td data-order="{{ \Carbon\Carbon::parse($barang->tanggal)->format('Ymd') }}">{{ \Carbon\Carbon::parse($barang->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
                                 <td>{{ $barang->nama_barang }}</td>
                                 <td>{{ $barang->kode_unit ?: '-' }}</td>
                                 <td>{{ $barang->jumlah }}</td>
@@ -572,6 +572,14 @@
             "paging": true,
             "pageLength": 10,
             "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+            "order": [[1, 'asc']], // Default sort by Hari/Tanggal ascending (oldest to newest)
+            "columnDefs": [
+                {
+                    "targets": 0,
+                    "orderable": false,
+                    "searchable": false
+                }
+            ],
             "language": {
                 "search": "Cari:",
                 "lengthMenu": "Tampilkan _MENU_ data per halaman",
@@ -586,8 +594,23 @@
             }
         });
 
+        // Auto-generate row numbers on every draw
+        table.on('order.dt search.dt draw.dt', function () {
+            table.column(0, {search:'applied', order:'applied'}).nodes().each(function (cell, i) {
+                cell.innerHTML = table.page.info().start + i + 1;
+            });
+        }).draw();
+
         // Show all data by default - no auto-filtering on page load
         // Only filter when user manually changes dropdown values
+
+        // Update preview link when DataTable sort or search changes
+        table.on('order.dt', function() {
+            updatePreviewLink();
+        });
+        table.on('search.dt', function() {
+            updatePreviewLink();
+        });
 
         // Initialize preview link
         updatePreviewLink();
@@ -637,7 +660,7 @@
         });
     });
 
-    // Helper function to get current filter parameters
+    // Helper function to get current filter parameters including sort and search from DataTable
     function getCurrentFilterParams() {
         var params = [];
         var tahun = $('#filter-tahun').val();
@@ -654,10 +677,27 @@
             params.push('minggu=' + encodeURIComponent(minggu));
         }
         
+        // Get DataTable sort order
+        if (table) {
+            var order = table.order();
+            if (order && order.length > 0) {
+                var columnIndex = order[0][0];
+                var sortDirection = order[0][1];
+                params.push('sort_by=' + encodeURIComponent(columnIndex));
+                params.push('sort_order=' + encodeURIComponent(sortDirection));
+            }
+            
+            // Get DataTable search query
+            var searchQuery = table.search();
+            if (searchQuery && searchQuery !== '') {
+                params.push('search=' + encodeURIComponent(searchQuery));
+            }
+        }
+        
         return params.length > 0 ? '?' + params.join('&') : '';
     }
 
-    // Update preview link with current filters
+    // Update preview link with current filters, sort, and search
     function updatePreviewLink() {
         var filterParams = getCurrentFilterParams();
         var baseUrl = '/preview-laporan-pemakaian-barang';

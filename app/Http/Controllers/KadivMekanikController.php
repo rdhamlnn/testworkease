@@ -1112,7 +1112,43 @@ class KadivMekanikController extends Controller
             }
         }
 
-        $data = $query->orderBy('tanggal', 'desc')->orderBy('created_at', 'desc')->get();
+        // Apply search filter if provided
+        if ($request->has('search') && $request->search && $request->search !== '') {
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('nama_unit', 'like', "%{$searchTerm}%")
+                  ->orWhere('keluhan_kerusakan', 'like', "%{$searchTerm}%")
+                  ->orWhere('penyebab_kerusakan', 'like', "%{$searchTerm}%")
+                  ->orWhere('tindakan_perbaikan', 'like', "%{$searchTerm}%");
+            });
+        }
+
+        // Apply sorting - use sort_by and sort_order from request, default to tanggal desc
+        $sortColumn = $request->get('sort_by', 'tanggal');
+        $sortOrder = $request->get('sort_order', 'desc');
+        
+        // Map column index to actual column names (DataTable columns: 0=No, 1=Tanggal, 2=Unit, etc.)
+        $columnMap = [
+            '1' => 'tanggal',
+            '2' => 'nama_unit',
+            '3' => 'keluhan_kerusakan',
+            '4' => 'penyebab_kerusakan',
+            '5' => 'tanggal_mulai',
+            '6' => 'tanggal_selesai',
+            '7' => 'tindakan_perbaikan',
+            'tanggal' => 'tanggal',
+            'nama_unit' => 'nama_unit',
+            'keluhan_kerusakan' => 'keluhan_kerusakan',
+            'penyebab_kerusakan' => 'penyebab_kerusakan',
+            'tanggal_mulai' => 'tanggal_mulai',
+            'tanggal_selesai' => 'tanggal_selesai',
+            'tindakan_perbaikan' => 'tindakan_perbaikan',
+        ];
+        
+        $actualColumn = $columnMap[$sortColumn] ?? 'tanggal';
+        $actualOrder = in_array(strtolower($sortOrder), ['asc', 'desc']) ? strtolower($sortOrder) : 'asc';
+        
+        $data = $query->orderBy($actualColumn, $actualOrder)->orderBy('created_at', 'desc')->get();
         
         // Generate period string for filename and display - HANYA menampilkan apa yang dipilih user
         $periode = 'Semua Data';
@@ -1289,7 +1325,45 @@ class KadivMekanikController extends Controller
             }
         }
 
-        $data = $query->orderBy('tanggal', 'desc')->orderBy('created_at', 'desc')->get();
+        // Apply search filter if provided
+        if ($request->has('search') && $request->search && $request->search !== '') {
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('nama_barang', 'like', "%{$searchTerm}%")
+                  ->orWhere('kode_unit', 'like', "%{$searchTerm}%")
+                  ->orWhere('bentuk_satuan', 'like', "%{$searchTerm}%")
+                  ->orWhere('keterangan', 'like', "%{$searchTerm}%");
+            });
+        }
+
+        // Apply sorting - use sort_by and sort_order from request, default to tanggal desc
+        $sortColumn = $request->get('sort_by', 'tanggal');
+        $sortOrder = $request->get('sort_order', 'desc');
+        
+        // Map column index to actual column names (DataTable columns)
+        $columnMap = [
+            '1' => 'tanggal',
+            '2' => 'nama_barang',
+            '3' => 'kode_unit',
+            '4' => 'jumlah',
+            '5' => 'bentuk_satuan',
+            '6' => 'harga_satuan',
+            '7' => 'total_harga',
+            '8' => 'keterangan',
+            'tanggal' => 'tanggal',
+            'nama_barang' => 'nama_barang',
+            'kode_unit' => 'kode_unit',
+            'jumlah' => 'jumlah',
+            'bentuk_satuan' => 'bentuk_satuan',
+            'harga_satuan' => 'harga_satuan',
+            'total_harga' => 'total_harga',
+            'keterangan' => 'keterangan',
+        ];
+        
+        $actualColumn = $columnMap[$sortColumn] ?? 'tanggal';
+        $actualOrder = in_array(strtolower($sortOrder), ['asc', 'desc']) ? strtolower($sortOrder) : 'asc';
+        
+        $data = $query->orderBy($actualColumn, $actualOrder)->orderBy('created_at', 'desc')->get();
         
         // Generate period string for filename and display - HANYA menampilkan apa yang dipilih user
         $periode = 'Semua Data';

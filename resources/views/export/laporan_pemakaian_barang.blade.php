@@ -4,149 +4,211 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Preview Laporan Pemakaian Barang</title>
-    <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+    @if(($format ?? 'preview') !== 'pdf')
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/js/bootstrap.bundle.min.js"></script>
-    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    @endif
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
-            background-color: #ffffff;
-            font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
-            color: #000000;
+            box-sizing: border-box;
         }
 
-        /* Header Bar seperti Google Drive */
-        .preview-header-bar {
-            background-color: #fff;
-            border-bottom: 1px solid #e0e0e0;
-            padding: 12px 24px;
+        body {
+            background-color: #f0f0f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+            color: #1a1a1a;
+        }
+
+        /* ===== WINDOWS 11 HEADER BAR ===== */
+        .win11-header {
+            background: linear-gradient(180deg, #f9f9f9 0%, #f3f3f3 100%);
+            border-bottom: 1px solid #e5e5e5;
+            padding: 8px 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
         }
 
-        .preview-header-bar .title {
-            font-size: 18px;
-            font-weight: 500;
-            color: #202124;
+        .win11-header .title-section {
             display: flex;
             align-items: center;
             gap: 12px;
         }
 
-        .preview-header-bar .title i {
-            color: #5f6368;
+        .win11-header .file-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #107C10 0%, #0E6E0E 100%);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
         }
 
-        .preview-header-bar .actions {
+        .win11-header .title-text {
             display: flex;
-            gap: 8px;
+            flex-direction: column;
+        }
+
+        .win11-header .title-text h1 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 0;
+            line-height: 1.3;
+        }
+
+        .win11-header .title-text span {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .win11-header .actions {
+            display: flex;
+            gap: 6px;
             align-items: center;
         }
 
-        .preview-header-bar .btn {
+        /* Windows 11 Fluent Buttons */
+        .win11-btn {
             padding: 8px 16px;
-            border-radius: 4px;
-            font-size: 14px;
+            border-radius: 6px;
+            font-size: 13px;
             font-weight: 500;
             border: none;
             cursor: pointer;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
-            transition: background-color 0.2s;
+            transition: all 0.15s ease;
+            text-decoration: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .win11-btn:hover {
             text-decoration: none;
         }
 
-        .preview-header-bar .btn-primary {
-            background-color: #1a73e8;
+        .win11-btn-primary {
+            background: linear-gradient(180deg, #0078D4 0%, #006CBD 100%);
+            color: white;
+            box-shadow: 0 1px 3px rgba(0, 120, 212, 0.3);
+        }
+
+        .win11-btn-primary:hover {
+            background: linear-gradient(180deg, #106EBE 0%, #005A9E 100%);
+            color: white;
+            box-shadow: 0 2px 6px rgba(0, 120, 212, 0.4);
+        }
+
+        .win11-btn-danger {
+            background: linear-gradient(180deg, #D13438 0%, #C42B30 100%);
+            color: white;
+            box-shadow: 0 1px 3px rgba(209, 52, 56, 0.3);
+        }
+
+        .win11-btn-danger:hover {
+            background: linear-gradient(180deg, #C42B30 0%, #A4262C 100%);
             color: white;
         }
 
-        .preview-header-bar .btn-primary:hover {
-            background-color: #1557b0;
+        .win11-btn-success {
+            background: linear-gradient(180deg, #107C10 0%, #0E6E0E 100%);
+            color: white;
+            box-shadow: 0 1px 3px rgba(16, 124, 16, 0.3);
         }
 
-        .preview-header-bar .btn-secondary {
-            background-color: #f1f3f4;
-            color: #202124;
-        }
-
-        .preview-header-bar .btn-secondary:hover {
-            background-color: #e8eaed;
-        }
-
-        .preview-header-bar .btn-danger {
-            background-color: #dc3545;
+        .win11-btn-success:hover {
+            background: linear-gradient(180deg, #0E6E0E 0%, #0C5E0C 100%);
             color: white;
         }
 
-        .preview-header-bar .btn-danger:hover {
-            background-color: #c82333;
+        .win11-btn-secondary {
+            background: #ffffff;
+            color: #1a1a1a;
+            border: 1px solid #d1d1d1;
         }
 
-        .preview-header-bar .btn-success {
-            background-color: #28a745;
+        .win11-btn-secondary:hover {
+            background: #f5f5f5;
+            border-color: #c1c1c1;
+            color: #1a1a1a;
+        }
+
+        .win11-btn-close {
+            background: transparent;
+            color: #666;
+            padding: 8px 12px;
+        }
+
+        .win11-btn-close:hover {
+            background: #e81123;
             color: white;
         }
 
-        .preview-header-bar .btn-success:hover {
-            background-color: #218838;
+        /* Separator */
+        .win11-separator {
+            width: 1px;
+            height: 24px;
+            background: #d1d1d1;
+            margin: 0 4px;
         }
 
-        /* Main Container */
+        /* ===== PREVIEW CONTAINER ===== */
         .preview-container {
             display: flex;
+            justify-content: center;
+            padding: 24px;
             min-height: calc(100vh - 60px);
-            background-color: #ffffff;
-            padding: 15px;
+            background: linear-gradient(180deg, #e8e8e8 0%, #f0f0f0 100%);
         }
 
-        /* Document Preview Area */
+        /* ===== DOCUMENT PREVIEW ===== */
         .document-preview {
-            flex: 1;
-            background-color: #ffffff;
-            border: none;
-            border-radius: 0;
-            box-shadow: none;
-            overflow: auto;
-            position: relative;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
+            max-width: 1200px;
+            width: 100%;
+            overflow: hidden;
         }
 
         .document-content {
-            padding: 20px;
+            padding: 32px;
             background-color: #ffffff;
-            min-height: 100%;
         }
 
+        /* ===== DOCUMENT HEADER ===== */
         .preview-header {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
             width: 100%;
             text-align: center;
-            border-bottom: 2px solid #000000;
-            padding-bottom: 15px;
+            border-bottom: 2px solid #1a1a1a;
+            padding-bottom: 16px;
         }
 
         .preview-header-wrapper {
             display: inline-flex;
             align-items: flex-start;
-            gap: 15px;
+            gap: 16px;
             vertical-align: top;
         }
 
         .preview-header .company-logo {
-            width: 60px;
-            height: 60px;
+            width: 64px;
+            height: 64px;
             object-fit: contain;
             flex-shrink: 0;
-            margin-top: 0;
-            align-self: flex-start;
         }
 
         .preview-header .header-content {
@@ -156,94 +218,145 @@
         }
 
         .preview-header .company-name {
-            font-size: 14px;
-            font-weight: bold;
+            font-size: 15px;
+            font-weight: 700;
             margin-bottom: 4px;
             text-transform: uppercase;
-            color: #000;
+            color: #1a1a1a;
             letter-spacing: 0.5px;
         }
 
         .preview-header .report-title {
-            font-size: 12px;
-            font-weight: bold;
+            font-size: 13px;
+            font-weight: 600;
             margin-bottom: 4px;
             text-transform: uppercase;
-            color: #000;
-            letter-spacing: 0.5px;
+            color: #1a1a1a;
         }
 
         .preview-header .period {
-            font-size: 11px;
-            font-weight: normal;
-            margin-bottom: 0;
-            color: #000;
+            font-size: 12px;
+            font-weight: 400;
+            color: #666;
         }
 
+        /* ===== TABLE STYLES ===== */
         .preview-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
             background-color: #ffffff;
-            border: 1px solid #000000;
-            font-size: 10px;
+            border: 2px solid #1a1a1a;
+            font-size: 11px;
+            border-radius: 6px;
+            overflow: hidden;
         }
 
         .preview-table th,
         .preview-table td {
-            border: 1px solid #000000;
-            padding: 8px 10px;
+            border: 2px solid #1a1a1a;
+            padding: 10px 12px;
             vertical-align: top;
-            line-height: 1.4;
+            line-height: 1.5;
         }
 
         .preview-table th {
-            background-color: #e8e8e8;
-            color: #000000;
-            font-weight: bold;
-            text-align: center !important;
+            background: linear-gradient(180deg, #f8f8f8 0%, #f0f0f0 100%);
+            color: #1a1a1a;
+            font-weight: 600;
+            text-align: center;
             font-size: 11px;
-            padding: 10px 12px;
-            white-space: nowrap;
+            padding: 12px;
+            border-bottom: 3px solid #1a1a1a;
         }
 
         .preview-table td {
             text-align: left;
             font-size: 10px;
             background-color: #ffffff;
-            word-wrap: break-word;
         }
 
         .preview-table tbody tr:nth-child(even) {
-            background-color: #f9f9f9;
+            background-color: #fafafa;
         }
 
         .preview-table tbody tr:hover {
-            background-color: #f0f0f0;
+            background-color: #f5f9ff;
+        }
+
+        .preview-table tfoot td {
+            background: linear-gradient(180deg, #f8f8f8 0%, #f0f0f0 100%);
+            font-weight: 600;
+            border-top: 2px solid #d1d1d1;
         }
 
         .currency {
-            text-align: right;
+            text-align: right !important;
+            font-family: 'Consolas', 'Monaco', monospace;
         }
 
-        /* PDF Specific Styles - Ensure 1 page */
-        @page {
-            size: A4 landscape;
-            margin: 7mm;
+        /* ===== SIGNATURE SECTION ===== */
+        .signature-section {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #e0e0e0;
         }
 
+        .signature-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .signature-table td {
+            width: 50%;
+            text-align: center;
+            padding: 12px;
+            vertical-align: top;
+        }
+
+        .signature-label {
+            font-weight: 600;
+            text-decoration: underline;
+            margin-bottom: 16px;
+            font-size: 11px;
+            color: #1a1a1a;
+        }
+
+        .signature-space {
+            height: 60px;
+            border-bottom: 1px solid #1a1a1a;
+            margin: 0 auto;
+            width: 200px;
+        }
+
+        .signature-name {
+            font-weight: 600;
+            font-size: 11px;
+            margin-top: 12px;
+            color: #1a1a1a;
+        }
+
+        .signature-title {
+            font-size: 10px;
+            margin-top: 4px;
+            color: #666;
+        }
+
+        /* ===== PDF EXPORT STYLES ===== */
         body.pdf-export {
+            background: #ffffff;
             margin: 0;
             padding: 0;
         }
 
-        body.pdf-export .preview-header-bar {
+        body.pdf-export .win11-header {
             display: none;
         }
 
         body.pdf-export .preview-container {
             padding: 0;
             min-height: auto;
+            background: #ffffff;
         }
 
         body.pdf-export .document-preview {
@@ -256,231 +369,57 @@
             padding: 7mm !important;
         }
 
-        body.pdf-export .preview-header {
-            margin-bottom: 5mm !important;
-            padding-bottom: 5px !important;
-        }
+        body.pdf-export .preview-header { margin-bottom: 5mm !important; }
+        body.pdf-export .preview-header .company-logo { width: 40px !important; height: 40px !important; }
+        body.pdf-export .preview-header .company-name { font-size: 10px !important; }
+        body.pdf-export .preview-header .report-title { font-size: 9px !important; }
+        body.pdf-export .preview-header .period { font-size: 8px !important; }
+        body.pdf-export .preview-table { margin-bottom: 5mm !important; font-size: 7px !important; }
+        body.pdf-export .preview-table th, body.pdf-export .preview-table td { padding: 4px 6px !important; font-size: 7px !important; }
+        body.pdf-export .signature-section { margin-top: 5mm !important; }
+        body.pdf-export .signature-label { font-size: 7px !important; }
+        body.pdf-export .signature-space { height: 30px !important; }
+        body.pdf-export .signature-name { font-size: 7px !important; }
+        body.pdf-export .signature-title { font-size: 7px !important; }
 
-        body.pdf-export .preview-header-wrapper {
-            gap: 6px !important;
-            align-items: flex-start;
-        }
-
-        body.pdf-export .preview-header .company-logo {
-            width: 40px !important;
-            height: 40px !important;
-            flex-shrink: 0;
-            align-self: flex-start;
-        }
-
-        body.pdf-export .preview-header .company-name {
-            font-size: 10px !important;
-            line-height: 1.2 !important;
-            margin-bottom: 2px !important;
-        }
-
-        body.pdf-export .preview-header .report-title {
-            font-size: 9px !important;
-            line-height: 1.2 !important;
-            margin-bottom: 2px !important;
-        }
-
-        body.pdf-export .preview-header .period {
-            font-size: 8px !important;
-            line-height: 1.2 !important;
-        }
-
-        body.pdf-export .preview-table {
-            margin-bottom: 5mm !important;
-            border-collapse: separate;
-            border-spacing: 0;
-            page-break-inside: avoid !important;
-            font-size: 7px !important;
-        }
-
-        body.pdf-export .preview-table th,
-        body.pdf-export .preview-table td {
-            padding: 4px 6px !important;
-            font-size: 7px !important;
-            line-height: 1.3 !important;
-        }
-
-        body.pdf-export .preview-table th {
-            font-size: 7px !important;
-            padding: 5px 7px !important;
-        }
-
-        body.pdf-export .preview-table tbody tr {
-            page-break-inside: avoid;
-        }
-
-        body.pdf-export .preview-table tfoot {
-            page-break-inside: avoid !important;
-        }
-
-        body.pdf-export .preview-table tfoot td {
-            padding: 4px 6px !important;
-            font-size: 7px !important;
-        }
-
-        body.pdf-export .document-content > div:last-child {
-            page-break-inside: avoid !important;
-            margin-top: 5mm !important;
-        }
-
-        body.pdf-export .document-content > div:last-child table {
-            margin-top: 0 !important;
-        }
-
-        body.pdf-export .document-content > div:last-child table td {
-            padding: 5px !important;
-            font-size: 7px !important;
-        }
-
-        body.pdf-export .document-content > div:last-child table div {
-            font-size: 7px !important;
-            line-height: 1.3 !important;
-        }
-
-        /* Print-only: hide control panel and UI, keep only the document */
+        /* ===== PRINT STYLES ===== */
         @media print {
-            @page {
-                size: A4 landscape;
-                margin: 10mm;
-            }
-            * {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color-adjust: exact !important;
-            }
-
-            body {
-                background-color: #ffffff !important;
-                font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif !important;
-                color: #000000 !important;
-            }
-
-            .preview-header-bar {
-                display: none !important;
-            }
-
-            .preview-container { 
-                display: block !important; 
-                background-color: #ffffff !important;
-            }
-            .document-preview { 
-                margin: 0 !important; 
-                box-shadow: none !important; 
-                border-radius: 0 !important; 
-                border: none !important;
-                background-color: #ffffff !important;
-            }
-            .document-content { 
-                padding: 10mm !important; 
-                background-color: #ffffff !important;
-            }
-
-            .preview-header {
-                margin-bottom: 8mm !important;
-                border-bottom: 2px solid #000000 !important;
-                padding-bottom: 10px !important;
-            }
-
-            .preview-header-wrapper {
-                gap: 8px !important;
-                align-items: flex-start !important;
-            }
-
-            .preview-header .company-logo {
-                width: 45px !important;
-                height: 45px !important;
-                flex-shrink: 0 !important;
-                align-self: flex-start !important;
-            }
-
-            .preview-header .company-name {
-                font-size: 11px !important;
-            }
-
-            .preview-header .report-title {
-                font-size: 10px !important;
-            }
-
-            .preview-header .period {
-                font-size: 9px !important;
-            }
-
-            .preview-table {
-                margin-bottom: 8mm !important;
-                border: 1px solid #000000 !important;
-                background-color: #ffffff !important;
-                page-break-inside: avoid !important;
-            }
-
-            .preview-table th,
-            .preview-table td {
-                border: 1px solid #000000 !important;
-                padding: 6px 8px !important;
-                font-size: 9px !important;
-                line-height: 1.4 !important;
-            }
-
-            .preview-table th {
-                font-size: 9px !important;
-                padding: 8px 10px !important;
-                background-color: #e8e8e8 !important;
-                color: #000000 !important;
-            }
-
-            .preview-table td {
-                background-color: #ffffff !important;
-                color: #000000 !important;
-            }
-
-            .preview-table tbody tr {
-                page-break-inside: avoid !important;
-            }
-
-            .preview-table tbody tr:nth-child(even) {
-                background-color: #f9f9f9 !important;
-            }
-
-            .preview-table tfoot {
-                page-break-inside: avoid !important;
-            }
-
-            .document-content > div:last-child {
-                page-break-inside: avoid !important;
-            }
-
-            html, body {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color-adjust: exact !important;
-            }
+            @page { size: A4 landscape; margin: 10mm; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            body { background: #ffffff !important; }
+            .win11-header { display: none !important; }
+            .preview-container { padding: 0 !important; background: #ffffff !important; }
+            .document-preview { margin: 0 !important; box-shadow: none !important; border-radius: 0 !important; }
+            .document-content { padding: 10mm !important; }
         }
     </style>
 </head>
 <body class="{{ ($format ?? 'preview') === 'pdf' ? 'pdf-export' : '' }}">
     @if(($format ?? 'preview') !== 'pdf')
-    <!-- Header Bar seperti Google Drive -->
-    <div class="preview-header-bar">
-        <div class="title">
-            <i class="fa fa-file-text-o"></i>
-            <span>Preview Laporan Pemakaian Barang</span>
+    <!-- Windows 11 Header Bar -->
+    <div class="win11-header">
+        <div class="title-section">
+            <div class="file-icon">
+                <i class="fas fa-boxes-stacked"></i>
+            </div>
+            <div class="title-text">
+                <h1>Laporan Pemakaian Barang</h1>
+                <span>Periode: {{ $periode ?? 'Semua Data' }}</span>
+            </div>
         </div>
         <div class="actions">
-            <a href="/download-laporan-pemakaian-barang-pdf{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="btn btn-danger">
-                <i class="fa fa-file-pdf"></i> Download PDF
+            <a href="/download-laporan-pemakaian-barang-pdf{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="win11-btn win11-btn-danger">
+                <i class="fas fa-file-pdf"></i> PDF
             </a>
-            <a href="/download-laporan-pemakaian-barang-excel{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="btn btn-success">
-                <i class="fa fa-file-excel"></i> Download Excel
+            <a href="/download-laporan-pemakaian-barang-excel{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="win11-btn win11-btn-success">
+                <i class="fas fa-file-excel"></i> Excel
             </a>
-            <button class="btn btn-secondary" onclick="window.print()">
-                <i class="fa fa-print"></i> Print
+            <div class="win11-separator"></div>
+            <button class="win11-btn win11-btn-secondary" onclick="window.print()">
+                <i class="fas fa-print"></i> Print
             </button>
-            <button class="btn btn-secondary" onclick="window.close()">
-                <i class="fa fa-times"></i> Tutup
+            <button class="win11-btn win11-btn-close" onclick="window.close()">
+                <i class="fas fa-xmark"></i>
             </button>
         </div>
     </div>
@@ -490,6 +429,8 @@
     <div class="preview-container">
         <!-- Document Preview -->
         <div class="document-preview">
+            <div class="document-content">
+                <!-- Header Document -->
                 <div class="preview-header">
                     <div class="preview-header-wrapper">
                         @php
@@ -511,15 +452,15 @@
                     </div>
                 </div>
 
+                <!-- Table Data -->
                 <table class="preview-table">
                     <thead>
                         <tr>
-                            <th style="width: 5%;">No</th>
-                            <th style="width: 12%;">Tanggal</th>
+                            <th style="width: 15%;">Hari/Tanggal</th>
                             <th style="width: 25%;">Sparepart/Material/Jasa</th>
                             <th style="width: 10%;">Kode Unit</th>
                             <th style="width: 7%;">Jumlah</th>
-                            <th style="width: 8%;">Bentuk Satuan</th>
+                            <th style="width: 10%;">Satuan</th>
                             <th style="width: 12%;">Harga Satuan</th>
                             <th style="width: 12%;">Total Harga</th>
                             <th style="width: 9%;">Keterangan</th>
@@ -537,8 +478,7 @@
                                 $grandTotal += $total;
                             @endphp
                             <tr>
-                                <td style="text-align: center;">{{ $i + 1 }}</td>
-                                <td>{{ \Carbon\Carbon::parse($row->tanggal ?? now())->format('d/m/Y') }}</td>
+                                <td>{{ \Carbon\Carbon::parse($row->tanggal ?? now())->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
                                 <td>{{ $row->nama_barang ?? '-' }}</td>
                                 <td>{{ $row->kode_unit ?? '-' }}</td>
                                 <td style="text-align: center;">{{ $row->jumlah ?? '-' }}</td>
@@ -549,7 +489,8 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" style="text-align: center; padding: 20px; font-style: italic; color: #666;">
+                                <td colspan="8" style="text-align: center; padding: 32px; color: #666; font-style: italic;">
+                                    <i class="fas fa-inbox" style="font-size: 24px; margin-bottom: 8px; display: block; color: #ccc;"></i>
                                     Tidak ada data laporan untuk periode yang dipilih
                                 </td>
                             </tr>
@@ -557,32 +498,31 @@
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="6" style="text-align: right; font-weight: bold; padding: 10px;">JUMLAH</td>
-                            <td colspan="2" class="currency" style="font-weight: bold; padding: 10px;">Rp {{ number_format($grandTotal, 0, ',', '.') }}</td>
+                            <td colspan="5" style="text-align: right; font-weight: bold; padding: 12px;">JUMLAH</td>
+                            <td colspan="2" class="currency" style="font-weight: bold; padding: 12px;">Rp {{ number_format($grandTotal, 0, ',', '.') }}</td>
                             <td></td>
                         </tr>
                     </tfoot>
                 </table>
 
-                 <!-- TANDA TANGAN -->
-                <div style="margin-top: 30px; border-top: 1px solid #000000; padding-top: 20px;">
-                    <table style="width:100%; text-align:center; border-collapse: collapse;">
+                <!-- Signature Section -->
+                <div class="signature-section">
+                    <table class="signature-table">
                         <tr>
-                            <td style="width:50%; padding: 10px;">
-                                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 15px; font-size: 10px;">Menyetujui:</div>
-                                <div style="height: 50px; border-bottom: 1px solid #000000; margin: 0 auto; width: 200px;"></div>
-                                <div style="font-weight: bold; margin-top: 10px; font-size: 10px;">Jony Rakhman, S.T.</div>
-                                <div style="font-size: 9px; margin-top: 5px;">Direktur</div>
+                            <td>
+                                <div class="signature-label">Menyetujui:</div>
+                                <div class="signature-space"></div>
+                                <div class="signature-name">Jony Rakhman, S.T.</div>
+                                <div class="signature-title">Direktur</div>
                             </td>
-                            <td style="width:50%; padding: 10px;">
-                                <div style="font-weight: bold; text-decoration: underline; margin-bottom: 15px; font-size: 10px;">Dibuat Oleh:</div>
-                                <div style="height: 50px; border-bottom: 1px solid #000000; margin: 0 auto; width: 200px;"></div>
-                                <div style="font-weight: bold; margin-top: 10px; font-size: 10px;">Dewo Kuncoro Putra</div>
-                                <div style="font-size: 9px; margin-top: 5px;">Kadiv Mekanik</div>
+                            <td>
+                                <div class="signature-label">Dibuat Oleh:</div>
+                                <div class="signature-space"></div>
+                                <div class="signature-name">Dewo Kuncoro Putra</div>
+                                <div class="signature-title">Kadiv Mekanik</div>
                             </td>
                         </tr>
                     </table>
-                </div>
                 </div>
             </div>
         </div>
