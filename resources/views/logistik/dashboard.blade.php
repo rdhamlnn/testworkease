@@ -22,9 +22,9 @@
                 <div class="card-icon bg-primary"><i class="fas fa-clipboard-check"></i></div>
                 <div class="card-wrap">
                     <div class="card-header">
-                        <h4>Work Order Dicek</h4>
+                        <h4>WO Diterima</h4>
                     </div>
-                    <div class="card-body">{{ $totalWODicek ?? 0 }}</div>
+                    <div class="card-body">{{ $totalWODiterima ?? 0 }}</div>
                 </div>
             </div>
         </div>
@@ -34,9 +34,9 @@
                 <div class="card-icon bg-danger"><i class="fas fa-shopping-cart"></i></div>
                 <div class="card-wrap">
                     <div class="card-header">
-                        <h4>Permintaan Dibuat</h4>
+                        <h4>Perlu Diproses</h4>
                     </div>
-                    <div class="card-body">{{ $totalPermintaan ?? 0 }}</div>
+                    <div class="card-body">{{ $perluDiproses ?? 0 }}</div>
                 </div>
             </div>
         </div>
@@ -72,7 +72,7 @@
         <div class="col-lg-6 col-md-12">
             <div class="card">
                 <div class="card-header">
-                    <h4>Trend Work Order per Bulan</h4>
+                    <h4>Trend WO Diterima per Bulan</h4>
                 </div>
                 <div class="card-body">
                     <canvas id="woTrendChart" height="200"></canvas>
@@ -84,10 +84,10 @@
         <div class="col-lg-6 col-md-12">
             <div class="card">
                 <div class="card-header">
-                    <h4>Status Permintaan Barang</h4>
+                    <h4>Status Work Order</h4>
                 </div>
                 <div class="card-body">
-                    <canvas id="statusPermintaanChart" height="200"></canvas>
+                    <canvas id="statusWOChart" height="200"></canvas>
                 </div>
             </div>
         </div>
@@ -154,7 +154,7 @@
 <script>
 // Data dari Controller (Real Database)
 const monthlyWOTrendData = @json($monthlyWOTrend ?? []);
-const statusPermintaanData = @json($statusPermintaan ?? []);
+const statusWOData = @json($statusWO ?? []);
 
 // Helper function untuk format bulan
 function formatMonthData(data) {
@@ -213,15 +213,15 @@ if (woTrendCtx) {
     });
 }
 
-// Status Permintaan Chart (Doughnut)
-const statusPermintaanCtx = document.getElementById('statusPermintaanChart');
-if (statusPermintaanCtx) {
-    const statusPermintaanChart = new Chart(statusPermintaanCtx.getContext('2d'), {
+// Status WO Chart (Doughnut)
+const statusWOCtx = document.getElementById('statusWOChart');
+if (statusWOCtx) {
+    const statusWOChart = new Chart(statusWOCtx.getContext('2d'), {
         type: 'doughnut',
         data: {
-            labels: Object.keys(statusPermintaanData),
+            labels: Object.keys(statusWOData),
             datasets: [{
-                data: Object.values(statusPermintaanData),
+                data: Object.values(statusWOData),
                 backgroundColor: [
                     '#1B3C88',
                     '#28a745',
