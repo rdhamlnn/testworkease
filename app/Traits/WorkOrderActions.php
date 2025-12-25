@@ -169,7 +169,8 @@ trait WorkOrderActions
             $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi');
             
             // Validasi: Hanya divisi pengaju yang bisa resend
-            if ($workOrder->divisi_pengaju !== $userDivisiNama) {
+            // Gunakan case-insensitive comparison untuk menghindari masalah case
+            if (!$userDivisiNama || strtolower(trim($workOrder->divisi_pengaju)) !== strtolower(trim($userDivisiNama))) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Anda tidak memiliki akses untuk mengirim ulang work order ini.'
@@ -177,18 +178,33 @@ trait WorkOrderActions
             }
             
             // Validasi: Hanya work order yang ditolak yang bisa di-resend
-            if ($workOrder->id_verifikator != 3) {
+            // Check both id_verifikator == 3 OR status contains 'Ditolak' (handles 'Ditolak Atasan' case)
+            $isDitolak = $workOrder->id_verifikator == 3 || 
+                         ($workOrder->status && strpos($workOrder->status, 'Ditolak') !== false);
+            
+            if (!$isDitolak) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Hanya work order yang ditolak yang dapat dikirim ulang.'
                 ], 400);
             }
             
-            // Update status dari Ditolak (3) ke Menunggu (1)
+            // Validasi: Hanya jenis work order "Pembelian" yang bisa dikirim ulang
+            $workOrder->load('jenisWorkOrder');
+            $jenisWo = $workOrder->jenisWorkOrder ? strtolower($workOrder->jenisWorkOrder->nama_jenis_wo) : '';
+            
+            if ($jenisWo !== 'pembelian') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hanya work order dengan jenis "Pembelian" yang dapat dikirim ulang.'
+                ], 400);
+            }
+            
+            // Update status dari Ditolak ke Menunggu
+            // Tidak mengubah 'ditujukan' - tetap kirim ke divisi tujuan yang asli
             $workOrder->update([
                 'id_verifikator' => 1, // 1 = Menunggu
-                'status' => 'Menunggu',
-                'catatan_penolakan' => null // Hapus catatan penolakan sebelumnya
+                'status' => 'Menunggu'
             ]);
             
             Session::flash('success', 'Work Order berhasil dikirim ulang!');

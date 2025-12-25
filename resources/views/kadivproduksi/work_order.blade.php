@@ -703,7 +703,7 @@
                                     <td>
                                         @if($status == 'Disetujui' || $status == 'Selesai')
                                             <span class="badge badge-success">{{ $status }}</span>
-                                        @elseif($status == 'Ditolak')
+                                        @elseif(Str::contains($status, 'Ditolak'))
                                             <span class="badge badge-danger">{{ $status }}</span>
                                         @else
                                             <span class="badge badge-warning">{{ $status }}</span>
@@ -729,19 +729,21 @@
                                                 data-lock-message="{{ $isLocked ? 'Work Order tidak dapat dihapus karena status sudah '.$statusLower.'.' : '' }}">
                                                 <i class="fas fa-trash"></i>
                                             </button>
-                                            @elseif($status == 'Ditolak')
+                                            @elseif(Str::contains($status, 'Ditolak'))
                                             {{-- Button Edit untuk Work Order yang Ditolak --}}
                                             <button type="button" class="btn btn-warning btn-sm btn-edit" 
                                                 data-id="{{ $wo->id_surat_pengajuan }}" title="Edit Work Order">
                                                 <i class="fas fa-edit"></i>
                                             </button>
-                                            {{-- Button Kirim Ulang Ajuan untuk WO yang ditolak --}}
+                                            {{-- Button Kirim Ulang Ajuan HANYA untuk WO Pembelian yang ditolak --}}
+                                            @if($isPembelian)
                                             <button type="button" class="btn btn-success btn-sm btn-resend" 
                                                 data-id="{{ $wo->id_surat_pengajuan }}"
                                                 data-url="{{ route('kadivproduksi.work-order.resend', $wo->id_surat_pengajuan) }}"
                                                 title="Kirim Ulang Ajuan">
                                                 <i class="fas fa-paper-plane"></i> Kirim Ulang
                                             </button>
+                                            @endif
                                             @endif
                                         </div>
                                     </td>
