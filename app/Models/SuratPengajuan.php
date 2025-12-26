@@ -26,7 +26,6 @@ class SuratPengajuan extends Model
         'id_verifikator',
         'id_akun',
         'id_unit',
-        'id_surat_pengajuan_parent',
         'harga_barang',
         'total_harga',
         'catatan_penolakan',
@@ -134,20 +133,24 @@ class SuratPengajuan extends Model
         return $this->belongsTo(JenisWorkOrder::class, 'id_jenis_wo');
     }
 
-    /**
-     * Relasi ke work order parent (work order yang menjadi sumber/asal)
-     */
     public function parent()
     {
-        return $this->belongsTo(SuratPengajuan::class, 'id_surat_pengajuan_parent');
+        return $this->belongsToMany(
+            SuratPengajuan::class,
+            'surat_pengajuan_referensi',
+            'id_surat_pengajuan',
+            'id_referensi'
+        )->withTimestamps();
     }
 
-    /**
-     * Relasi ke work order children (work order yang dibuat dari work order ini)
-     */
     public function children()
     {
-        return $this->hasMany(SuratPengajuan::class, 'id_surat_pengajuan_parent');
+        return $this->belongsToMany(
+            SuratPengajuan::class,
+            'surat_pengajuan_referensi',
+            'id_referensi',
+            'id_surat_pengajuan'
+        )->withTimestamps();
     }
 
     /**
@@ -159,29 +162,37 @@ class SuratPengajuan extends Model
     }
 
     /**
-     * Relasi many-to-many ke surat pengajuan yang menjadi referensi
+     * Relasi ke daftar pembelian barang logs (realisasi)
+     */
+    public function daftarPembelianBarang()
+    {
+        return $this->hasMany(DaftarPembelianBarang::class, 'id_surat_pengajuan');
+    }
+
+    /**
+     * Relasi many-to-many ke surat pengajuan yang menjadi referensi (alias untuk parent)
      * Contoh: $surat->referensi untuk mendapatkan semua surat yang dijadikan referensi
      */
     public function referensi()
     {
         return $this->belongsToMany(
             SuratPengajuan::class,
-            'surat_pengajuan_refrensi',
+            'surat_pengajuan_referensi',
             'id_surat_pengajuan',
-            'id_surat_pengajuan_referensi'
+            'id_referensi'
         )->withTimestamps();
     }
 
     /**
-     * Relasi many-to-many ke surat pengajuan yang mereferensikan surat ini
+     * Relasi many-to-many ke surat pengajuan yang mereferensikan surat ini (alias untuk children)
      * Contoh: $surat->direferensiOleh untuk mendapatkan semua surat yang mereferensikan surat ini
      */
     public function direferensiOleh()
     {
         return $this->belongsToMany(
             SuratPengajuan::class,
-            'surat_pengajuan_refrensi',
-            'id_surat_pengajuan_referensi',
+            'surat_pengajuan_referensi',
+            'id_referensi',
             'id_surat_pengajuan'
         )->withTimestamps();
     }

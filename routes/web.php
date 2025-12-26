@@ -362,6 +362,10 @@ Route::middleware(['role:kadiv'])->prefix('purchasing')->name('purchasing.')->gr
     Route::post('/beli-barang/{id}', [PurchasingController::class, 'prosesBeliBarang'])->name('beli-barang.proses');
     Route::get('/kirim-barang', [PurchasingController::class, 'kirimBarang'])->name('kirim-barang');
     Route::post('/kirim-barang/{id}', [PurchasingController::class, 'prosesKirimBarang'])->name('kirim-barang.proses');
+    
+    // 🔹 Log Pembelian Barang
+    Route::get('/daftar-barang-work-order', [PurchasingController::class, 'daftarBarangWorkOrder'])->name('daftar-barang-work-order');
+    Route::post('/store-harga-barang', [PurchasingController::class, 'storeHargaBarang'])->name('store-harga-barang');
 
 
     // 🔹 PROFILE

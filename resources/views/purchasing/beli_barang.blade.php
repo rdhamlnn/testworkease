@@ -115,7 +115,7 @@
     }
 
     /* Styling untuk tabel di dalam modal */
-    #viewPermintaanModal .modal-body .table-responsive {
+    #viewWorkOrderModal .modal-body .table-responsive {
         max-width: 100% !important;
         overflow-x: auto !important;
         overflow-y: visible !important;
@@ -123,7 +123,7 @@
         margin: 0 !important;
     }
 
-    #viewPermintaanModal .modal-body table {
+    #viewWorkOrderModal .modal-body table {
         width: 100% !important;
         max-width: 100% !important;
         min-width: auto !important;
@@ -131,17 +131,11 @@
         margin-bottom: 0 !important;
     }
 
-    #viewPermintaanModal .modal-body table th,
-    #viewPermintaanModal .modal-body table td {
+    #viewWorkOrderModal .modal-body table th,
+    #viewWorkOrderModal .modal-body table td {
         white-space: normal !important;
         word-wrap: break-word !important;
         padding: 8px !important;
-    }
-
-    #viewPermintaanModal .modal-body #view_daftar_barang {
-        width: 100% !important;
-        max-width: 100% !important;
-        overflow: hidden !important;
     }
 </style>
 @endsection
@@ -186,56 +180,49 @@
                                     @forelse($permintaanBarang as $i => $pb)
                                         @php
                                             $daftarBarang = $pb->daftarBarang ?? collect();
-                                            $barangCount = $daftarBarang->count() > 0 ? $daftarBarang->count() : 1;
                                         @endphp
                                         @if($daftarBarang->count() > 0)
                                             @foreach($daftarBarang as $idx => $barang)
                                                 <tr>
-                                                    @if($idx === 0)
-                                                        <td rowspan="{{ $barangCount }}">{{ $i + 1 }}</td>
-                                                        <td rowspan="{{ $barangCount }}">{{ $pb->no_permintaan_barang }}</td>
-                                                        <td rowspan="{{ $barangCount }}">{{ $pb->suratPengajuan->no_surat_pengajuan ?? '-' }}</td>
-                                                        <td rowspan="{{ $barangCount }}">{{ \Carbon\Carbon::parse($pb->tanggal_permintaan)->locale('id')->isoFormat('DD MMMM YYYY') }}</td>
-                                                    @endif
+                                                    <td>{{ $i + 1 }}</td>
+                                                    <td>{{ $pb->no_permintaan_barang }}</td>
+                                                    <td>{{ $pb->suratPengajuan->no_surat_pengajuan ?? '-' }}</td>
+                                                    <td>{{ \Carbon\Carbon::parse($pb->tanggal_permintaan)->locale('id')->isoFormat('DD MMMM YYYY') }}</td>
                                                     <td>{{ $barang->nama_barang ?? '-' }}</td>
-                                                    <td>{{ $barang->jumlah ?? '-' }}</td>
-                                                    <td>{{ $barang->satuan ?? '-' }}</td>
-                                                    @if($idx === 0)
-                                                        <td rowspan="{{ $barangCount }}">Rp {{ number_format($pb->total_estimasi_harga ?? 0, 0, ',', '.') }}</td>
-                                                        <td rowspan="{{ $barangCount }}">
-                                                            @php
-                                                                $status = $pb->statusWo->nama_status ?? $pb->status ?? 'Menunggu';
-                                                            @endphp
-                                                            @if($status == 'Disetujui Atasan' || $status == 'Diterima Logistik' || $status == 'Diserahkan ke Divisi' || $status == 'Dibeli Purchasing' || $status == 'Dikirim Purchasing')
-                                                                <span class="badge badge-success">{{ $status }}</span>
-                                                            @elseif($status == 'Ditolak Atasan')
-                                                                <span class="badge badge-danger">{{ $status }}</span>
-                                                            @else
-                                                                <span class="badge badge-warning">{{ $status }}</span>
-                                                            @endif
-                                                        </td>
-                                                        <td rowspan="{{ $barangCount }}">
-                                                            <div style="display: flex; gap: 5px;">
-                                                                <button type="button" class="btn btn-info btn-sm btn-icon btn-view" 
-                                                                    data-id="{{ $pb->id_permintaan_barang }}" 
-                                                                    data-toggle="modal" 
-                                                                    data-target="#viewPermintaanModal"
-                                                                    title="Lihat Detail">
-                                                                    <i class="fas fa-eye"></i>
+                                                    <td class="text-center">{{ $barang->jumlah ?? '-' }}</td>
+                                                    <td class="text-center">{{ $barang->satuan ?? '-' }}</td>
+                                                    <td>Rp {{ number_format($pb->total_estimasi_harga ?? 0, 0, ',', '.') }}</td>
+                                                    <td>
+                                                        @php
+                                                            $status = $pb->statusWo->nama_status ?? $pb->status ?? 'Menunggu';
+                                                        @endphp
+                                                        @if($status == 'Disetujui Atasan' || $status == 'Diterima Logistik' || $status == 'Diserahkan ke Divisi' || $status == 'Dibeli Purchasing' || $status == 'Dikirim Purchasing')
+                                                            <span class="badge badge-success">{{ $status }}</span>
+                                                        @elseif($status == 'Ditolak Atasan')
+                                                            <span class="badge badge-danger">{{ $status }}</span>
+                                                        @else
+                                                            <span class="badge badge-warning">{{ $status }}</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        <div style="display: flex; gap: 5px;">
+                                                            <button type="button" class="btn btn-info btn-sm btn-icon btn-view" 
+                                                                data-id="{{ $pb->id_surat_pengajuan }}" 
+                                                                title="Lihat Detail">
+                                                                <i class="fas fa-eye"></i>
+                                                            </button>
+                                                            <form action="{{ route('purchasing.beli-barang.proses', $pb->id_permintaan_barang) }}" method="POST" class="confirm-form" style="display:inline;" 
+                                                                data-message="Yakin barang sudah dibeli?"
+                                                                data-description="Tindakan ini akan mengkonfirmasi bahwa barang sudah dibeli."
+                                                                data-button-text="Ya, Konfirmasi"
+                                                                data-button-class="btn-success">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-success btn-sm btn-icon" title="Konfirmasi Pembelian">
+                                                                    <i class="fas fa-shopping-cart"></i>
                                                                 </button>
-                                                                <form action="{{ route('purchasing.beli-barang.proses', $pb->id_permintaan_barang) }}" method="POST" class="confirm-form" style="display:inline;" 
-                                                                    data-message="Yakin barang sudah dibeli?"
-                                                                    data-description="Tindakan ini akan mengkonfirmasi bahwa barang sudah dibeli."
-                                                                    data-button-text="Ya, Konfirmasi"
-                                                                    data-button-class="btn-success">
-                                                                    @csrf
-                                                                    <button type="submit" class="btn btn-success btn-sm btn-icon" title="Konfirmasi Pembelian">
-                                                                        <i class="fas fa-shopping-cart"></i>
-                                                                    </button>
-                                                                </form>
-                                                            </div>
-                                                        </td>
-                                                    @endif
+                                                            </form>
+                                                        </div>
+                                                    </td>
                                                 </tr>
                                             @endforeach
                                         @else
@@ -245,8 +232,8 @@
                                                 <td>{{ $pb->suratPengajuan->no_surat_pengajuan ?? '-' }}</td>
                                                 <td>{{ \Carbon\Carbon::parse($pb->tanggal_permintaan)->locale('id')->isoFormat('DD MMMM YYYY') }}</td>
                                                 <td class="text-muted">-</td>
-                                                <td class="text-muted">-</td>
-                                                <td class="text-muted">-</td>
+                                                <td class="text-center text-muted">-</td>
+                                                <td class="text-center text-muted">-</td>
                                                 <td>Rp {{ number_format($pb->total_estimasi_harga ?? 0, 0, ',', '.') }}</td>
                                                 <td>
                                                     @php
@@ -263,9 +250,7 @@
                                                 <td>
                                                     <div style="display: flex; gap: 5px;">
                                                         <button type="button" class="btn btn-info btn-sm btn-icon btn-view" 
-                                                            data-id="{{ $pb->id_permintaan_barang }}" 
-                                                            data-toggle="modal" 
-                                                            data-target="#viewPermintaanModal"
+                                                            data-id="{{ $pb->id_surat_pengajuan }}" 
                                                             title="Lihat Detail">
                                                             <i class="fas fa-eye"></i>
                                                         </button>
@@ -298,12 +283,12 @@
     </div>
 </section>
 
-<!-- Modal View Permintaan -->
-<div class="modal fade" id="viewPermintaanModal" tabindex="-1" role="dialog" aria-labelledby="viewPermintaanModalLabel" aria-hidden="true">
+<!-- Modal View Work Order -->
+<div class="modal fade" id="viewWorkOrderModal" tabindex="-1" role="dialog" aria-labelledby="viewWorkOrderModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="viewPermintaanModalLabel">Detail Permintaan Barang</h5>
+                <h5 class="modal-title" id="viewWorkOrderModalLabel">Detail Work Order</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <i class="fas fa-times"></i>
                 </button>
@@ -312,46 +297,64 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label><strong>No. Permintaan:</strong></label>
-                            <p id="view_no_permintaan" class="form-control-plaintext border p-2 rounded"></p>
+                            <label><strong>No. Surat Pengajuan:</strong></label>
+                            <p id="view_no_wo" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label><strong>No. Work Order:</strong></label>
-                            <p id="view_no_wo" class="form-control-plaintext border p-2 rounded"></p>
+                            <label><strong>Tanggal:</strong></label>
+                            <p id="view_tanggal" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label><strong>Tanggal Permintaan:</strong></label>
-                            <p id="view_tanggal" class="form-control-plaintext border p-2 rounded"></p>
+                            <label><strong>Divisi Pengaju:</strong></label>
+                            <p id="view_divisi_pengaju" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label><strong>Status:</strong></label>
-                            <p id="view_status" class="form-control-plaintext border p-2 rounded"></p>
+                            <label><strong>Ditujukan:</strong></label>
+                            <p id="view_ditujukan" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label><strong>Total Harga:</strong></label>
-                    <p id="view_total_harga" class="form-control-plaintext border p-2 rounded"></p>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label><strong>Jenis Work Order:</strong></label>
+                            <p id="view_jenis_wo" class="form-control-plaintext border p-2 rounded"></p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group" id="view_unit_container">
+                            <label id="view_label_unit"><strong>Unit:</strong></label>
+                            <p id="view_unit" class="form-control-plaintext border p-2 rounded"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group" id="view_barang_container" style="display: none;">
+                    <label><strong>Barang:</strong></label>
+                    <div id="view_barang_table" class="border rounded" style="padding: 0; overflow: hidden;"></div>
                 </div>
                 <div class="form-group">
-                    <label><strong>Daftar Barang:</strong></label>
-                    <div id="view_daftar_barang" class="mt-2"></div>
+                    <label><strong>Uraian:</strong></label>
+                    <p id="view_uraian" class="form-control-plaintext border p-2 rounded"></p>
+                </div>
+                <div class="form-group" id="view_harga_barang_container" style="display: none;">
+                    <label><strong>Detail Harga Barang:</strong></label>
+                    <div id="view_harga_barang" class="form-control-plaintext border p-2 rounded"></div>
+                </div>
+                <div class="form-group" id="view_catatan_penolakan_container" style="display: none;">
+                    <label><strong>Alasan Penolakan:</strong></label>
+                    <p id="view_catatan_penolakan" class="form-control-plaintext border p-2 rounded text-danger"></p>
                 </div>
                 <div class="form-group">
-                    <label><strong>Catatan Logistik:</strong></label>
-                    <p id="view_catatan_logistik" class="form-control-plaintext border p-2 rounded"></p>
-                </div>
-                <div class="form-group" id="view_catatan_atasan_group" style="display: none;">
-                    <label><strong>Catatan Atasan:</strong></label>
-                    <p id="view_catatan_atasan" class="form-control-plaintext border p-2 rounded"></p>
+                    <label><strong>Dokumentasi:</strong></label>
+                    <div id="view_dokumentasi" class="form-control-plaintext border p-2 rounded"></div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -395,100 +398,163 @@
 
         $(document).on('click', '.btn-view', function() {
             var id = $(this).data('id');
-            viewPermintaan(id);
+            console.log('Viewing Work Order ID:', id);
+            if(id) {
+                viewWorkOrder(id);
+            } else {
+                alert('ID Work Order tidak ditemukan');
+            }
         });
     });
 
-    function escapeHtml(text) {
-        var map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
-        };
-        return text ? text.toString().replace(/[&<>"']/g, function(m) { return map[m]; }) : '';
-    }
-
-    function viewPermintaan(id) {
-        fetch(`/purchasing/api/permintaan-barang/${id}`)
+    function viewWorkOrder(id) {
+        // Show modal immediately
+        $('#viewWorkOrderModal').modal('show');
+        
+        // Clear previous content and show loading
+        $('#view_no_wo, #view_tanggal, #view_divisi_pengaju, #view_ditujukan, #view_jenis_wo, #view_unit, #view_uraian').text('Memuat...');
+        $('#view_barang_container, #view_harga_barang_container, #view_catatan_penolakan_container').hide();
+        $('#view_dokumentasi').html('<span class="text-muted">Memuat...</span>');
+        
+        fetch(`{{ url('purchasing/api/work-order') }}/${id}`)
             .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
+                if (!response.ok) throw new Error('Gagal mengambil data (Status: ' + response.status + ')');
                 return response.json();
             })
             .then(data => {
-                $('#view_no_permintaan').text(data.no_permintaan_barang || '-');
-                $('#view_no_wo').text(data.no_work_order || '-');
-                
-                if (data.tanggal_permintaan) {
-                    var tanggal = new Date(data.tanggal_permintaan);
-                    var options = { year: 'numeric', month: 'long', day: 'numeric' };
-                    $('#view_tanggal').text(tanggal.toLocaleDateString('id-ID', options));
-                } else {
-                    $('#view_tanggal').text('-');
+                try {
+                    $('#view_no_wo').text(data.no_surat_pengajuan || data.no_work_order || '-');
+                    
+                    // Safe date parsing
+                    if (data.tanggal) {
+                        try {
+                            const dateObj = new Date(data.tanggal);
+                            if (isNaN(dateObj.getTime())) {
+                                $('#view_tanggal').text(data.tanggal);
+                            } else {
+                                $('#view_tanggal').text(dateObj.toLocaleDateString('id-ID', { 
+                                    weekday: 'long', 
+                                    year: 'numeric', 
+                                    month: 'long', 
+                                    day: 'numeric' 
+                                }));
+                            }
+                        } catch (e) {
+                            $('#view_tanggal').text(data.tanggal);
+                        }
+                    } else {
+                        $('#view_tanggal').text('-');
+                    }
+
+                    $('#view_divisi_pengaju').text(data.divisi_pengaju || '-');
+                    $('#view_ditujukan').text(data.ditujukan || '-');
+                    $('#view_jenis_wo').text(data.jenis_wo || '-');
+                    
+                    const jenisWo = data.jenis_wo ? data.jenis_wo.toLowerCase() : '';
+                    const isPembelian = jenisWo === 'pembelian' || jenisWo.includes('pembelian');
+                    
+                    // Helper function for satuan
+                    function getSatuanByBarangName(barangName) {
+                        if (data.satuan_lookup && data.satuan_lookup[barangName]) {
+                            return data.satuan_lookup[barangName];
+                        }
+                        return '-';
+                    }
+                    
+                    if (isPembelian) {
+                        let barangTable = '';
+                        let displayItems = [];
+                        
+                        if (Array.isArray(data.unit)) {
+                            displayItems = data.unit;
+                        } else if (data.unit && typeof data.unit === 'string') {
+                            displayItems = data.unit.split(',').map(v => v.trim()).filter(v => v);
+                        }
+                        
+                        if (displayItems.length > 0) {
+                            barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
+                            barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 37%;">Nama Barang</th><th style="width: 15%; text-align: center !important;">Qty</th><th style="width: 20%; text-align: center !important;">Satuan</th></tr></thead><tbody>';
+                            
+                            displayItems.forEach(function(item, index) {
+                                const qtyMatch = item.match(/\(qty:\s*(\d+)\)/);
+                                let qty = '-';
+                                let barangName = item;
+                                
+                                if (qtyMatch) {
+                                    qty = qtyMatch[1];
+                                    barangName = item.replace(/\s*\(qty:\s*\d+\)/, '').trim();
+                                }
+                                
+                                const satuan = getSatuanByBarangName(barangName);
+                                barangTable += `<tr><td>${index + 1}</td><td>${barangName}</td><td class="text-center"><strong>${qty}</strong></td><td class="text-center">${satuan}</td></tr>`;
+                            });
+                            
+                            barangTable += '</tbody></table>';
+                            $('#view_barang_table').html(barangTable);
+                            $('#view_barang_container').show();
+                            $('#view_unit_container').hide();
+                        } else {
+                            $('#view_unit').text(data.unit || '-');
+                            $('#view_unit_container').show();
+                            $('#view_barang_container').hide();
+                        }
+                    } else {
+                        let unitDisplay = data.unit || '-';
+                        if (typeof data.unit === 'string') {
+                            unitDisplay = data.unit.replace(/\s*\(qty:\s*\d+\)/g, '');
+                        }
+                        $('#view_unit').text(unitDisplay);
+                        $('#view_unit_container').show();
+                        $('#view_barang_container').hide();
+                    }
+                    
+                    $('#view_uraian').text(data.uraian || '-');
+                    
+                    // Pricing details
+                    if (data.harga_barang && Array.isArray(data.harga_barang) && data.harga_barang.length > 0) {
+                        let hargaHtml = '<table class="table table-sm table-bordered mb-0"><thead><tr><th>Barang</th><th>Harga</th></tr></thead><tbody>';
+                        data.harga_barang.forEach(function(item) {
+                            hargaHtml += `<tr><td>${item.nama_barang || '-'}</td><td>Rp ${new Intl.NumberFormat('id-ID').format(item.harga || 0)}</td></tr>`;
+                        });
+                        hargaHtml += '</tbody></table>';
+                        $('#view_harga_barang').html(hargaHtml);
+                        $('#view_harga_barang_container').show();
+                    } else {
+                        $('#view_harga_barang_container').hide();
+                    }
+                    
+                    // Rejection note
+                    if (data.catatan_penolakan) {
+                        $('#view_catatan_penolakan').text(data.catatan_penolakan);
+                        $('#view_catatan_penolakan_container').show();
+                    } else {
+                        $('#view_catatan_penolakan_container').hide();
+                    }
+                    
+                    // Documentation
+                    if (data.dokumentasi && data.dokumentasi !== '-') {
+                        const fileExt = data.dokumentasi.split('.').pop().toLowerCase();
+                        const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(fileExt);
+                        if (isImage) {
+                            $('#view_dokumentasi').html(`<img src="/storage/${data.dokumentasi}" alt="Dokumentasi" style="max-width: 100%; max-height: 300px; object-fit: contain; border-radius: 8px;">`);
+                        } else {
+                            $('#view_dokumentasi').html(`<a href="/storage/${data.dokumentasi}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-file"></i> Lihat Dokumentasi</a>`);
+                        }
+                    } else {
+                        $('#view_dokumentasi').html('<span class="text-muted">-</span>');
+                    }
+                    
+                    // Ensure modal is shown (in case it wasn't opened by data-toggle)
+                    $('#viewWorkOrderModal').modal('show');
+                } catch (err) {
+                    console.error('Error populating modal:', err);
+                    alert('Terjadi kesalahan saat memproses data work order.');
                 }
-                
-                // Format total harga
-                var totalHarga = data.total_estimasi_harga || 0;
-                $('#view_total_harga').text('Rp ' + new Intl.NumberFormat('id-ID').format(totalHarga));
-                
-                // Set status dengan badge berwarna sesuai status
-                var statusText = data.status || 'Menunggu';
-                var badgeClass = 'badge-secondary';
-                if (statusText === 'Disetujui Atasan' || statusText === 'Diterima Logistik' || statusText === 'Diserahkan ke Divisi' || statusText === 'Dibeli Purchasing' || statusText === 'Dikirim Purchasing') {
-                    badgeClass = 'badge-success';
-                } else if (statusText === 'Ditolak Atasan') {
-                    badgeClass = 'badge-danger';
-                } else {
-                    badgeClass = 'badge-warning';
-                }
-                $('#view_status').html('<span class="badge ' + badgeClass + '">' + statusText + '</span>');
-                
-                // Tampilkan daftar barang
-                var daftarBarangHtml = '';
-                if (data.daftar_barang && data.daftar_barang.length > 0) {
-                    daftarBarangHtml = '<div class="table-responsive" style="max-width: 100%; overflow-x: auto;">';
-                    daftarBarangHtml += '<table class="table table-sm table-bordered table-striped mb-0" style="width: 100%; max-width: 100%; table-layout: auto;">';
-                    daftarBarangHtml += '<thead class="thead-light"><tr>';
-                    daftarBarangHtml += '<th style="padding: 8px; width: 40%;">Nama Barang</th>';
-                    daftarBarangHtml += '<th style="padding: 8px; text-align: center; width: 15%;">Jumlah</th>';
-                    daftarBarangHtml += '<th style="padding: 8px; text-align: center; width: 15%;">Satuan</th>';
-                    daftarBarangHtml += '<th style="padding: 8px; text-align: right; width: 30%;">Estimasi Harga</th>';
-                    daftarBarangHtml += '</tr></thead>';
-                    daftarBarangHtml += '<tbody>';
-                    data.daftar_barang.forEach(function(barang) {
-                        var estimasiHarga = barang.estimasi_harga || 0;
-                        daftarBarangHtml += '<tr>';
-                        daftarBarangHtml += '<td style="padding: 8px; word-wrap: break-word;">' + escapeHtml(barang.nama_barang || '-') + '</td>';
-                        daftarBarangHtml += '<td style="padding: 8px; text-align: center;">' + escapeHtml(barang.jumlah || '-') + '</td>';
-                        daftarBarangHtml += '<td style="padding: 8px; text-align: center;">' + escapeHtml(barang.satuan || '-') + '</td>';
-                        daftarBarangHtml += '<td style="padding: 8px; text-align: right;">Rp ' + new Intl.NumberFormat('id-ID').format(estimasiHarga) + '</td>';
-                        daftarBarangHtml += '</tr>';
-                    });
-                    daftarBarangHtml += '</tbody></table></div>';
-                } else {
-                    daftarBarangHtml = '<p class="text-muted mb-0">Tidak ada data barang</p>';
-                }
-                $('#view_daftar_barang').html(daftarBarangHtml);
-                
-                // Catatan
-                $('#view_catatan_logistik').text(data.catatan_logistik || '-');
-                
-                // Tampilkan catatan atasan jika status Ditolak Atasan
-                if (statusText === 'Ditolak Atasan' && data.catatan_atasan) {
-                    $('#view_catatan_atasan').text(data.catatan_atasan);
-                    $('#view_catatan_atasan_group').show();
-                } else {
-                    $('#view_catatan_atasan_group').hide();
-                }
-                
-                $('#viewPermintaanModal').modal('show');
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Gagal mengambil data permintaan barang');
+                alert('Gagal mengambil data work order: ' + error.message);
+                $('#viewWorkOrderModal').modal('hide');
             });
     }
 
@@ -516,4 +582,3 @@
 </script>
 @include('components.confirm-modal')
 @endsection
-

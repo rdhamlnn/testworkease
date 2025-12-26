@@ -320,7 +320,20 @@
                             </ul>
                         </li>
 
-
+                        <li class="menu-header">Barang Work Order</li>
+                        <li class="dropdown {{ request()->is('purchasing/daftar-barang-work-order*') ? 'active' : '' }}">
+                            <a href="#" class="nav-link has-dropdown" data-toggle="dropdown">
+                                <i class="fas fa-inbox"></i> <span>Barang Work Order</span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li class="{{ request()->is('purchasing/daftar-barang-work-order') ? 'active' : '' }}">
+                                    <a class="nav-link" href="{{ route('purchasing.daftar-barang-work-order') }}">
+                                        <i class="fas fa-inbox"></i>
+                                        <span>Barang Work Order</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
 
                         <li class="menu-header">Pembelian</li>
                         <li class="dropdown {{ request()->is('purchasing/beli-barang*') || request()->is('purchasing/kirim-barang*') ? 'active' : '' }}">

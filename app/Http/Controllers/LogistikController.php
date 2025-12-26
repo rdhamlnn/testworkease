@@ -131,7 +131,7 @@ class LogistikController extends Controller
     {
         $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Logistik';
         
-        $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])
+        $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent', 'permintaanBarang'])
             ->toDivisi($userDivisiNama)
             ->where('divisi_pengaju', '!=', $userDivisiNama)
             ->byVerifikator(1)
@@ -1025,48 +1025,51 @@ class LogistikController extends Controller
         try {
             $permintaan = PermintaanBarang::with('daftarBarang')->findOrFail($id);
             
-            // Tambah stok barang ke daftar_barang berdasarkan detail_barang_permintaan
+            DB::beginTransaction();
+
+            // 1. Tambah stok barang ke daftar_barang (master barang)
             if ($permintaan->daftarBarang && $permintaan->daftarBarang->count() > 0) {
                 foreach ($permintaan->daftarBarang as $detail) {
+                    $masterBarang = null;
+                    
+                    // Cari master barang berdasarkan foreign key atau nama
                     if ($detail->id_daftar_barang_master) {
                         $masterBarang = DaftarBarang::find($detail->id_daftar_barang_master);
-                        if ($masterBarang) {
-                            // Tambah stock
-                            $jumlahDiterima = $detail->jumlah ?? 0;
-                            $stokSekarang = $masterBarang->stok ?? 0;
-                            $stokBaru = $stokSekarang + $jumlahDiterima; // Tambah stok
-                            
-                            $masterBarang->update([
-                                'stok' => $stokBaru
-                            ]);
-                        }
                     } else {
-                        // Jika tidak ada id_daftar_barang_master, cari berdasarkan nama_barang
                         $masterBarang = DaftarBarang::where('nama_barang', $detail->nama_barang)->first();
-                        if ($masterBarang) {
-                            $jumlahDiterima = $detail->jumlah ?? 0;
-                            $stokSekarang = $masterBarang->stok ?? 0;
-                            $stokBaru = $stokSekarang + $jumlahDiterima; // Tambah stok
-                            
-                            $masterBarang->update([
-                                'stok' => $stokBaru
-                            ]);
-                        }
+                    }
+
+                    if ($masterBarang) {
+                        $jumlahKirim = $detail->jumlah ?? 0;
+                        $stokBaru = ($masterBarang->stok ?? 0) + $jumlahKirim;
+                        
+                        $masterBarang->update([
+                            'stok' => $stokBaru,
+                            // Update harga dari detail jika belum ada harga di master
+                            'harga_barang' => $masterBarang->harga_barang ?: ($detail->estimasi_harga > 0 ? $detail->estimasi_harga : $masterBarang->harga_barang)
+                        ]);
                     }
                 }
             }
             
-            // Update status
+            // 2. Update status permintaan barang
+            $statusDiterimaId = StatusWo::where('nama_status', 'Diterima Logistik')->value('id_status_wo');
+            
             $permintaan->update([
                 'status' => 'Diterima Logistik',
+                'id_status_wo' => $statusDiterimaId,
                 'updated_at' => now(),
             ]);
-            
-            // Update id_status_wo juga
-            $statusDiterimaId = StatusWo::where('nama_status', 'Diterima Logistik')->value('id_status_wo');
-            if ($statusDiterimaId) {
-                $permintaan->update(['id_status_wo' => $statusDiterimaId]);
+
+            // 3. Update status SuratPengajuan (Work Order) jika ada
+            if ($permintaan->suratPengajuan) {
+                $permintaan->suratPengajuan->update([
+                    'status' => 'Diterima Logistik',
+                    'updated_at' => now()
+                ]);
             }
+            
+            DB::commit();
             
             // Simpan success message di session untuk toast notification
             Session::flash('success', 'Barang berhasil diterima dan stok telah diupdate!');
@@ -1181,19 +1184,30 @@ class LogistikController extends Controller
                 ], 403);
             }
             
-            if ($parentWorkOrder->id_verifikator != 2) {
+            // Jika WO masih Menunggu (id_verifikator = 1), approve dulu sebelum forward
+            if ($parentWorkOrder->id_verifikator == 1) {
+                // Auto-approve WO karena stok kurang dan akan di-forward ke Purchasing
+                $parentWorkOrder->update([
+                    'id_verifikator' => 2,
+                    'status' => 'Diterima Logistik',
+                ]);
+            } elseif ($parentWorkOrder->id_verifikator == 3) {
+                // Jika sudah ditolak, tidak bisa di-forward
                 return response()->json([
                     'success' => false,
-                    'message' => 'Work order harus disetujui terlebih dahulu sebelum dapat diforward ke Purchasing.'
+                    'message' => 'Work order yang sudah ditolak tidak dapat diforward ke Purchasing.'
                 ], 403);
             }
             
-            // Cek apakah sudah ada child work order ke Purchasing
-            $existingChild = SuratPengajuan::where('id_surat_pengajuan_parent', $id)
-                ->where('ditujukan', 'Purchasing')
+            // Cek apakah sudah ada WO yang di-forward ke Purchasing dari WO ini
+            // Menggunakan tabel pivot surat_pengajuan_referensi
+            $existingForward = DB::table('surat_pengajuan_referensi')
+                ->where('id_referensi', $id)
+                ->join('surat_pengajuan', 'surat_pengajuan_referensi.id_surat_pengajuan', '=', 'surat_pengajuan.id_surat_pengajuan')
+                ->where('surat_pengajuan.ditujukan', 'Purchasing')
                 ->first();
             
-            if ($existingChild) {
+            if ($existingForward) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Work order ini sudah pernah diforward ke Purchasing.'
@@ -1228,7 +1242,14 @@ class LogistikController extends Controller
                 'id_verifikator' => 1, // Menunggu
                 'id_akun' => Session::get('user_id'),
                 'id_unit' => $parentWorkOrder->id_unit,
-                'id_surat_pengajuan_parent' => $id, // Link to parent
+            ]);
+            
+            // Simpan relasi parent-child di tabel pivot surat_pengajuan_referensi
+            DB::table('surat_pengajuan_referensi')->insert([
+                'id_surat_pengajuan' => $newWorkOrder->id_surat_pengajuan,
+                'id_referensi' => $id,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
             
             Session::flash('success', 'Work Order berhasil diforward ke Purchasing!');

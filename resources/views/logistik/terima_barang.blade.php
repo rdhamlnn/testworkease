@@ -147,55 +147,53 @@
                                         @if($daftarBarang->count() > 0)
                                             @foreach($daftarBarang as $idx => $barang)
                                                 <tr>
-                                                    @if($idx === 0)
-                                                        <td rowspan="{{ $barangCount }}">{{ $i + 1 }}</td>
-                                                        <td rowspan="{{ $barangCount }}">{{ $pb->no_permintaan_barang }}</td>
-                                                        <td rowspan="{{ $barangCount }}">{{ $pb->suratPengajuan->no_surat_pengajuan ?? '-' }}</td>
-                                                        <td rowspan="{{ $barangCount }}">{{ \Carbon\Carbon::parse($pb->tanggal_permintaan)->locale('id')->isoFormat('DD MMMM YYYY') }}</td>
-                                                    @endif
+                                                    <td>{{ $i + 1 }}</td>
+                                                    <td>{{ $pb->no_permintaan_barang }}</td>
+                                                    <td>{{ $pb->suratPengajuan->no_surat_pengajuan ?? '-' }}</td>
+                                                    <td>{{ \Carbon\Carbon::parse($pb->tanggal_permintaan)->locale('id')->isoFormat('DD MMMM YYYY') }}</td>
                                                     <td>{{ $barang->nama_barang ?? '-' }}</td>
                                                     <td>{{ $barang->jumlah ?? '-' }}</td>
                                                     <td>{{ $barang->satuan ?? '-' }}</td>
-                                                    @if($idx === 0)
-                                                        <td rowspan="{{ $barangCount }}">Rp {{ number_format($pb->total_estimasi_harga ?? 0, 0, ',', '.') }}</td>
-                                                        <td rowspan="{{ $barangCount }}">
-                                                            @if($pb->status == 'Disetujui Atasan' || $pb->status == 'Diterima Logistik' || $pb->status == 'Diserahkan ke Divisi' || $pb->status == 'Dibeli Purchasing')
-                                                                <span class="badge badge-success">{{ $pb->status }}</span>
-                                                            @elseif($pb->status == 'Ditolak Atasan')
-                                                                <span class="badge badge-danger">{{ $pb->status }}</span>
-                                                            @elseif($pb->status == 'Menunggu Approval Atasan' || $pb->status == 'Menunggu Pembelian' || $pb->status == 'Menunggu Pengiriman' || $pb->status == 'Dikirim Purchasing')
-                                                                <span class="badge badge-warning">{{ $pb->status }}</span>
-                                                            @else
-                                                                <span class="badge badge-info">{{ $pb->status }}</span>
-                                                            @endif
-                                                        </td>
-                                                        <td rowspan="{{ $barangCount }}">
-                                                            <div style="display: flex; gap: 5px;">
-                                                                <button type="button" class="btn btn-info btn-sm btn-icon btn-view" 
-                                                                    data-id="{{ $pb->id_permintaan_barang }}"
-                                                                    data-no-permintaan="{{ htmlspecialchars($pb->no_permintaan_barang, ENT_QUOTES, 'UTF-8') }}"
-                                                                    data-no-wo="{{ htmlspecialchars($pb->suratPengajuan->no_surat_pengajuan ?? '-', ENT_QUOTES, 'UTF-8') }}"
-                                                                    data-tanggal="{{ htmlspecialchars(\Carbon\Carbon::parse($pb->tanggal_permintaan)->locale('id')->isoFormat('DD MMMM YYYY'), ENT_QUOTES, 'UTF-8') }}"
-                                                                    data-total-harga="{{ number_format($pb->total_estimasi_harga ?? 0, 0, ',', '.') }}"
-                                                                    data-status="{{ htmlspecialchars($pb->status, ENT_QUOTES, 'UTF-8') }}"
-                                                                    data-catatan="{{ htmlspecialchars($pb->catatan_atasan ?? '', ENT_QUOTES, 'UTF-8') }}"
-                                                                    data-daftar-barang="{{ $daftarBarangJson }}"
-                                                                    title="Lihat Detail">
-                                                                    <i class="fas fa-eye"></i>
+                                                    <td>Rp {{ number_format($pb->total_estimasi_harga ?? 0, 0, ',', '.') }}</td>
+                                                    <td>
+                                                        @if($pb->status == 'Disetujui Atasan' || $pb->status == 'Diterima Logistik' || $pb->status == 'Diserahkan ke Divisi' || $pb->status == 'Dibeli Purchasing')
+                                                            <span class="badge badge-success">{{ $pb->status }}</span>
+                                                        @elseif($pb->status == 'Ditolak Atasan')
+                                                            <span class="badge badge-danger">{{ $pb->status }}</span>
+                                                        @elseif($pb->status == 'Menunggu Approval Atasan' || $pb->status == 'Menunggu Pembelian' || $pb->status == 'Menunggu Pengiriman' || $pb->status == 'Dikirim Purchasing')
+                                                            <span class="badge badge-warning">{{ $pb->status }}</span>
+                                                        @else
+                                                            <span class="badge badge-info">{{ $pb->status }}</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        <div style="display: flex; gap: 5px;">
+                                                            <button type="button" class="btn btn-info btn-sm btn-icon btn-view" 
+                                                                data-id="{{ $pb->id_permintaan_barang }}"
+                                                                data-toggle="modal"
+                                                                data-target="#viewPermintaanModal"
+                                                                data-no-permintaan="{{ htmlspecialchars($pb->no_permintaan_barang, ENT_QUOTES, 'UTF-8') }}"
+                                                                data-no-wo="{{ htmlspecialchars($pb->suratPengajuan->no_surat_pengajuan ?? '-', ENT_QUOTES, 'UTF-8') }}"
+                                                                data-tanggal="{{ htmlspecialchars(\Carbon\Carbon::parse($pb->tanggal_permintaan)->locale('id')->isoFormat('DD MMMM YYYY'), ENT_QUOTES, 'UTF-8') }}"
+                                                                data-total-harga="{{ number_format($pb->total_estimasi_harga ?? 0, 0, ',', '.') }}"
+                                                                data-status="{{ htmlspecialchars($pb->status, ENT_QUOTES, 'UTF-8') }}"
+                                                                data-catatan="{{ htmlspecialchars($pb->catatan_atasan ?? '', ENT_QUOTES, 'UTF-8') }}"
+                                                                data-daftar-barang="{{ $daftarBarangJson }}"
+                                                                title="Lihat Detail">
+                                                                <i class="fas fa-eye"></i>
+                                                            </button>
+                                                            <form action="{{ route('logistik.terima-barang.proses', $pb->id_permintaan_barang) }}" method="POST" class="confirm-form" style="display:inline;" 
+                                                                data-message="Yakin ingin menerima barang ini?"
+                                                                data-description="Tindakan ini akan mengubah status permintaan menjadi diterima."
+                                                                data-button-text="Ya, Terima"
+                                                                data-button-class="btn-success">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-success btn-sm btn-icon" title="Terima Barang">
+                                                                    <i class="fas fa-check"></i>
                                                                 </button>
-                                                                <form action="{{ route('logistik.terima-barang.proses', $pb->id_permintaan_barang) }}" method="POST" class="confirm-form" style="display:inline;" 
-                                                                    data-message="Yakin ingin menerima barang ini?"
-                                                                    data-description="Tindakan ini akan mengubah status permintaan menjadi diterima."
-                                                                    data-button-text="Ya, Terima"
-                                                                    data-button-class="btn-success">
-                                                                    @csrf
-                                                                    <button type="submit" class="btn btn-success btn-sm btn-icon" title="Terima Barang">
-                                                                        <i class="fas fa-check"></i>
-                                                                    </button>
-                                                                </form>
-                                                            </div>
-                                                        </td>
-                                                    @endif
+                                                            </form>
+                                                        </div>
+                                                    </td>
                                                 </tr>
                                             @endforeach
                                         @else
@@ -223,6 +221,8 @@
                                                     <div style="display: flex; gap: 5px;">
                                                         <button type="button" class="btn btn-info btn-sm btn-icon btn-view" 
                                                             data-id="{{ $pb->id_permintaan_barang }}"
+                                                            data-toggle="modal"
+                                                            data-target="#viewPermintaanModal"
                                                             data-no-permintaan="{{ htmlspecialchars($pb->no_permintaan_barang, ENT_QUOTES, 'UTF-8') }}"
                                                             data-no-wo="{{ htmlspecialchars($pb->suratPengajuan->no_surat_pengajuan ?? '-', ENT_QUOTES, 'UTF-8') }}"
                                                             data-tanggal="{{ htmlspecialchars(\Carbon\Carbon::parse($pb->tanggal_permintaan)->locale('id')->isoFormat('DD MMMM YYYY'), ENT_QUOTES, 'UTF-8') }}"
@@ -301,11 +301,19 @@
                         </div>
                     </div>
                 </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label><strong>Status</strong></label>
+                            <div id="viewStatus"></div>
+                        </div>
+                    </div>
+                </div>
                 <div class="form-group">
                     <label><strong>Daftar Barang:</strong></label>
                     <div id="view_daftar_barang" class="mt-2"></div>
                 </div>
-                <div class="form-group" id="viewCatatanGroup" style="display: none;">
+                <div class="form-group" id="viewCatatanGroup" style="display : none;">
                     <label><strong>Alasan Penolakan</strong></label>
                     <div class="form-control-plaintext border p-2 rounded bg-danger text-white" id="viewCatatan"></div>
                 </div>

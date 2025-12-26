@@ -12,6 +12,9 @@ use App\Models\PermintaanBarang;
 use App\Models\StatusWo;
 use App\Models\SuratPengajuan;
 use App\Models\Akun;
+use App\Models\DetailBarangPermintaan;
+use App\Models\DaftarBarang;
+use App\Models\DaftarPembelianBarang;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -167,14 +170,14 @@ class AtasanController extends Controller
     {
         $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Atasan';
         
-        $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent', 'permintaanBarang.daftarBarang.masterBarang'])
+        $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent', 'permintaanBarang.daftarBarang.masterBarang', 'daftarPembelianBarang.barang'])
             ->toDivisi($userDivisiNama)
             ->where('divisi_pengaju', '!=', $userDivisiNama)
             ->byVerifikator(1)
             ->orderBy('created_at', 'desc')
             ->get();
         
-        // Preload semua harga barang untuk efisiensi
+        // Preload semua harga barang untuk efisiensi fallback
         $masterBarangPrices = DB::table('daftar_barang')
             ->whereNotNull('harga_barang')
             ->where('harga_barang', '>', 0)
@@ -184,50 +187,73 @@ class AtasanController extends Controller
         // Hitung total harga untuk setiap work order
         $workOrders->each(function ($wo) use ($masterBarangPrices) {
             $totalHarga = 0;
+            $wo->realization_available = false; // Flag untuk view
             
-            // Prioritas 1: Hitung dari detail_barang_permintaan
-            if ($wo->permintaanBarang && $wo->permintaanBarang->daftarBarang && $wo->permintaanBarang->daftarBarang->count() > 0) {
-                foreach ($wo->permintaanBarang->daftarBarang as $detail) {
-                    $jumlah = $detail->jumlah ?? 1;
-                    
-                    if ($detail->estimasi_harga && $detail->estimasi_harga > 0) {
-                        $totalHarga += $detail->estimasi_harga;
-                    } elseif ($detail->masterBarang && $detail->masterBarang->harga_barang && $detail->masterBarang->harga_barang > 0) {
-                        $totalHarga += $detail->masterBarang->harga_barang * $jumlah;
-                    }
-                }
-            }
-            
-            // Prioritas 2: Fallback ke total_estimasi_harga
-            if ($totalHarga == 0 && $wo->permintaanBarang && $wo->permintaanBarang->total_estimasi_harga > 0) {
-                $totalHarga = $wo->permintaanBarang->total_estimasi_harga;
-            }
-            
-            // Prioritas 3: Parse dari field unit jika masih 0
-            // Format: "Filter Oli (qty: 1), Belt Alternator (qty: 2)"
-            if ($totalHarga == 0 && $wo->unit) {
-                $unitString = is_object($wo->unit) ? ($wo->unit->nama_unit ?? '') : $wo->unit;
+            // Prioritas 0: Cek Log Realisasi Pembelian (DaftarPembelianBarang)
+            // Ini yang paling akurat jika Purchasing sudah input harga
+            if ($wo->daftarPembelianBarang && $wo->daftarPembelianBarang->count() > 0) {
+                 $wo->realization_available = true;
+                 $wo->realization_available = true;
+                 $tempItems = []; // Use temporary array
+                 
+                 foreach($wo->daftarPembelianBarang as $log) {
+                     $totalHarga += $log->total_harga;
+                     
+                     $tempItems[] = [
+                         'nama_barang' => $log->barang ? $log->barang->nama_barang : 'Unknown',
+                         'jumlah' => $log->jumlah,
+                         'satuan' => $log->barang ? $log->barang->satuan : '-',
+                         'harga' => $log->harga_satuan
+                     ];
+                 }
+                 $wo->realization_items = $tempItems; // Assign once at the end
+            } else {
+                // ... Existing Logic for Fallback ...
                 
-                // Parse items dari string unit
-                preg_match_all('/([^,]+?)(?:\s*\(qty:\s*(\d+)\))?(?:,|$)/i', $unitString, $matches, PREG_SET_ORDER);
-                
-                foreach ($matches as $match) {
-                    $namaBarang = trim($match[1]);
-                    $qty = isset($match[2]) ? (int)$match[2] : 1;
-                    
-                    if (empty($namaBarang)) continue;
-                    
-                    // Cari harga dari master barang
-                    $harga = 0;
-                    foreach ($masterBarangPrices as $nama => $price) {
-                        if (stripos($namaBarang, $nama) !== false || stripos($nama, $namaBarang) !== false) {
-                            $harga = $price;
-                            break;
+                // Prioritas 1: Hitung dari detail_barang_permintaan
+                if ($wo->permintaanBarang && $wo->permintaanBarang->daftarBarang && $wo->permintaanBarang->daftarBarang->count() > 0) {
+                    foreach ($wo->permintaanBarang->daftarBarang as $detail) {
+                        $jumlah = $detail->jumlah ?? 1;
+                        
+                        if ($detail->estimasi_harga && $detail->estimasi_harga > 0) {
+                            $totalHarga += $detail->estimasi_harga;
+                        } elseif ($detail->masterBarang && $detail->masterBarang->harga_barang && $detail->masterBarang->harga_barang > 0) {
+                            $totalHarga += $detail->masterBarang->harga_barang * $jumlah;
                         }
                     }
+                }
+                
+                // Prioritas 2: Fallback ke total_estimasi_harga
+                if ($totalHarga == 0 && $wo->permintaanBarang && $wo->permintaanBarang->total_estimasi_harga > 0) {
+                    $totalHarga = $wo->permintaanBarang->total_estimasi_harga;
+                }
+                
+                // Prioritas 3: Parse dari field unit jika masih 0
+                // Format: "Filter Oli (qty: 1), Belt Alternator (qty: 2)"
+                if ($totalHarga == 0 && $wo->unit) {
+                    $unitString = is_object($wo->unit) ? ($wo->unit->nama_unit ?? '') : $wo->unit;
                     
-                    if ($harga > 0) {
-                        $totalHarga += $harga * $qty;
+                    // Parse items dari string unit
+                    preg_match_all('/([^,]+?)(?:\s*\(qty:\s*(\d+)\))?(?:,|$)/i', $unitString, $matches, PREG_SET_ORDER);
+                    
+                    foreach ($matches as $match) {
+                        $namaBarang = trim($match[1]);
+                        $qty = isset($match[2]) ? (int)$match[2] : 1;
+                        
+                        if (empty($namaBarang)) continue;
+                        
+                        // Cari harga dari master barang
+                        $harga = 0;
+                        foreach ($masterBarangPrices as $nama => $price) {
+                            if (stripos($namaBarang, $nama) !== false || stripos($nama, $namaBarang) !== false) {
+                                $harga = $price;
+                                break;
+                            }
+                        }
+                        
+                        if ($harga > 0) {
+                            $totalHarga += $harga * $qty;
+                        }
                     }
                 }
             }
@@ -242,13 +268,88 @@ class AtasanController extends Controller
     {
         $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Atasan';
         
-        $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])
+        $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent', 'permintaanBarang.daftarBarang.masterBarang', 'daftarPembelianBarang.barang'])
             ->dibuatAtauDiterima($userDivisiNama)
             ->byVerifikator([2, 3])
             ->orderBy('created_at', 'desc')
             ->get();
+            
+        // Preload semua harga barang untuk efisiensi fallback
+        $masterBarangPrices = DB::table('daftar_barang')
+            ->whereNotNull('harga_barang')
+            ->where('harga_barang', '>', 0)
+            ->pluck('harga_barang', 'nama_barang')
+            ->toArray();
+            
+        // Hitung total harga untuk setiap work order (Copy of logic from workOrderMasuk)
+        $workOrders->each(function ($wo) use ($masterBarangPrices) {
+            $totalHarga = 0;
+            $wo->realization_available = false; // Flag untuk view
+            
+            // Prioritas 0: Cek Log Realisasi Pembelian (DaftarPembelianBarang)
+            if ($wo->daftarPembelianBarang && $wo->daftarPembelianBarang->count() > 0) {
+                 $wo->realization_available = true;
+                 $tempItems = []; 
+                 
+                 foreach($wo->daftarPembelianBarang as $log) {
+                     $totalHarga += $log->total_harga;
+                     
+                     $tempItems[] = [
+                         'nama_barang' => $log->barang ? $log->barang->nama_barang : 'Unknown',
+                         'jumlah' => $log->jumlah,
+                         'satuan' => $log->barang ? $log->barang->satuan : '-',
+                         'harga' => $log->harga_satuan
+                     ];
+                 }
+                 $wo->realization_items = $tempItems;
+            } else {
+                // Prioritas 1: Hitung dari detail_barang_permintaan
+                if ($wo->permintaanBarang && $wo->permintaanBarang->daftarBarang && $wo->permintaanBarang->daftarBarang->count() > 0) {
+                    foreach ($wo->permintaanBarang->daftarBarang as $detail) {
+                        $jumlah = $detail->jumlah ?? 1;
+                        if ($detail->estimasi_harga && $detail->estimasi_harga > 0) {
+                            $totalHarga += $detail->estimasi_harga;
+                        } elseif ($detail->masterBarang && $detail->masterBarang->harga_barang && $detail->masterBarang->harga_barang > 0) {
+                            $totalHarga += $detail->masterBarang->harga_barang * $jumlah;
+                        }
+                    }
+                }
+                
+                // Prioritas 2: Fallback ke total_estimasi_harga
+                if ($totalHarga == 0 && $wo->permintaanBarang && $wo->permintaanBarang->total_estimasi_harga > 0) {
+                    $totalHarga = $wo->permintaanBarang->total_estimasi_harga;
+                }
+                
+                // Prioritas 3: Parse dari field unit if still 0
+                if ($totalHarga == 0 && $wo->unit) {
+                    $unitString = is_object($wo->unit) ? ($wo->unit->nama_unit ?? '') : $wo->unit;
+                    preg_match_all('/([^,]+?)(?:\s*\(qty:\s*(\d+)\))?(?:,|$)/i', $unitString, $matches, PREG_SET_ORDER);
+                    
+                    foreach ($matches as $match) {
+                        $namaBarang = trim($match[1]);
+                        $qty = isset($match[2]) ? (int)$match[2] : 1;
+                        if (empty($namaBarang)) continue;
+                        
+                        $harga = 0;
+                        foreach ($masterBarangPrices as $nama => $price) {
+                            if (stripos($namaBarang, $nama) !== false || stripos($nama, $namaBarang) !== false) {
+                                $harga = $price;
+                                break;
+                            }
+                        }
+                        if ($harga > 0) {
+                            $totalHarga += $harga * $qty;
+                        }
+                    }
+                }
+            }
+            
+            $wo->calculated_total_harga = $totalHarga;
+        });
         
-        return view('atasan.riwayat_work_order', compact('workOrders'));
+        $daftarBarang = DaftarBarang::orderBy('nama_barang')->get();
+        
+        return view('atasan.riwayat_work_order', compact('workOrders', 'daftarBarang'));
     }
 
 
@@ -319,15 +420,47 @@ class AtasanController extends Controller
                 'status' => 'Disetujui Atasan'
             ]);
             
+            $statusDisetujuiAtasanId = StatusWo::where('nama_status', 'Disetujui Atasan')->value('id_status_wo');
+
             // Update status permintaan barang jika ada
             if ($workOrder->permintaanBarang) {
-                $statusDisetujuiAtasanId = StatusWo::where('nama_status', 'Disetujui Atasan')->value('id_status_wo');
-                
                 $workOrder->permintaanBarang->update([
                     'status' => 'Disetujui Atasan',
                     'id_status_wo' => $statusDisetujuiAtasanId,
                     'id_atasan' => Session::get('user_id'),
                 ]);
+            } else {
+                // Jika permintaan barang belum ada (misal dari Purchasing murni),
+                // Cek apakah ada logs realisasi pembelian
+                $logs = DaftarPembelianBarang::with('barang')->where('id_surat_pengajuan', $id)->get();
+                
+                if ($logs->count() > 0) {
+                    $totalHarga = $logs->sum('total_harga');
+                    
+                    // Buat PermintaanBarang baru
+                    $permintaan = PermintaanBarang::create([
+                        'no_permintaan_barang' => $this->generateNoPermintaan('LOG'),
+                        'id_surat_pengajuan' => $id,
+                        'tanggal_permintaan' => now(),
+                        'status' => 'Disetujui Atasan',
+                        'id_status_wo' => $statusDisetujuiAtasanId,
+                        'total_estimasi_harga' => $totalHarga,
+                        'id_akun' => $workOrder->id_akun, // Attribution to WO creator
+                        'id_atasan' => Session::get('user_id'),
+                    ]);
+                    
+                    // Buat DetailBarangPermintaan dari Logs
+                    foreach ($logs as $log) {
+                        DetailBarangPermintaan::create([
+                            'id_permintaan_barang' => $permintaan->id_permintaan_barang,
+                            'id_daftar_barang_master' => $log->id_barang,
+                            'nama_barang' => $log->barang ? $log->barang->nama_barang : 'Unknown',
+                            'jumlah' => $log->jumlah,
+                            'satuan' => $log->barang ? $log->barang->satuan : '-',
+                            'estimasi_harga' => $log->total_harga,
+                        ]);
+                    }
+                }
             }
             
             Session::flash('success', 'Work Order berhasil disetujui! Data akan muncul di halaman Beli Barang.');

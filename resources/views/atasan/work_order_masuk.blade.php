@@ -295,7 +295,15 @@
                                             // Buat array lookup untuk satuan dari master barang (jika tersedia)
                                             $barangLookup = isset($daftarBarang) ? collect($daftarBarang)->keyBy('nama_barang') : collect();
                                             
-                                            if ($isPembelian && $wo->unit && $wo->unit !== '-') {
+                                            if (isset($wo->realization_available) && $wo->realization_available) {
+                                                // Jika ada data Realisasi (Purchasing sudah input), GUNAKAN ITU
+                                                foreach ($wo->realization_items as $rItem) {
+                                                    $barangItems[] = $rItem['nama_barang'];
+                                                    $qtyItems[] = $rItem['jumlah'];
+                                                    $satuanItems[] = $rItem['satuan'];
+                                                }
+                                            } elseif ($isPembelian && $wo->unit && $wo->unit !== '-') {
+                                                // Fallback ke logic lama match string
                                                 $parts = explode(', ', $wo->unit);
                                                 foreach ($parts as $part) {
                                                     if (preg_match('/^(.+?)\s*\(qty:\s*(\d+)\)$/i', trim($part), $matches)) {
@@ -392,6 +400,7 @@
                                                         <form action="{{ route('atasan.approve-work-order', $wo->id_surat_pengajuan) }}" method="POST" class="approve-form" style="display:inline;" 
                                                             data-message="Yakin ingin menyetujui work order ini?">
                                                             @csrf
+                                                            @method('PUT')
                                                             <button type="submit" 
                                                                     class="btn btn-success btn-sm btn-icon" 
                                                                     title="Setujui">
@@ -576,7 +585,13 @@
             const form = $(this);
             const url = form.attr('action');
             const message = form.data('message') || 'Yakin ingin menyetujui work order ini?';
-            showApproveRejectConfirm(url, 'approve', message);
+            if (typeof showConfirmModal === 'function') {
+                showConfirmModal(url, message, 'Tindakan ini akan menyetujui work order.', 'Ya, Setujui', 'btn-success', 'fas fa-check');
+            } else {
+                if(confirm(message)) {
+                    form.off('submit').submit();
+                }
+            }
         });
 
         $(document).on('click', '.btn-reject', function() {
@@ -810,5 +825,6 @@
         </div>
     </div>
 </div>
+@include('components.confirm-modal')
 @endsection
 

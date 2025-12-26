@@ -112,7 +112,18 @@
         padding-bottom: 10px;
         border-bottom: 2px solid #1B3C88;
     }
+    
+    /* Select2 Bootstrap 4 Theme Fixes */
+    .select2-container--bootstrap4 .select2-selection--single {
+        height: calc(1.5em + 0.75rem + 2px) !important;
+    }
+    .select2-container--bootstrap4 .select2-selection--single .select2-selection__placeholder {
+        line-height: calc(1.5em + 0.75rem) !important;
+        color: #6c757d;
+    }
 </style>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css">
 @endsection
 
 @section('content')
@@ -158,13 +169,13 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>No. Work Order</label>
-                                    <p class="form-control-plaintext">{{ $workOrder->no_surat_pengajuan }}</p>
+                                    <p>{{ $workOrder->no_surat_pengajuan }}</p>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Tanggal</label>
-                                    <p class="form-control-plaintext">{{ \Carbon\Carbon::parse($workOrder->tanggal)->locale('id')->isoFormat('dddd, DD MMMM YYYY') }}</p>
+                                    <p>{{ \Carbon\Carbon::parse($workOrder->tanggal)->locale('id')->isoFormat('dddd, DD MMMM YYYY') }}</p>
                                 </div>
                             </div>
                         </div>
@@ -173,13 +184,13 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Jenis Work Order</label>
-                                    <p class="form-control-plaintext">{{ $workOrder->jenisWorkOrder->nama_jenis_wo ?? '-' }}</p>
+                                    <p>{{ $workOrder->jenisWorkOrder->nama_jenis_wo ?? '-' }}</p>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Status</label>
-                                    <p class="form-control-plaintext">
+                                    <p>
                                         @if($status == 'Disetujui' || $status == 'Selesai')
                                             <span class="badge badge-success">{{ $status }}</span>
                                         @elseif(Str::contains($status, 'Ditolak'))
@@ -196,13 +207,13 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Divisi Pengaju</label>
-                                    <p class="form-control-plaintext">{{ $workOrder->divisi_pengaju }}</p>
+                                    <p>{{ $workOrder->divisi_pengaju }}</p>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Ditujukan</label>
-                                    <p class="form-control-plaintext">{{ $workOrder->ditujukan }}</p>
+                                    <p>{{ $workOrder->ditujukan }}</p>
                                 </div>
                             </div>
                         </div>
@@ -212,7 +223,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Unit/Code</label>
-                                    <p class="form-control-plaintext">{{ $workOrder->unit ?? '-' }}</p>
+                                    <p>{{ $workOrder->unit ?? '-' }}</p>
                                 </div>
                             </div>
                         </div>
@@ -222,7 +233,7 @@
                             <div class="col-12">
                                 <div class="form-group">
                                     <label>Uraian</label>
-                                    <p class="form-control-plaintext">{{ $workOrder->uraian }}</p>
+                                    <p>{{ $workOrder->uraian }}</p>
                                 </div>
                             </div>
                         </div>
@@ -293,19 +304,82 @@
                                 </tbody>
                             </table>
                         </div>
+                        <div class="section-title mt-4">Daftar Barang Realisasi</div>           
+                             <div class="table-responsive table-barang">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th width="5%">No</th>
+                                        <th>Nama Barang</th>
+                                        <th width="10%">Jumlah</th>
+                                        <th width="20%">Harga Satuan</th>
+                                        <th width="20%">Total Harga</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($realisasiItems as $index => $item)
+                                    <tr>
+                                        <td>{{ $index + 1 }}</td>
+                                        <td>{{ $item->barang->nama_barang ?? 'Unknown' }}</td>
+                                        <td>{{ $item->jumlah }} {{ $item->barang->satuan ?? '' }}</td>
+                                        <td>Rp {{ number_format($item->harga_satuan, 0, ',', '.') }}</td>
+                                        <td>Rp {{ number_format($item->total_harga, 0, ',', '.') }}</td>
+                                    </tr>
+                                    @endforeach
+                                    @if(count($realisasiItems) == 0)
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">Belum ada data realisasi pembelian.</td>
+                                    </tr>
+                                    @endif
+                                    <tr class="total-row">
+                                        <td colspan="4" class="text-right"><strong>Total Realisasi:</strong></td>
+                                        <td><strong>Rp {{ number_format($totalRealisasi, 0, ',', '.') }}</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                         @endif
-                        
-                        <!-- Tombol Aksi Bawah -->
-                        @if($status == 'Menunggu')
-                        <div class="mt-4 d-flex justify-content-end gap-2">
-                            <form action="{{ route('purchasing.approve-work-order', $workOrder->id_surat_pengajuan) }}" method="POST" class="approve-form d-inline" 
-                                data-message="Yakin ingin menyetujui work order ini?"
-                                data-wo-id="{{ $workOrder->id_surat_pengajuan }}">
-                                @csrf
-                                <button type="submit" class="btn btn-success approve-btn">
-                                    <i class="fas fa-check mr-1"></i> Setujui
-                                </button>
-                            </form>
+
+                        <!-- Form Input Harga Pembelian (Log) -->
+                        @if($isPembelian && count($barangItems) > 0)
+                        <div class="section-title mt-4">Input Harga Pembelian (Log)</div>
+                        <div class="card bg-light border-0 shadow-sm mb-4">
+                            <div class="card-body">
+                                <form action="{{ route('purchasing.store-harga-barang') }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="id_surat_pengajuan" value="{{ $workOrder->id_surat_pengajuan }}">
+                                    
+                                    <div class="row align-items-end">
+                                        <div class="col-md-5">
+                                            <div class="form-group mb-0">
+                                                <label for="id_barang">Pilih Barang yang Dibeli</label>
+                                                <select class="form-control select2" id="id_barang" name="id_barang" required style="width: 100%;">
+                                                    <option value="">-- Pilih Barang --</option>
+                                                    @foreach($barangItems as $item)
+                                                        @if(isset($item['id_barang']) && $item['id_barang'])
+                                                            <option value="{{ $item['id_barang'] }}" data-harga="{{ $item['harga_satuan'] }}">
+                                                                {{ $item['nama_barang'] }} (Qty: {{ $item['jumlah'] }} {{ $item['satuan'] }})
+                                                            </option>
+                                                        @endif
+                                                    @endforeach
+                                                </select>
+                                                <small class="form-text text-muted">Hanya barang yang terdaftar di master data yang bisa dipilih.</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group mb-0">
+                                                <label for="harga_barang">Harga Beli Satuan (Rp)</label>
+                                                <input type="number" class="form-control" id="harga_barang" name="harga_barang" min="0" required placeholder="0">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button type="submit" class="btn btn-primary btn-block">
+                                                <i class="fas fa-save mr-1"></i> Update Harga
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                         @endif
                     </div>
@@ -340,8 +414,27 @@
 @endsection
 
 @section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     $(document).ready(function() {
+        // Init Select2
+        $('.select2').select2({
+            theme: 'bootstrap4',
+            width: '100%'
+        });
+
+        // Auto-fill harga saat barang dipilih
+        $('#id_barang').on('change', function() {
+            var selectedOption = $(this).find('option:selected');
+            var harga = selectedOption.data('harga');
+            // Jika harga ada dan > 0, isi field harga
+            if (harga && harga > 0) {
+                $('#harga_barang').val(harga);
+            } else {
+                $('#harga_barang').val('');
+            }
+        });
+
         // Handle approve form
         $(document).on('submit', '.approve-form', function(e) {
             e.preventDefault();

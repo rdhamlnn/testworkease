@@ -398,6 +398,7 @@
                                         <th>Barang</th>
                                         <th>Qty</th>
                                         <th>Satuan</th>
+                                        <th>Total Harga</th>
                                         <th>Uraian</th>
                                         <th>Status</th>
                                         <th>Aksi</th>
@@ -479,6 +480,14 @@
                                             <td>
                                                 @if($isPembelian && count($satuanItems) > 0)
                                                     {{ implode(', ', $satuanItems) }}
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
+                                            </td>
+                                            
+                                            <td>
+                                                @if($wo->permintaanBarang && $wo->permintaanBarang->total_estimasi_harga > 0)
+                                                    Rp {{ number_format($wo->permintaanBarang->total_estimasi_harga, 0, ',', '.') }}
                                                 @else
                                                     <span class="text-muted">-</span>
                                                 @endif

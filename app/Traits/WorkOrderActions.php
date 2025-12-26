@@ -34,10 +34,12 @@ trait WorkOrderActions
         
         // Buat satuan_lookup dari master barang berdasarkan nama barang yang ada di field unit
         $satuanLookup = [];
-        if ($workOrder->unit && $workOrder->unit !== '-') {
+        $rawUnit = $workOrder->getAttributes()['unit'] ?? null;
+        
+        if ($rawUnit && $rawUnit !== '-') {
             // Parse nama barang dari field unit
             $barangNames = [];
-            $unitData = $workOrder->unit;
+            $unitData = $rawUnit;
             
             if (is_string($unitData)) {
                 if (strpos($unitData, ',') !== false) {
@@ -76,7 +78,7 @@ trait WorkOrderActions
             'id_jenis_wo' => $workOrder->id_jenis_wo,
             'jenis_wo' => $workOrder->jenisWorkOrder ? $workOrder->jenisWorkOrder->nama_jenis_wo : null,
             'tanggal' => $workOrder->tanggal,
-            'unit' => $workOrder->unit,
+            'unit' => $rawUnit,
             'id_unit' => $workOrder->id_unit,
             'uraian' => $workOrder->uraian,
             'dokumentasi' => $workOrder->dokumentasi,
@@ -85,6 +87,8 @@ trait WorkOrderActions
             'id_verifikator' => $workOrder->id_verifikator,
             'catatan_penolakan' => $workOrder->catatan_penolakan,
             'satuan_lookup' => $satuanLookup,
+            'harga_barang' => $workOrder->harga_barang,
+            'total_harga' => $workOrder->total_harga,
         ];
 
         return response()->json($data);

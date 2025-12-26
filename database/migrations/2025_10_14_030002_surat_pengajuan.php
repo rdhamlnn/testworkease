@@ -26,6 +26,7 @@ return new class extends Migration
             $table->unsignedBigInteger('id_verifikator');
             $table->unsignedBigInteger('id_akun');
             $table->unsignedBigInteger('id_unit');
+            $table->text('catatan_penolakan')->nullable();
             $table->timestamps();
 
             $table->foreign('id_divisi')->references('id_divisi')->on('divisi')->onDelete('cascade')->onUpdate('cascade');

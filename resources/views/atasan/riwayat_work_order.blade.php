@@ -284,10 +284,17 @@
                                             $qtyItems = [];
                                             $satuanItems = [];
                                             
-                                            // Buat array lookup untuk satuan dari master barang (jika tersedia)
-                                            $barangLookup = isset($daftarBarang) ? collect($daftarBarang)->keyBy('nama_barang') : collect();
-                                            
-                                            if ($isPembelian && $wo->unit && $wo->unit !== '-') {
+                                            // Prioritize realization data if available (passed from controller)
+                                            if (isset($wo->realization_available) && $wo->realization_available && isset($wo->realization_items)) {
+                                                foreach ($wo->realization_items as $item) {
+                                                    $barangItems[] = $item['nama_barang'];
+                                                    $qtyItems[] = $item['jumlah'];
+                                                    $satuanItems[] = $item['satuan'];
+                                                }
+                                            } elseif ($isPembelian && $wo->unit && $wo->unit !== '-') {
+                                                // Fallback to parsing unit string for legacy/unrealized items
+                                                $barangLookup = isset($daftarBarang) ? collect($daftarBarang)->keyBy('nama_barang') : collect();
+                                                
                                                 $parts = explode(', ', $wo->unit);
                                                 foreach ($parts as $part) {
                                                     if (preg_match('/^(.+?)\s*\(qty:\s*(\d+)\)$/i', trim($part), $matches)) {
@@ -355,7 +362,7 @@
                                             </td>
                                             
                                             <td>{{ Str::limit($wo->uraian, 30) }}</td>
-                                            <td>Rp {{ number_format($wo->total_harga ?? 0, 0, ',', '.') }}</td>
+                                            <td>Rp {{ number_format($wo->calculated_total_harga ?? 0, 0, ',', '.') }}</td>
                                             <td>
                                                 @if($status == 'Disetujui' || $status == 'Selesai')
                                                     <span class="badge badge-success">{{ $status }}</span>

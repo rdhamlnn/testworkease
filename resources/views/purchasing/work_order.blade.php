@@ -785,7 +785,9 @@
                                         <select class="form-control" name="id_jenis_wo" id="id_jenis_wo" required autofocus>
                                             <option value="">-- Pilih Jenis Work Order --</option>
                                             @foreach($jenisWorkOrder as $jenis)
-                                                <option value="{{ $jenis->id_jenis_wo }}" data-nama-jenis="{{ $jenis->nama_jenis_wo }}">{{ $jenis->nama_jenis_wo }}</option>
+                                                @if(strtolower($jenis->nama_jenis_wo) !== 'pembelian')
+                                                    <option value="{{ $jenis->id_jenis_wo }}" data-nama-jenis="{{ $jenis->nama_jenis_wo }}">{{ $jenis->nama_jenis_wo }}</option>
+                                                @endif
                                             @endforeach
                                         </select>
                                     </div>
@@ -801,11 +803,7 @@
                                         <label for="ditujukan">Ditujukan <span class="text-danger">*</span></label>
                                         <select class="form-control" name="ditujukan" id="ditujukan" required disabled>
                                             <option value="">-- Pilih Jenis Work Order terlebih dahulu --</option>
-                                            <!-- Options untuk Pembelian: purchasing → Logistik -->
-                                            <option value="Atasan" data-jenis-wo="pembelian" style="display: none;">Atasan</option>
-                                            <!-- Options untuk Perbaikan: ditujukan ke Mekanik -->
                                             <option value="Mekanik" data-jenis-wo="perbaikan" style="display: none;">Mekanik</option>
-                                            <!-- Options untuk Permintaan: semua kecuali Atasan, Purchasing, Admin, dan Mekanik sendiri -->
                                             <option value="Produksi" data-jenis-wo="permintaan" style="display: none;">Produksi</option>
                                             <option value="Plasma" data-jenis-wo="permintaan" style="display: none;">Plasma</option>
                                             <option value="Quality Control" data-jenis-wo="permintaan" style="display: none;">Quality Control</option>
@@ -837,11 +835,7 @@
                                                 <option value="{{ $u->nama_unit }}">{{ $u->nama_unit }}</option>
                                             @endforeach
                                         </select>
-                                        <!-- Input text (default, muncul jika pilih "Tidak") -->
                                         <input type="text" class="form-control" id="unit" name="unit" required placeholder="Masukkan keterangan">
-                                        <!-- Container untuk Select2 dinamis (jenis work order Pembelian) -->
-                                        <div id="unit_pembelian_container" style="display: none;"></div>
-                                        <!-- Template tersembunyi untuk option barang -->
                                         <select id="template_barang_options" style="display: none;">
                                             @foreach($daftarBarang as $barang)
                                                 <option value="{{ $barang->nama_barang }}" data-stok="{{ $barang->stok ?? 0 }}" data-satuan="{{ $barang->satuan ?? '' }}">{{ $barang->nama_barang }}</option>
@@ -965,11 +959,7 @@
                                         <label for="edit_ditujukan">Ditujukan <span class="text-danger">*</span></label>
                                         <select class="form-control" name="ditujukan" id="edit_ditujukan" required disabled>
                                             <option value="">-- Pilih Jenis Work Order terlebih dahulu --</option>
-                                            <!-- Options untuk Pembelian: purchasing → Atasan (untuk approval) -->
-                                            <option value="Atasan" data-jenis-wo="pembelian" style="display: none;">Atasan</option>
-                                            <!-- Options untuk Perbaikan: ditujukan ke Mekanik -->
                                             <option value="Mekanik" data-jenis-wo="perbaikan" style="display: none;">Mekanik</option>
-                                            <!-- Options untuk Permintaan: semua kecuali Atasan, Purchasing, Admin, dan Mekanik sendiri -->
                                             <option value="Produksi" data-jenis-wo="permintaan" style="display: none;">Produksi</option>
                                             <option value="Plasma" data-jenis-wo="permintaan" style="display: none;">Plasma</option>
                                             <option value="Quality Control" data-jenis-wo="permintaan" style="display: none;">Quality Control</option>
@@ -1937,9 +1927,6 @@
             }
         }
 
-        // Filter divisi "Ditujukan" berdasarkan jenis work order
-        // Buat global agar bisa diakses dari luar document.ready
-        // Filter divisi "Ditujukan" berdasarkan jenis work order - SEDERHANA
         window.filterDivisiDitujukan = function() {
             const jenisWoSelect = $('#id_jenis_wo');
             const ditujukanSelect = $('#ditujukan');
