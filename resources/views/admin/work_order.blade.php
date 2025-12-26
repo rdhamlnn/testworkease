@@ -605,6 +605,9 @@
                                 <th>Jenis WO</th>
                                 <th>Hari/Tanggal</th>
                                 <th>Unit/Code</th>
+                                <th>Barang</th>
+                                <th>Qty</th>
+                                <th>Satuan</th>
                                 <th>Uraian</th>
                                 <th>Status</th>
                                 <th>Aksi</th>
@@ -614,6 +617,35 @@
                             @forelse ($workOrders as $i => $wo)
                                 @php
                                     $status = $wo->verifikator->nama_status ?? $wo->status ?? 'Menunggu';
+                                    $jenisWo = $wo->jenisWorkOrder ? strtolower($wo->jenisWorkOrder->nama_jenis_wo) : '';
+                                    $isPembelian = $jenisWo === 'pembelian';
+                                    $isPermintaan = $jenisWo === 'permintaan';
+                                    $isPerbaikan = $jenisWo === 'perbaikan';
+                                    
+                                    // Parse unit field untuk mendapatkan barang, qty, dan satuan
+                                    $barangItems = [];
+                                    $qtyItems = [];
+                                    $satuanItems = [];
+                                    
+                                    // Buat array lookup untuk satuan dari master barang (jika tersedia)
+                                    $barangLookup = isset($daftarBarang) ? collect($daftarBarang)->keyBy('nama_barang') : collect();
+                                    
+                                    if ($isPembelian && $wo->unit && $wo->unit !== '-') {
+                                        $parts = explode(', ', $wo->unit);
+                                        foreach ($parts as $part) {
+                                            if (preg_match('/^(.+?)\s*\(qty:\s*(\d+)\)$/i', trim($part), $matches)) {
+                                                $namaBarang = trim($matches[1]);
+                                                $barangItems[] = $namaBarang;
+                                                $qtyItems[] = (int)$matches[2];
+                                                $satuanItems[] = $barangLookup->get($namaBarang)->satuan ?? '-';
+                                            } elseif (!empty(trim($part))) {
+                                                $namaBarang = trim($part);
+                                                $barangItems[] = $namaBarang;
+                                                $qtyItems[] = 1;
+                                                $satuanItems[] = $barangLookup->get($namaBarang)->satuan ?? '-';
+                                            }
+                                        }
+                                    }
                                 @endphp
                                 <tr>
                                     <td data-order="{{ $i + 1 }}">{{ $i + 1 }}</td>
@@ -621,7 +653,42 @@
                                     <td>{{ $wo->divisi_pengaju }}</td>
                                     <td>{{ $wo->jenisWorkOrder->nama_jenis_wo ?? '-' }}</td>
                                     <td data-order="{{ \Carbon\Carbon::parse($wo->tanggal)->format('Ymd') }}">{{ \Carbon\Carbon::parse($wo->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
-                                    <td>{{ is_object($wo->unit_code) ? $wo->unit_code->nama_unit : $wo->unit_code }}</td>
+                                    {{-- Kolom Unit/Code --}}
+                                    <td>
+                                        @if($isPembelian)
+                                            <span class="text-muted">-</span>
+                                        @elseif($isPermintaan)
+                                            <span class="text-muted">-</span>
+                                        @elseif($isPerbaikan)
+                                            {{ $wo->unit && $wo->unit !== '-' ? $wo->unit : '-' }}
+                                        @else
+                                            {{ is_object($wo->unit_code) ? $wo->unit_code->nama_unit : ($wo->unit_code ?? '-') }}
+                                        @endif
+                                    </td>
+                                    {{-- Kolom Barang --}}
+                                    <td>
+                                        @if($isPembelian && count($barangItems) > 0)
+                                            {{ implode(', ', $barangItems) }}
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    {{-- Kolom Qty --}}
+                                    <td>
+                                        @if($isPembelian && count($qtyItems) > 0)
+                                            {{ implode(', ', $qtyItems) }}
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    {{-- Kolom Satuan --}}
+                                    <td>
+                                        @if($isPembelian && count($satuanItems) > 0)
+                                            {{ implode(', ', $satuanItems) }}
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
                                     <td>{{ Str::limit($wo->uraian, 30) }}</td>
                                     <td>
                                         @if($status == 'Disetujui' || $status == 'Selesai')
@@ -651,7 +718,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="11" class="text-center text-muted">Belum ada data work order</td>
+                                    <td colspan="12" class="text-center text-muted">Belum ada data work order</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -814,21 +881,32 @@
                 let unitDisplay = '-';
                 let barangTable = '';
                 
+                // Helper function untuk mengambil satuan dari data barang (jika tersedia)
+                function getSatuanByBarangName(barangName) {
+                    // Cek apakah ada data satuan_lookup dari server
+                    if (data.satuan_lookup && data.satuan_lookup[barangName]) {
+                        return data.satuan_lookup[barangName];
+                    }
+                    return '-';
+                }
+                
                 if (isPembelian) {
                     // Jika jenis WO adalah Pembelian, tampilkan tabel di div baru
                     if (Array.isArray(data.unit)) {
-                        // Jika array, buat table dengan qty
+                        // Jika array, buat table dengan qty dan satuan
                         if (data.unit.length > 0) {
                             barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
-                            barangTable += '<thead><tr><th style="width: 10%;">No</th><th style="width: 60%;">Nama Barang</th><th style="width: 30%;" class="text-center">Qty</th></tr></thead><tbody>';
+                            barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 37%;">Nama Barang</th><th style="width: 15%; text-align: center !important;">Qty</th><th style="width: 20%; text-align: center !important;">Satuan</th></tr></thead><tbody>';
                             data.unit.forEach(function(item, index) {
                                 const qtyMatch = item.match(/\(qty:\s*(\d+)\)/);
                                 if (qtyMatch) {
                                     const qty = qtyMatch[1];
                                     const barangName = item.replace(/\s*\(qty:\s*\d+\)/, '').trim();
-                                    barangTable += `<tr><td style="width: 10%;">${index + 1}</td><td style="width: 60%;">${barangName}</td><td style="width: 30%;" class="text-center"><strong>${qty}</strong></td></tr>`;
+                                    const satuan = getSatuanByBarangName(barangName);
+                                    barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 37%;">${barangName}</td><td style="width: 15%; text-align: center !important;"><strong>${qty}</strong></td><td style="width: 20%; text-align: center !important;">${satuan}</td></tr>`;
                                 } else {
-                                    barangTable += `<tr><td style="width: 10%;">${index + 1}</td><td style="width: 60%;">${item}</td><td style="width: 30%;" class="text-center"><strong>-</strong></td></tr>`;
+                                    const satuan = getSatuanByBarangName(item);
+                                    barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 37%;">${item}</td><td style="width: 15%; text-align: center !important;"><strong>-</strong></td><td style="width: 20%; text-align: center !important;">${satuan}</td></tr>`;
                                 }
                             });
                             barangTable += '</tbody></table>';
@@ -839,15 +917,17 @@
                             const parts = data.unit.split(',').map(v => v.trim()).filter(v => v);
                             if (parts.length > 0) {
                                 barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
-                                barangTable += '<thead><tr><th style="width: 10%;">No</th><th style="width: 60%;">Nama Barang</th><th style="width: 30%;" class="text-center">Qty</th></tr></thead><tbody>';
+                                barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 37%;">Nama Barang</th><th style="width: 15%; text-align: center !important;">Qty</th><th style="width: 20%; text-align: center !important;">Satuan</th></tr></thead><tbody>';
                                 parts.forEach(function(part, index) {
                                     const qtyMatch = part.match(/\(qty:\s*(\d+)\)/);
                                     if (qtyMatch) {
                                         const qty = qtyMatch[1];
                                         const barangName = part.replace(/\s*\(qty:\s*\d+\)/, '').trim();
-                                        barangTable += `<tr><td style="width: 10%;">${index + 1}</td><td style="width: 60%;">${barangName}</td><td style="width: 30%;" class="text-center"><strong>${qty}</strong></td></tr>`;
+                                        const satuan = getSatuanByBarangName(barangName);
+                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 37%;">${barangName}</td><td style="width: 15%; text-align: center !important;"><strong>${qty}</strong></td><td style="width: 20%; text-align: center !important;">${satuan}</td></tr>`;
                                     } else {
-                                        barangTable += `<tr><td style="width: 10%;">${index + 1}</td><td style="width: 60%;">${part}</td><td style="width: 30%;" class="text-center"><strong>-</strong></td></tr>`;
+                                        const satuan = getSatuanByBarangName(part);
+                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 37%;">${part}</td><td style="width: 15%; text-align: center !important;"><strong>-</strong></td><td style="width: 20%; text-align: center !important;">${satuan}</td></tr>`;
                                     }
                                 });
                                 barangTable += '</tbody></table>';
@@ -858,9 +938,10 @@
                             if (qtyMatch) {
                                 const qty = qtyMatch[1];
                                 const barangName = data.unit.replace(/\s*\(qty:\s*\d+\)/, '').trim();
+                                const satuan = getSatuanByBarangName(barangName);
                                 barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
-                                barangTable += '<thead><tr><th style="width: 10%;">No</th><th style="width: 60%;">Nama Barang</th><th style="width: 30%;" class="text-center">Qty</th></tr></thead><tbody>';
-                                barangTable += `<tr><td style="width: 10%;">1</td><td style="width: 60%;">${barangName}</td><td style="width: 30%;" class="text-center"><strong>${qty}</strong></td></tr>`;
+                                barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 37%;">Nama Barang</th><th style="width: 15%; text-align: center !important;">Qty</th><th style="width: 20%; text-align: center !important;">Satuan</th></tr></thead><tbody>';
+                                barangTable += `<tr><td style="width: 8%;">1</td><td style="width: 37%;">${barangName}</td><td style="width: 15%; text-align: center !important;"><strong>${qty}</strong></td><td style="width: 20%; text-align: center !important;">${satuan}</td></tr>`;
                                 barangTable += '</tbody></table>';
                             }
                         }

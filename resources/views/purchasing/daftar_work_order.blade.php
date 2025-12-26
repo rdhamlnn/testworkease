@@ -158,6 +158,7 @@
                                         <th>Unit/Code</th>
                                         <th>Barang</th>
                                         <th>Qty</th>
+                                        <th>Satuan</th>
                                         <th>Uraian</th>
                                         <th>Total Harga</th>
                                         <th>Status</th>
@@ -175,16 +176,23 @@
                                             
                                             $barangItems = [];
                                             $qtyItems = [];
+                                            $satuanItems = [];
+                                            
+                                            $barangLookup = isset($daftarBarang) ? collect($daftarBarang)->keyBy('nama_barang') : collect();
                                             
                                             if ($isPembelian && $wo->unit && $wo->unit !== '-') {
                                                 $parts = explode(', ', $wo->unit);
                                                 foreach ($parts as $part) {
                                                     if (preg_match('/^(.+?)\s*\(qty:\s*(\d+)\)$/i', trim($part), $matches)) {
-                                                        $barangItems[] = trim($matches[1]);
+                                                        $namaBarang = trim($matches[1]);
+                                                        $barangItems[] = $namaBarang;
                                                         $qtyItems[] = (int)$matches[2];
+                                                        $satuanItems[] = $barangLookup->get($namaBarang)->satuan ?? '-';
                                                     } elseif (!empty(trim($part))) {
-                                                        $barangItems[] = trim($part);
+                                                        $namaBarang = trim($part);
+                                                        $barangItems[] = $namaBarang;
                                                         $qtyItems[] = 1;
+                                                        $satuanItems[] = $barangLookup->get($namaBarang)->satuan ?? '-';
                                                     }
                                                 }
                                             }
@@ -230,6 +238,14 @@
                                                 @endif
                                             </td>
                                             
+                                            <td>
+                                                @if($isPembelian && count($satuanItems) > 0)
+                                                    {{ implode(', ', $satuanItems) }}
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
+                                            </td>
+                                            
                                             <td>{{ Str::limit($wo->uraian, 30) }}</td>
                                             <td>Rp {{ number_format($wo->calculated_total_harga ?? 0, 0, ',', '.') }}</td>
                                             <td>
@@ -266,7 +282,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="12" class="text-center text-muted">Belum ada data work order</td>
+                                            <td colspan="13" class="text-center text-muted">Belum ada data work order</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
