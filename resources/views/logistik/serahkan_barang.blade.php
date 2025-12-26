@@ -124,6 +124,31 @@
         background-color: #138496 !important;
         border-color: #117a8b !important;
     }
+
+    /* Button Serahkan - ukuran sama dengan btn-view */
+    .btn-serahkan {
+        min-width: 32px;
+        padding: 4px 8px;
+    }
+
+    .btn-serahkan i {
+        font-size: 14px;
+    }
+
+    /* Modal styling */
+    #viewPermintaanModal .modal-header {
+        background-color: #1B3C88 !important;
+        color: #fff !important;
+    }
+
+    #viewPermintaanModal .modal-header .close {
+        color: #fff !important;
+        opacity: 1 !important;
+    }
+
+    #viewPermintaanModal .modal-header .close:hover {
+        opacity: 0.8 !important;
+    }
 </style>
 @endsection
 
@@ -214,14 +239,12 @@
                                                                     <i class="fas fa-eye"></i>
                                                                 </button>
                                                                 <form action="{{ route('logistik.serahkan-barang.proses', $pb->id_permintaan_barang) }}" method="POST" class="confirm-form no-transition" style="display:inline;" 
-                                                                    onsubmit="return false;"
                                                                     data-message="Yakin ingin menyerahkan barang ini ke divisi?"
-                                                                    data-description="Tindakan ini akan mengubah status permintaan menjadi diserahkan ke divisi."
                                                                     data-button-text="Ya, Serahkan"
                                                                     data-button-class="btn-primary">
                                                                     @csrf
-                                                                    <button type="submit" class="btn btn-primary btn-sm" title="Serahkan ke Divisi">
-                                                                        <i class="fas fa-hand-holding"></i>
+                                                                    <button type="submit" class="btn btn-primary btn-sm btn-serahkan" title="Serahkan ke Divisi">
+                                                                        <i class="fas fa-share"></i>
                                                                     </button>
                                                                 </form>
                                                             </div>
@@ -267,7 +290,6 @@
                                                         <form action="{{ route('logistik.serahkan-barang.proses', $pb->id_permintaan_barang) }}" method="POST" class="confirm-form no-transition" style="display:inline;" 
                                                             onsubmit="return false;"
                                                             data-message="Yakin ingin menyerahkan barang ini ke divisi?"
-                                                            data-description="Tindakan ini akan mengubah status permintaan menjadi diserahkan ke divisi."
                                                             data-button-text="Ya, Serahkan"
                                                             data-button-class="btn-primary">
                                                             @csrf
@@ -353,122 +375,89 @@
 @include('components.confirm-modal')
 @section('scripts')
 <script>
-    // Handler form submit dengan vanilla JS untuk prioritas lebih tinggi - MENCEGAH SUBMIT NORMAL
+    // Handler form submit dengan vanilla JS - langsung proses via AJAX
     document.addEventListener('submit', function(e) {
         const form = e.target;
         if (form && form.tagName === 'FORM' && form.classList.contains('confirm-form')) {
             e.preventDefault();
             e.stopPropagation();
-            e.stopImmediatePropagation();
-            console.log('Form submit prevented (vanilla JS)!'); // Debug
+            
+            const url = form.getAttribute('action');
+            const message = form.dataset.message || 'Yakin ingin melanjutkan?';
+            const description = form.dataset.description || '';
+            const buttonText = form.dataset.buttonText || 'Ya, Lanjutkan';
+            const buttonClass = form.dataset.buttonClass || 'btn-primary';
+            
+            // Jika showConfirmModal tersedia, gunakan itu
+            if (typeof showConfirmModal === 'function') {
+                showConfirmModal(url, message, description, buttonText, buttonClass);
+            } else {
+                // Fallback: confirm dialog + AJAX
+                if (confirm(message)) {
+                    const btn = form.querySelector('button[type="submit"]');
+                    const originalHtml = btn ? btn.innerHTML : '';
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                    }
+                    
+                    const formData = new FormData(form);
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                                      form.querySelector('input[name="_token"]')?.value;
+                    
+                    fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.redirect) {
+                            window.location.href = data.redirect;
+                        } else if (data.success) {
+                            window.location.reload();
+                        } else {
+                            alert(data.message || 'Gagal memproses');
+                            if (btn) {
+                                btn.disabled = false;
+                                btn.innerHTML = originalHtml;
+                            }
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error:', err);
+                        alert('Terjadi kesalahan. Silakan coba lagi.');
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.innerHTML = originalHtml;
+                        }
+                    });
+                }
+            }
             return false;
         }
-    }, true); // Gunakan capture phase untuk prioritas lebih tinggi
-    
-    // Pastikan jQuery tersedia sebelum menggunakan
-    (function() {
-        function initSerahkanBarang() {
-            if (typeof jQuery === 'undefined' || typeof $ === 'undefined') {
-                console.warn('jQuery belum tersedia, menunggu...');
-                setTimeout(initSerahkanBarang, 100);
-                return;
-            }
+    }, true);
+
+    // Tunggu jQuery tersedia
+    (function waitForJQuery() {
+        if (typeof jQuery === 'undefined') {
+            setTimeout(waitForJQuery, 100);
+            return;
+        }
+        
+        $(document).ready(function() {
+            console.log('=== SERAHKAN BARANG PAGE LOADED ===');
             
-            // Sekarang jQuery sudah tersedia
-            $(document).ready(function() {
-                // Handler untuk confirm-form - HANYA SATU HANDLER YANG LENGKAP
-                $(document).on('submit', '.confirm-form', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
-                    
-                    console.log('Form submit handler triggered!'); // Debug
-                    
-                    const form = $(this);
-                    const url = form.attr('action');
-                    const message = form.data('message') || 'Yakin ingin melanjutkan?';
-                    const description = form.data('description') || 'Tindakan ini akan memproses data.';
-                    const buttonText = form.data('button-text') || 'Konfirmasi';
-                    const buttonClass = form.data('button-class') || 'btn-primary';
-                    const iconClass = form.data('icon-class') || 'fas fa-question-circle';
-                    
-                    console.log('showConfirmModal available:', typeof showConfirmModal); // Debug
-                    
-                    // Gunakan modal konfirmasi jika tersedia
-                    if (typeof showConfirmModal === 'function') {
-                        console.log('Calling showConfirmModal'); // Debug
-                        showConfirmModal(url, message, description, buttonText, buttonClass, iconClass);
-                    } else {
-                        console.log('Using fallback AJAX'); // Debug
-                        // Fallback: submit via AJAX langsung jika modal belum tersedia
-                        if (confirm(message)) {
-                            const submitBtn = form.find('button[type="submit"]');
-                            const originalHtml = submitBtn.html();
-                            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Memproses...');
-                            
-                            $.ajax({
-                                url: url,
-                                type: 'POST',
-                                headers: {
-                                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || $('input[name="_token"]').first().val(),
-                                    'Accept': 'application/json',
-                                    'X-Requested-With': 'XMLHttpRequest'
-                                },
-                                data: form.serialize(),
-                                dataType: 'json',
-                                success: function(response) {
-                                    if (response && response.success) {
-                                        // Redirect dengan URL yang sudah include from=crud untuk trigger notifikasi toast
-                                        if (response.redirect) {
-                                            window.location.href = response.redirect;
-                                        } else {
-                                            // Fallback: redirect dengan from=crud
-                                            const currentUrl = new URL(window.location.href);
-                                            currentUrl.searchParams.set('from', 'crud');
-                                            window.location.href = currentUrl.toString();
-                                        }
-                                    } else {
-                                        submitBtn.prop('disabled', false).html(originalHtml);
-                                        // Gunakan toast jika tersedia, jika tidak alert
-                                        if (typeof triggerToast === 'function') {
-                                            triggerToast('Gagal memproses: ' + (response.message || 'Error tidak diketahui'), 'danger');
-                                        } else {
-                                            alert('Gagal memproses: ' + (response.message || 'Error tidak diketahui'));
-                                        }
-                                    }
-                                },
-                                error: function(xhr) {
-                                    submitBtn.prop('disabled', false).html(originalHtml);
-                                    let errorMessage = 'Gagal memproses. Silakan coba lagi.';
-                                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                                        errorMessage = xhr.responseJSON.message;
-                                    }
-                                    // Gunakan toast jika tersedia, jika tidak alert
-                                    if (typeof triggerToast === 'function') {
-                                        triggerToast(errorMessage, 'danger');
-                                    } else {
-                                        alert(errorMessage);
-                                    }
-                                }
-                            });
-                        }
-                    }
-                    
-                    return false;
-                });
-                
-                // Tunggu confirm modal ter-inisialisasi sebelum mendaftarkan handler
-                function initHandlers() {
-            // Initialize DataTable dengan error handling
+            // Initialize DataTable
             try {
-                // Cek apakah tabel sudah ada dan valid
                 if ($('#serahkanBarangTable').length > 0) {
-                    // Cek apakah DataTable sudah diinisialisasi
                     if ($.fn.DataTable.isDataTable('#serahkanBarangTable')) {
-                        // Jika sudah, destroy dulu
                         $('#serahkanBarangTable').DataTable().destroy();
                     }
-                    
                     $('#serahkanBarangTable').DataTable({
                         "responsive": false,
                         "scrollX": false,
@@ -478,13 +467,7 @@
                             "search": "Cari:",
                             "lengthMenu": "Tampilkan _MENU_ data per halaman",
                             "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
-                            "paginate": {
-                                "next": "Selanjutnya",
-                                "previous": "Sebelumnya"
-                            }
-                        },
-                        "error": function(xhr, error, thrown) {
-                            console.error('DataTables error:', error, thrown);
+                            "paginate": { "next": "Selanjutnya", "previous": "Sebelumnya" }
                         }
                     });
                 }
@@ -493,124 +476,109 @@
             }
 
             // Auto hide alerts
-            setTimeout(function() {
-                $('.alert').fadeOut();
-            }, 3000);
-
-            // Handler untuk tombol view detail
-            $(document).on('click', '.btn-view', function() {
-            var $btn = $(this);
-            var noPermintaan = $btn.data('no-permintaan') || '-';
-            var noWo = $btn.data('no-wo') || '-';
-            var tanggal = $btn.data('tanggal') || '-';
-            var totalHargaRaw = $btn.data('total-harga') || '0';
-            var totalHarga = 'Rp ' + totalHargaRaw;
-            var status = $btn.attr('data-status') || '-';
-            var catatan = ($btn.attr('data-catatan') || '').toString();
+            setTimeout(function() { $('.alert').fadeOut(); }, 3000);
             
-            // Parse data daftar barang
-            var daftarBarangData = [];
-            try {
-                var daftarBarangAttr = $btn.attr('data-daftar-barang');
-                if (daftarBarangAttr) {
-                    // Decode HTML entities jika ada
-                    daftarBarangAttr = $('<div>').html(daftarBarangAttr).text();
-                    daftarBarangData = JSON.parse(daftarBarangAttr);
-                }
-            } catch(e) {
-                console.error('Error parsing daftar barang:', e);
-                daftarBarangData = [];
-            }
-
-            // Validasi dan set data
-            $('#viewNoPermintaan').text(noPermintaan || 'Tidak tersedia');
-            $('#viewNoWo').text(noWo || 'Tidak tersedia');
-            $('#viewTanggal').text(tanggal || 'Tidak tersedia');
-            $('#viewTotalHarga').text(totalHarga || 'Rp 0');
-            
-            // Set status HTML - buat badge secara dinamis berdasarkan status dengan warna yang sesuai
-            var badgeClass = 'badge-secondary';
-            var statusText = status || 'Tidak tersedia';
-            
-            if (statusText === 'Disetujui Atasan' || statusText === 'Diterima Logistik' || statusText === 'Diserahkan ke Divisi' || statusText === 'Dibeli Purchasing') {
-                badgeClass = 'badge-success'; // Hijau untuk status sukses
-            } else if (statusText === 'Ditolak Atasan') {
-                badgeClass = 'badge-danger'; // Merah untuk status ditolak
-            } else if (statusText === 'Menunggu Approval Atasan' || statusText === 'Menunggu Pembelian' || statusText === 'Menunggu Pengiriman' || statusText === 'Dikirim Purchasing') {
-                badgeClass = 'badge-warning'; // Kuning untuk status menunggu/pengiriman
-            } else {
-                badgeClass = 'badge-info'; // Biru untuk status lainnya
-            }
-            $('#viewStatus').html('<span class="badge ' + badgeClass + '">' + statusText + '</span>');
-            
-            // Build tabel daftar barang
-            var daftarBarangHtml = '';
-            if (Array.isArray(daftarBarangData) && daftarBarangData.length > 0) {
-                daftarBarangHtml = '<div class="table-responsive" style="max-width: 100%; overflow-x: auto;">';
-                daftarBarangHtml += '<table class="table table-sm table-bordered table-striped mb-0" style="width: 100%; max-width: 100%; table-layout: auto;">';
-                daftarBarangHtml += '<thead class="thead-light"><tr>';
-                daftarBarangHtml += '<th style="padding: 8px; width: 50%;">Nama Barang</th>';
-                daftarBarangHtml += '<th style="padding: 8px; text-align: center; width: 25%;">Jumlah</th>';
-                daftarBarangHtml += '<th style="padding: 8px; text-align: center; width: 25%;">Satuan</th>';
-                daftarBarangHtml += '</tr></thead>';
-                daftarBarangHtml += '<tbody>';
-                daftarBarangData.forEach(function(barang) {
-                    if (barang.nama && barang.nama !== '-') {
-                        daftarBarangHtml += '<tr>';
-                        daftarBarangHtml += '<td style="padding: 8px; word-wrap: break-word;">' + $('<div>').text(barang.nama).html() + '</td>';
-                        daftarBarangHtml += '<td style="padding: 8px; text-align: center;">' + $('<div>').text(barang.jumlah || '-').html() + '</td>';
-                        daftarBarangHtml += '<td style="padding: 8px; text-align: center;">' + $('<div>').text(barang.satuan || '-').html() + '</td>';
-                        daftarBarangHtml += '</tr>';
+            // ========== HANDLER TOMBOL LIHAT DETAIL ==========
+            $(document).on('click', '.btn-view', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                console.log('BTN-VIEW CLICKED');
+                
+                var $btn = $(this);
+                var noPermintaan = $btn.data('no-permintaan') || '-';
+                var noWo = $btn.data('no-wo') || '-';
+                var tanggal = $btn.data('tanggal') || '-';
+                var totalHargaRaw = $btn.data('total-harga') || '0';
+                var totalHarga = 'Rp ' + totalHargaRaw;
+                var status = $btn.attr('data-status') || '-';
+                var catatan = ($btn.attr('data-catatan') || '').toString();
+                
+                // Parse data daftar barang
+                var daftarBarangData = [];
+                try {
+                    var daftarBarangAttr = $btn.attr('data-daftar-barang');
+                    if (daftarBarangAttr) {
+                        daftarBarangAttr = $('<div>').html(daftarBarangAttr).text();
+                        daftarBarangData = JSON.parse(daftarBarangAttr);
                     }
-                });
-                daftarBarangHtml += '</tbody></table></div>';
-            } else {
-                daftarBarangHtml = '<p class="text-muted mb-0">Tidak ada data barang</p>';
-            }
-            $('#view_daftar_barang').html(daftarBarangHtml);
+                } catch(err) {
+                    console.error('Error parsing daftar barang:', err);
+                }
 
-            // Tampilkan alasan penolakan jika status Ditolak Atasan
-            if (status === 'Ditolak Atasan' && catatan && catatan.trim() !== '') {
-                var catatanHtml = $('<div>').text(catatan).html().replace(/\n/g, '<br>');
-                $('#viewCatatan').html(catatanHtml);
-                $('#viewCatatanGroup').show();
-            } else {
-                $('#viewCatatanGroup').hide();
-            }
-
-            $('#viewPermintaanModal').modal('show');
-        });
-        
-        // Inisialisasi handler dengan retry jika confirm modal belum tersedia
-        if (typeof showConfirmModal !== 'undefined') {
-            initHandlers();
-        } else {
-            // Tunggu confirm modal ter-inisialisasi (max 2 detik)
-            let retryCount = 0;
-            const maxRetries = 20;
-            const checkInterval = setInterval(function() {
-                if (typeof showConfirmModal !== 'undefined') {
-                    clearInterval(checkInterval);
-                    initHandlers();
+                // Set data ke modal
+                $('#viewNoPermintaan').text(noPermintaan);
+                $('#viewNoWo').text(noWo);
+                $('#viewTanggal').text(tanggal);
+                $('#viewTotalHarga').text(totalHarga);
+                
+                // Set status badge
+                var badgeClass = 'badge-info';
+                if (status === 'Diterima Logistik' || status === 'Diserahkan ke Divisi') {
+                    badgeClass = 'badge-success';
+                } else if (status.indexOf('Ditolak') >= 0) {
+                    badgeClass = 'badge-danger';
+                } else if (status.indexOf('Menunggu') >= 0) {
+                    badgeClass = 'badge-warning';
+                }
+                $('#viewStatus').html('<span class="badge ' + badgeClass + '">' + status + '</span>');
+                
+                // Build tabel daftar barang
+                var html = '';
+                if (Array.isArray(daftarBarangData) && daftarBarangData.length > 0) {
+                    html = '<table class="table table-sm table-bordered mb-0"><thead class="thead-light"><tr><th>Nama Barang</th><th class="text-center">Jumlah</th><th class="text-center">Satuan</th></tr></thead><tbody>';
+                    daftarBarangData.forEach(function(b) {
+                        html += '<tr><td>' + (b.nama || '-') + '</td><td class="text-center">' + (b.jumlah || '-') + '</td><td class="text-center">' + (b.satuan || '-') + '</td></tr>';
+                    });
+                    html += '</tbody></table>';
                 } else {
-                    retryCount++;
-                    if (retryCount >= maxRetries) {
-                        clearInterval(checkInterval);
-                        console.warn('Confirm modal tidak tersedia setelah beberapa kali percobaan. Menggunakan fallback.');
-                        initHandlers(); // Tetap inisialisasi dengan fallback
-                    }
+                    html = '<p class="text-muted mb-0">Tidak ada data barang</p>';
                 }
-            }, 100);
-        }
-    });
-        }
-        
-        // Mulai inisialisasi
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initSerahkanBarang);
-        } else {
-            initSerahkanBarang();
-        }
+                $('#view_daftar_barang').html(html);
+
+                // Alasan penolakan
+                if (status.indexOf('Ditolak') >= 0 && catatan) {
+                    $('#viewCatatan').html(catatan);
+                    $('#viewCatatanGroup').show();
+                } else {
+                    $('#viewCatatanGroup').hide();
+                }
+
+                // Tampilkan modal
+                $('#viewPermintaanModal').modal('show');
+            });
+            
+            // ========== HANDLER FORM CONFIRM ==========
+            $(document).on('submit', '.confirm-form', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const form = $(this);
+                const url = form.attr('action');
+                const message = form.data('message') || 'Yakin?';
+                
+                if (typeof showConfirmModal === 'function') {
+                    showConfirmModal(url, message, form.data('description') || '', form.data('button-text') || 'OK', form.data('button-class') || 'btn-primary');
+                } else if (confirm(message)) {
+                    const btn = form.find('button[type="submit"]');
+                    btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+                    
+                    $.ajax({
+                        url: url,
+                        type: 'POST',
+                        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'), 'Accept': 'application/json' },
+                        data: form.serialize(),
+                        success: function(r) {
+                            if (r.success && r.redirect) window.location.href = r.redirect;
+                            else window.location.reload();
+                        },
+                        error: function() { alert('Error'); btn.prop('disabled', false); }
+                    });
+                }
+                return false;
+            });
+        });
     })();
 </script>
 @endsection
+

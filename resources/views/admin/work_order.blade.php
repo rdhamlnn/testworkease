@@ -630,7 +630,7 @@
                                     // Buat array lookup untuk satuan dari master barang (jika tersedia)
                                     $barangLookup = isset($daftarBarang) ? collect($daftarBarang)->keyBy('nama_barang') : collect();
                                     
-                                    if ($isPembelian && $wo->unit && $wo->unit !== '-') {
+                                    if ($isPembelian && isset($wo->unit) && $wo->unit && $wo->unit !== '-') {
                                         $parts = explode(', ', $wo->unit);
                                         foreach ($parts as $part) {
                                             if (preg_match('/^(.+?)\s*\(qty:\s*(\d+)\)$/i', trim($part), $matches)) {
@@ -660,7 +660,7 @@
                                         @elseif($isPermintaan)
                                             <span class="text-muted">-</span>
                                         @elseif($isPerbaikan)
-                                            {{ $wo->unit && $wo->unit !== '-' ? $wo->unit : '-' }}
+                                            {{ isset($wo->unit) && $wo->unit && $wo->unit !== '-' ? $wo->unit : '-' }}
                                         @else
                                             {{ is_object($wo->unit_code) ? $wo->unit_code->nama_unit : ($wo->unit_code ?? '-') }}
                                         @endif

@@ -151,13 +151,20 @@ class KadivMekanikController extends Controller
     {
         $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Mekanik';
         
+        // Ambil WO yang sudah diproses: id_verifikator 2/3 ATAU status Selesai
         $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])
             ->dibuatAtauDiterima($userDivisiNama)
-            ->byVerifikator([2, 3]) // Status Disetujui dan Ditolak
+            ->where(function($query) {
+                $query->whereIn('id_verifikator', [2, 3])
+                      ->orWhere('status', 'Selesai');
+            })
             ->orderBy('created_at', 'desc')
             ->get();
         
-        return view('kadivmekanik.riwayat_work_order', compact('workOrders'));
+        // Ambil daftar barang untuk lookup satuan
+        $daftarBarang = DaftarBarang::all();
+        
+        return view('kadivmekanik.riwayat_work_order', compact('workOrders', 'daftarBarang'));
     }
 
     /**

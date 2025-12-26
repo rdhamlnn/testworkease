@@ -124,13 +124,20 @@ class KadivProduksiController extends Controller
     {
         $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Produksi';
         
+        // Ambil WO yang sudah diproses: id_verifikator 2/3 ATAU status Selesai
         $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])
             ->dibuatAtauDiterima($userDivisiNama)
-            ->byVerifikator([2, 3])
+            ->where(function($query) {
+                $query->whereIn('id_verifikator', [2, 3])
+                      ->orWhere('status', 'Selesai');
+            })
             ->orderBy('created_at', 'desc')
             ->get();
         
-        return view('kadivproduksi.riwayat_work_order', compact('workOrders'));
+        // Ambil daftar barang untuk lookup satuan
+        $daftarBarang = DaftarBarang::all();
+        
+        return view('kadivproduksi.riwayat_work_order', compact('workOrders', 'daftarBarang'));
     }
 
     /**

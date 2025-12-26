@@ -32,6 +32,41 @@ trait WorkOrderActions
             $status = $workOrder->verifikator ? $workOrder->verifikator->nama_status : ($workOrder->status ?? 'Menunggu');
         }
         
+        // Buat satuan_lookup dari master barang berdasarkan nama barang yang ada di field unit
+        $satuanLookup = [];
+        if ($workOrder->unit && $workOrder->unit !== '-') {
+            // Parse nama barang dari field unit
+            $barangNames = [];
+            $unitData = $workOrder->unit;
+            
+            if (is_string($unitData)) {
+                if (strpos($unitData, ',') !== false) {
+                    $parts = explode(',', $unitData);
+                } else {
+                    $parts = [$unitData];
+                }
+                
+                foreach ($parts as $part) {
+                    $part = trim($part);
+                    if (empty($part)) continue;
+                    
+                    // Remove qty format jika ada: "Barang1 (qty: 5)" -> "Barang1"
+                    $namaBarang = trim(preg_replace('/\s*\(qty:\s*\d+\)/i', '', $part));
+                    if (!empty($namaBarang)) {
+                        $barangNames[] = $namaBarang;
+                    }
+                }
+            }
+            
+            // Lookup satuan dari master barang
+            if (!empty($barangNames)) {
+                $masterBarangList = DaftarBarang::whereIn('nama_barang', $barangNames)->get();
+                foreach ($masterBarangList as $master) {
+                    $satuanLookup[$master->nama_barang] = $master->satuan ?? '-';
+                }
+            }
+        }
+        
         $data = [
             'id_surat_pengajuan' => $workOrder->id_surat_pengajuan,
             'no_surat_pengajuan' => $workOrder->no_surat_pengajuan,
@@ -49,10 +84,12 @@ trait WorkOrderActions
             'status' => $status,
             'id_verifikator' => $workOrder->id_verifikator,
             'catatan_penolakan' => $workOrder->catatan_penolakan,
+            'satuan_lookup' => $satuanLookup,
         ];
 
         return response()->json($data);
     }
+
 
     /**
      * Delete work order.
@@ -403,11 +440,12 @@ trait WorkOrderActions
     protected function generateNoPermintaan($prefix = 'LOG')
     {
         $year = Carbon::now()->year;
-        $month = Carbon::now()->month;
         
+        // Gunakan whereYear saja (tanpa month) karena format nomor adalah per tahun, bukan per bulan
+        // Tambahkan lock untuk mencegah race condition
         $lastPermintaan = PermintaanBarang::whereYear('created_at', $year)
-            ->whereMonth('created_at', $month)
-            ->orderBy('created_at', 'desc')
+            ->orderByRaw("CAST(SUBSTRING_INDEX(no_permintaan_barang, '/', 1) AS UNSIGNED) DESC")
+            ->lockForUpdate()
             ->first();
         
         $sequence = '001';

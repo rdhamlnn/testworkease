@@ -130,10 +130,25 @@
     #viewWorkOrderModal .modal-body {
         max-height: 80vh;
         overflow-y: auto !important;
-        overflow-x: hidden !important;
+        overflow-x: auto !important;
         padding: 20px 30px;
         scrollbar-width: thin;
         scrollbar-color: #1B3C88 #f1f1f1;
+    }
+    
+    /* Override table styles inside modal to prevent cutoff */
+    #viewWorkOrderModal .table,
+    #view_barang_table .table {
+        min-width: auto !important;
+        width: 100% !important;
+        table-layout: fixed !important;
+    }
+    
+    #viewWorkOrderModal .table th:last-child,
+    #viewWorkOrderModal .table td:last-child,
+    #view_barang_table .table th:last-child,
+    #view_barang_table .table td:last-child {
+        min-width: auto !important;
     }
     
     #viewWorkOrderModal .modal-body::-webkit-scrollbar {
@@ -484,7 +499,7 @@
                                                     <button type="button" class="btn btn-info btn-sm btn-view" 
                                                         data-id="{{ $wo->id_surat_pengajuan }}" 
                                                         data-toggle="modal" 
-                                                        data-target="#viewPengajuanModal"
+                                                        data-target="#viewWorkOrderModal"
                                                         title="Lihat Detail">
                                                         <i class="fas fa-eye"></i>
                                                     </button>
@@ -597,6 +612,10 @@
                             <p id="view_unit" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
+                </div>
+                <div class="form-group" id="view_barang_container" style="display: none;">
+                    <label><strong>Daftar Barang:</strong></label>
+                    <div id="view_barang_table" class="mt-2"></div>
                 </div>
                 <div class="form-group">
                     <label><strong>Uraian:</strong></label>
@@ -728,29 +747,117 @@
     });
 
     function viewWorkOrder(id) {
+        console.log('[viewWorkOrder v2] Loading work order:', id);
         fetch(`/logistik/api/work-order/${id}`)
             .then(response => response.json())
             .then(data => {
+                console.log('[viewWorkOrder v2] Data received:', data);
+                console.log('[viewWorkOrder v2] satuan_lookup:', data.satuan_lookup);
+                
                 $('#view_no_wo').text(data.no_surat_pengajuan || data.no_work_order);
                 $('#view_tanggal').text(new Date(data.tanggal).toLocaleDateString('id-ID'));
                 $('#view_divisi_pengaju').text(data.divisi_pengaju);
                 $('#view_ditujukan').text(data.ditujukan);
                 
-                // Tampilkan unit
-                let unitDisplay = '-';
-                if (Array.isArray(data.unit)) {
-                    if (data.unit.length > 0) {
-                        unitDisplay = data.unit.join(', ');
+                // Cek jenis work order
+                const jenisWo = data.jenis_wo ? data.jenis_wo.toLowerCase() : '';
+                const isPembelian = jenisWo === 'pembelian';
+                
+                // Helper function untuk mengambil satuan dari data satuan_lookup
+                function getSatuanByBarangName(barangName) {
+                    if (data.satuan_lookup && data.satuan_lookup[barangName]) {
+                        return data.satuan_lookup[barangName];
                     }
-                } else if (data.unit && typeof data.unit === 'string') {
-                    // Remove qty format jika ada untuk display di field Unit
-                    unitDisplay = data.unit.replace(/\s*\(qty:\s*\d+\)/g, '');
-                } else if (data.unit && data.unit.nama_unit) {
-                    unitDisplay = data.unit.nama_unit;
-                } else if (data.unit_code) {
-                    unitDisplay = data.unit_code;
+                    return '-';
                 }
-                $('#view_unit').html(unitDisplay || '-');
+                
+                // Parse format dengan qty dan tampilkan dalam table
+                let unitDisplay = '-';
+                let barangTable = '';
+                
+                // Jika jenis WO adalah Pembelian, tampilkan tabel barang (sama dengan kadivmekanik)
+                if (isPembelian) {
+                    // Tampilkan tabel di div baru
+                    if (Array.isArray(data.unit)) {
+                        // Jika array, buat table dengan qty dan satuan
+                        if (data.unit.length > 0) {
+                            barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
+                            barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 37%;">Nama Barang</th><th style="width: 15%; text-align: center !important;">Qty</th><th style="width: 20%; text-align: center !important;">Satuan</th></tr></thead><tbody>';
+                            data.unit.forEach(function(item, index) {
+                                const qtyMatch = item.match(/\(qty:\s*(\d+)\)/);
+                                if (qtyMatch) {
+                                    const qty = qtyMatch[1];
+                                    const barangName = item.replace(/\s*\(qty:\s*\d+\)/, '').trim();
+                                    const satuan = getSatuanByBarangName(barangName);
+                                    barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 37%;">${barangName}</td><td style="width: 15%; text-align: center !important;"><strong>${qty}</strong></td><td style="width: 20%; text-align: center !important;">${satuan}</td></tr>`;
+                                } else {
+                                    const satuan = getSatuanByBarangName(item);
+                                    barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 37%;">${item}</td><td style="width: 15%; text-align: center !important;"><strong>-</strong></td><td style="width: 20%; text-align: center !important;">${satuan}</td></tr>`;
+                                }
+                            });
+                            barangTable += '</tbody></table>';
+                        }
+                    } else if (data.unit && typeof data.unit === 'string') {
+                        // Parse string dengan format "Barang1 (qty: 5), Barang2 (qty: 3)"
+                        if (data.unit.includes(',')) {
+                            const parts = data.unit.split(',').map(v => v.trim()).filter(v => v);
+                            if (parts.length > 0) {
+                                barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
+                                barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 37%;">Nama Barang</th><th style="width: 15%; text-align: center !important;">Qty</th><th style="width: 20%; text-align: center !important;">Satuan</th></tr></thead><tbody>';
+                                parts.forEach(function(part, index) {
+                                    const qtyMatch = part.match(/\(qty:\s*(\d+)\)/);
+                                    if (qtyMatch) {
+                                        const qty = qtyMatch[1];
+                                        const barangName = part.replace(/\s*\(qty:\s*\d+\)/, '').trim();
+                                        const satuan = getSatuanByBarangName(barangName);
+                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 37%;">${barangName}</td><td style="width: 15%; text-align: center !important;"><strong>${qty}</strong></td><td style="width: 20%; text-align: center !important;">${satuan}</td></tr>`;
+                                    } else {
+                                        const satuan = getSatuanByBarangName(part);
+                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 37%;">${part}</td><td style="width: 15%; text-align: center !important;"><strong>-</strong></td><td style="width: 20%; text-align: center !important;">${satuan}</td></tr>`;
+                                    }
+                                });
+                                barangTable += '</tbody></table>';
+                            }
+                        } else {
+                            // Single value dengan atau tanpa qty
+                            const qtyMatch = data.unit.match(/\(qty:\s*(\d+)\)/);
+                            const barangName = data.unit.replace(/\s*\(qty:\s*\d+\)/, '').trim();
+                            const satuan = getSatuanByBarangName(barangName);
+                            const qty = qtyMatch ? qtyMatch[1] : '1';
+                            
+                            barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
+                            barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 37%;">Nama Barang</th><th style="width: 15%; text-align: center !important;">Qty</th><th style="width: 20%; text-align: center !important;">Satuan</th></tr></thead><tbody>';
+                            barangTable += `<tr><td style="width: 8%;">1</td><td style="width: 37%;">${barangName}</td><td style="width: 15%; text-align: center !important;"><strong>${qty}</strong></td><td style="width: 20%; text-align: center !important;">${satuan}</td></tr>`;
+                            barangTable += '</tbody></table>';
+                        }
+                    }
+                    
+                    // Tampilkan tabel di div baru dan sembunyikan field Unit
+                    if (barangTable) {
+                        $('#view_barang_table').html(barangTable);
+                        $('#view_barang_container').show();
+                    } else {
+                        $('#view_barang_container').hide();
+                    }
+                    $('#view_label_unit').closest('.form-group').hide();
+                } else {
+                    // Jika tidak ada data barang, tampilkan di field Unit seperti biasa
+                    if (Array.isArray(data.unit)) {
+                        if (data.unit.length > 0) {
+                            unitDisplay = data.unit.join(', ');
+                        }
+                    } else if (data.unit && typeof data.unit === 'string') {
+                        // Remove qty format jika ada untuk display di field Unit
+                        unitDisplay = data.unit.replace(/\s*\(qty:\s*\d+\)/g, '');
+                    } else if (data.unit && data.unit.nama_unit) {
+                        unitDisplay = data.unit.nama_unit;
+                    } else if (data.unit_code) {
+                        unitDisplay = data.unit_code;
+                    }
+                    $('#view_unit').html(unitDisplay || '-');
+                    $('#view_label_unit').closest('.form-group').show();
+                    $('#view_barang_container').hide();
+                }
                 
                 // Set status dengan badge berwarna sesuai status
                 var statusText = data.status || 'Menunggu';
