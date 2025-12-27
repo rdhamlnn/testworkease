@@ -10,6 +10,7 @@ use App\Models\Divisi;
 use App\Models\Peran;
 use App\Models\Unit;
 use App\Models\JenisWorkOrder;
+use Carbon\Carbon;
 
 class SuratPengajuanSeeder extends Seeder
 {
@@ -49,15 +50,24 @@ class SuratPengajuanSeeder extends Seeder
             'Disetujui' => 2,
             'Ditolak' => 3,
         ];
+        
+        // Mapping divisi ke prefix
+        $divisiPrefixMap = [
+            'Logistik' => 'LOG',
+            'Mekanik' => 'MKN',
+            'Produksi' => 'PRD',
+            'Purchasing' => 'PUR',
+            'Plasma' => 'PLS',
+            'Quality Control' => 'QC',
+        ];
 
+        // Entries TANPA no_surat_pengajuan - akan di-generate otomatis berdasarkan tanggal
         $entries = [
-            // Work Order untuk Logistik (Work Order Masuk)
-            // Perbaikan: ditujukan ke Mekanik (bukan Logistik) - perbaiki alur
+            // ============ LOGISTIK WO ============
             [
-                'no_surat_pengajuan' => '01/LOG/KCE/2025',
                 'divisi_pengaju' => 'Logistik',
                 'ditujukan' => 'Mekanik',
-                'unit_name' => $unit1, // Perbaikan: nama unit dari master
+                'unit_name' => $unit1,
                 'status' => 'Menunggu',
                 'uraian' => '[seeders] Perbaikan sistem hidrolik crane',
                 'tanggal' => now()->subDays(5),
@@ -65,37 +75,10 @@ class SuratPengajuanSeeder extends Seeder
                 'jenis_wo' => 'Perbaikan',
                 'status_dibaca' => false,
             ],
-            // Permintaan: unit = "-"
             [
-                'no_surat_pengajuan' => '02/LOG/KCE/2025',
-                'divisi_pengaju' => 'Produksi',
-                'ditujukan' => 'Logistik',
-                'unit_name' => '-', // Permintaan: hanya uraian
-                'status' => 'Disetujui',
-                'uraian' => '[seeders] Permintaan jasa pengiriman material',
-                'tanggal' => now()->subDays(4),
-                'peran' => 'Kadiv',
-                'jenis_wo' => 'Permintaan',
-                'status_dibaca' => true,
-            ],
-            [
-                'no_surat_pengajuan' => '03/LOG/KCE/2025',
-                'divisi_pengaju' => 'Purchasing',
-                'ditujukan' => 'Logistik',
-                'unit_name' => '-', // Permintaan: hanya uraian
-                'status' => 'Menunggu',
-                'uraian' => '[seeders] Permintaan pengecekan stok gudang',
-                'tanggal' => now()->subDays(3),
-                'peran' => 'Kadiv',
-                'jenis_wo' => 'Permintaan',
-                'status_dibaca' => false,
-            ],
-            // Work Order untuk Purchasing (Work Order Masuk) - Pembelian
-            [
-                'no_surat_pengajuan' => '04/PUR/KCE/2025',
                 'divisi_pengaju' => 'Logistik',
                 'ditujukan' => 'Purchasing',
-                'unit_name' => "{$barang1} (qty: 2), {$barang2} (qty: 3)", // Pembelian: format barang
+                'unit_name' => "{$barang1} (qty: 2), {$barang2} (qty: 3)",
                 'status' => 'Menunggu',
                 'uraian' => '[seeders] Pembelian sparepart untuk maintenance rutin',
                 'tanggal' => now()->subDays(4),
@@ -103,111 +86,45 @@ class SuratPengajuanSeeder extends Seeder
                 'jenis_wo' => 'Pembelian',
                 'status_dibaca' => false,
             ],
+            
+            // ============ PRODUKSI WO ============
             [
-                'no_surat_pengajuan' => '05/PUR/KCE/2025',
-                'divisi_pengaju' => 'Mekanik',
-                'ditujukan' => 'Logistik',
-                'unit_name' => "{$barang3} (qty: 4), {$barang4} (qty: 2)", // Pembelian: format barang
-                'status' => 'Disetujui',
-                'uraian' => '[seeders] Pembelian bahan untuk perbaikan rem tronton',
-                'tanggal' => now()->subDays(2),
-                'peran' => 'Kadiv',
-                'jenis_wo' => 'Pembelian',
-                'status_dibaca' => true,
-            ],
-            [
-                'no_surat_pengajuan' => '06/PUR/KCE/2025',
                 'divisi_pengaju' => 'Produksi',
                 'ditujukan' => 'Logistik',
-                'unit_name' => "{$barang5} (qty: 5)", // Pembelian: format barang
-                'status' => 'Menunggu',
-                'uraian' => '[seeders] Pembelian filter untuk service berkala',
-                'tanggal' => now()->subDay(),
-                'peran' => 'Kadiv',
-                'jenis_wo' => 'Pembelian',
-                'status_dibaca' => false,
-            ],
-            // Work Order untuk Mekanik (Work Order Masuk) - Perbaikan
-            [
-                'no_surat_pengajuan' => '07/MKN/KCE/2025',
-                'divisi_pengaju' => 'Plasma',
-                'ditujukan' => 'Mekanik',
-                'unit_name' => $unit1, // Perbaikan: nama unit dari master
-                'status' => 'Menunggu',
-                'uraian' => '[seeders] Perbaikan lampu hazard tidak menyala',
-                'tanggal' => now()->subDays(6),
-                'peran' => 'Kadiv',
-                'jenis_wo' => 'Perbaikan',
-                'status_dibaca' => false,
-            ],
-            [
-                'no_surat_pengajuan' => '08/MKN/KCE/2025',
-                'divisi_pengaju' => 'Produksi',
-                'ditujukan' => 'Mekanik',
-                'unit_name' => $unit2, // Perbaikan: nama unit dari master
-                'status' => 'Disetujui',
-                'uraian' => '[seeders] Perbaikan oli bocor di mesin',
-                'tanggal' => now()->subDays(3),
-                'peran' => 'Kadiv',
-                'jenis_wo' => 'Perbaikan',
-                'status_dibaca' => true,
-            ],
-            // Permintaan ditujukan ke mekanik - ini tidak valid sesuai aturan, ubah ke Permintaan ke divisi lain
-            [
-                'no_surat_pengajuan' => '09/MKN/KCE/2025',
-                'divisi_pengaju' => 'Quality Control',
-                'ditujukan' => 'Produksi',
-                'unit_name' => '-', // Permintaan: hanya uraian
+                'unit_name' => '-',
                 'status' => 'Ditolak',
-                'uraian' => '[seeders] Permintaan bantuan tenaga kerja',
-                'tanggal' => now()->subDays(7),
-                'peran' => 'Kadiv',
-                'jenis_wo' => 'Permintaan',
-                'status_dibaca' => false,
-            ],
-            // Work Order untuk Produksi (Work Order Masuk) - Permintaan
-            [
-                'no_surat_pengajuan' => '10/PRD/KCE/2025',
-                'divisi_pengaju' => 'Mekanik',
-                'ditujukan' => 'Produksi',
-                'unit_name' => '-', // Permintaan: hanya uraian
-                'status' => 'Menunggu',
-                'uraian' => '[seeders] Permintaan koordinasi jadwal produksi',
-                'tanggal' => now()->subDay(),
+                'uraian' => '[seeders] Permintaan pengiriman material urgent',
+                'tanggal' => now()->subDays(15),
                 'peran' => 'Kadiv',
                 'jenis_wo' => 'Permintaan',
                 'status_dibaca' => false,
             ],
             [
-                'no_surat_pengajuan' => '11/PRD/KCE/2025',
-                'divisi_pengaju' => 'Quality Control',
-                'ditujukan' => 'Produksi',
-                'unit_name' => '-', // Permintaan: hanya uraian
+                'divisi_pengaju' => 'Produksi',
+                'ditujukan' => 'Logistik',
+                'unit_name' => '-',
                 'status' => 'Disetujui',
-                'uraian' => '[seeders] Permintaan laporan hasil produksi',
-                'tanggal' => now()->subDays(7),
+                'uraian' => '[seeders] Permintaan jasa pengiriman material',
+                'tanggal' => now()->subDays(5),
                 'peran' => 'Kadiv',
                 'jenis_wo' => 'Permintaan',
                 'status_dibaca' => true,
             ],
             [
-                'no_surat_pengajuan' => '12/PRD/KCE/2025',
-                'divisi_pengaju' => 'Plasma',
-                'ditujukan' => 'Produksi',
-                'unit_name' => '-', // Permintaan: hanya uraian
-                'status' => 'Ditolak',
-                'uraian' => '[seeders] Permintaan tambahan shift kerja',
-                'tanggal' => now()->subDays(9),
+                'divisi_pengaju' => 'Produksi',
+                'ditujukan' => 'Plasma',
+                'unit_name' => '-',
+                'status' => 'Menunggu',
+                'uraian' => '[seeders] Permintaan pemotongan plat baja',
+                'tanggal' => now()->subDays(4),
                 'peran' => 'Kadiv',
                 'jenis_wo' => 'Permintaan',
                 'status_dibaca' => false,
             ],
-            // Work Order untuk Plasma (Work Order Masuk)
             [
-                'no_surat_pengajuan' => '13/PLS/KCE/2025',
                 'divisi_pengaju' => 'Produksi',
                 'ditujukan' => 'Mekanik',
-                'unit_name' => $unit1, // Perbaikan: nama unit dari master
+                'unit_name' => $unit1,
                 'status' => 'Disetujui',
                 'uraian' => '[seeders] Perbaikan mesin plasma cutting',
                 'tanggal' => now()->subDays(2),
@@ -216,23 +133,20 @@ class SuratPengajuanSeeder extends Seeder
                 'status_dibaca' => true,
             ],
             [
-                'no_surat_pengajuan' => '14/PLS/KCE/2025',
                 'divisi_pengaju' => 'Produksi',
-                'ditujukan' => 'Plasma',
-                'unit_name' => '-', // Permintaan: hanya uraian
+                'ditujukan' => 'Logistik',
+                'unit_name' => "{$barang5} (qty: 5)",
                 'status' => 'Menunggu',
-                'uraian' => '[seeders] Permintaan pemotongan plat baja',
-                'tanggal' => now()->subDays(5),
+                'uraian' => '[seeders] Pembelian filter untuk service berkala',
+                'tanggal' => now()->subDay(),
                 'peran' => 'Kadiv',
-                'jenis_wo' => 'Permintaan',
+                'jenis_wo' => 'Pembelian',
                 'status_dibaca' => false,
             ],
-            // Work Order untuk Quality Control (Work Order Masuk)
             [
-                'no_surat_pengajuan' => '15/QC/KCE/2025',
                 'divisi_pengaju' => 'Produksi',
                 'ditujukan' => 'Quality Control',
-                'unit_name' => '-', // Permintaan: hanya uraian
+                'unit_name' => '-',
                 'status' => 'Menunggu',
                 'uraian' => '[seeders] Permintaan inspeksi kualitas hasil welding',
                 'tanggal' => now()->subDay(),
@@ -240,11 +154,12 @@ class SuratPengajuanSeeder extends Seeder
                 'jenis_wo' => 'Permintaan',
                 'status_dibaca' => false,
             ],
+            
+            // ============ PURCHASING WO ============
             [
-                'no_surat_pengajuan' => '16/QC/KCE/2025',
                 'divisi_pengaju' => 'Purchasing',
                 'ditujukan' => 'Quality Control',
-                'unit_name' => '-', // Permintaan: hanya uraian
+                'unit_name' => '-',
                 'status' => 'Disetujui',
                 'uraian' => '[seeders] Permintaan verifikasi spesifikasi barang',
                 'tanggal' => now()->subDays(11),
@@ -252,24 +167,23 @@ class SuratPengajuanSeeder extends Seeder
                 'jenis_wo' => 'Permintaan',
                 'status_dibaca' => true,
             ],
-            // Work Order untuk Riwayat (berbagai status)
             [
-                'no_surat_pengajuan' => '17/LOG/KCE/2025',
-                'divisi_pengaju' => 'Logistik',
-                'ditujukan' => 'Mekanik',
-                'unit_name' => $unit2, // Perbaikan: nama unit dari master
+                'divisi_pengaju' => 'Purchasing',
+                'ditujukan' => 'Logistik',
+                'unit_name' => '-',
                 'status' => 'Menunggu',
-                'uraian' => '[seeders] Perbaikan sensor suhu mesin',
-                'tanggal' => now()->subDays(13),
+                'uraian' => '[seeders] Permintaan pengecekan stok gudang',
+                'tanggal' => now()->subDays(3),
                 'peran' => 'Kadiv',
-                'jenis_wo' => 'Perbaikan',
+                'jenis_wo' => 'Permintaan',
                 'status_dibaca' => false,
             ],
+            
+            // ============ MEKANIK WO ============
             [
-                'no_surat_pengajuan' => '18/MKN/KCE/2025',
                 'divisi_pengaju' => 'Mekanik',
                 'ditujukan' => 'Logistik',
-                'unit_name' => "{$barang1} (qty: 3), {$barang3} (qty: 2)", // Pembelian: format barang
+                'unit_name' => "{$barang1} (qty: 3), {$barang3} (qty: 2)",
                 'status' => 'Disetujui',
                 'uraian' => '[seeders] Pembelian sparepart untuk stok gudang',
                 'tanggal' => now()->subDays(12),
@@ -278,25 +192,106 @@ class SuratPengajuanSeeder extends Seeder
                 'status_dibaca' => true,
             ],
             [
-                'no_surat_pengajuan' => '19/PRD/KCE/2025',
-                'divisi_pengaju' => 'Produksi',
+                'divisi_pengaju' => 'Mekanik',
                 'ditujukan' => 'Logistik',
-                'unit_name' => '-', // Permintaan: hanya uraian
-                'status' => 'Ditolak',
-                'uraian' => '[seeders] Permintaan pengiriman material urgent',
-                'tanggal' => now()->subDays(15),
+                'unit_name' => "{$barang3} (qty: 4), {$barang4} (qty: 2)",
+                'status' => 'Disetujui',
+                'uraian' => '[seeders] Pembelian bahan untuk perbaikan rem tronton',
+                'tanggal' => now()->subDays(2),
+                'peran' => 'Kadiv',
+                'jenis_wo' => 'Pembelian',
+                'status_dibaca' => true,
+            ],
+            [
+                'divisi_pengaju' => 'Mekanik',
+                'ditujukan' => 'Produksi',
+                'unit_name' => '-',
+                'status' => 'Menunggu',
+                'uraian' => '[seeders] Permintaan koordinasi jadwal produksi',
+                'tanggal' => now()->subDay(),
                 'peran' => 'Kadiv',
                 'jenis_wo' => 'Permintaan',
                 'status_dibaca' => false,
             ],
+            
+            // ============ PLASMA WO ============
+            [
+                'divisi_pengaju' => 'Plasma',
+                'ditujukan' => 'Produksi',
+                'unit_name' => '-',
+                'status' => 'Ditolak',
+                'uraian' => '[seeders] Permintaan tambahan shift kerja',
+                'tanggal' => now()->subDays(9),
+                'peran' => 'Kadiv',
+                'jenis_wo' => 'Permintaan',
+                'status_dibaca' => false,
+            ],
+            [
+                'divisi_pengaju' => 'Plasma',
+                'ditujukan' => 'Mekanik',
+                'unit_name' => $unit1,
+                'status' => 'Menunggu',
+                'uraian' => '[seeders] Perbaikan lampu hazard tidak menyala',
+                'tanggal' => now()->subDays(6),
+                'peran' => 'Kadiv',
+                'jenis_wo' => 'Perbaikan',
+                'status_dibaca' => false,
+            ],
+            
+            // ============ QUALITY CONTROL WO ============
+            [
+                'divisi_pengaju' => 'Quality Control',
+                'ditujukan' => 'Produksi',
+                'unit_name' => '-',
+                'status' => 'Ditolak',
+                'uraian' => '[seeders] Permintaan bantuan tenaga kerja',
+                'tanggal' => now()->subDays(8),
+                'peran' => 'Kadiv',
+                'jenis_wo' => 'Permintaan',
+                'status_dibaca' => false,
+            ],
+            [
+                'divisi_pengaju' => 'Quality Control',
+                'ditujukan' => 'Produksi',
+                'unit_name' => '-',
+                'status' => 'Disetujui',
+                'uraian' => '[seeders] Permintaan laporan hasil produksi',
+                'tanggal' => now()->subDays(7),
+                'peran' => 'Kadiv',
+                'jenis_wo' => 'Permintaan',
+                'status_dibaca' => true,
+            ],
         ];
+        
+        // Sort entries by tanggal (oldest first) untuk setiap divisi
+        // Group by divisi_pengaju
+        $groupedEntries = collect($entries)->groupBy('divisi_pengaju');
+        
+        // Sort each group by tanggal and assign sequence numbers
+        $processedEntries = [];
+        foreach ($groupedEntries as $divisi => $divisiEntries) {
+            // Sort by date (oldest first)
+            $sorted = $divisiEntries->sortBy(function($entry) {
+                return $entry['tanggal']->timestamp;
+            })->values();
+            
+            // Assign sequence numbers based on sorted order
+            $prefix = $divisiPrefixMap[$divisi] ?? 'XXX';
+            $year = now()->year;
+            
+            foreach ($sorted as $index => $entry) {
+                $sequence = str_pad($index + 1, 2, '0', STR_PAD_LEFT);
+                $entry['no_surat_pengajuan'] = "{$sequence}/{$prefix}/KCE/{$year}";
+                $processedEntries[] = $entry;
+            }
+        }
 
         $resolveAccountId = function (int $divisiId) use ($akunByDivisi, $defaultAkunId) {
             $accounts = $akunByDivisi->get($divisiId);
             return ($accounts && $accounts->isNotEmpty()) ? $accounts->first()->id_akun : $defaultAkunId;
         };
 
-        foreach ($entries as $entry) {
+        foreach ($processedEntries as $entry) {
             $divisiPengajuId = $divisiMap->get($entry['divisi_pengaju']) ?? $defaultDivisiId;
             $peranId = $peranMap->get($entry['peran'] ?? 'Kadiv') ?? $defaultPeranId;
             $unitId = $unitMap->get($entry['unit_name']) ?? $defaultUnitId;

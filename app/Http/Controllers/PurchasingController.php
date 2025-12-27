@@ -1197,17 +1197,18 @@ class PurchasingController extends Controller
         $year = date('Y');
         $month = date('m');
 
+        // Filter by prefix so sequence is per divisi
         $lastWorkOrder = SuratPengajuan::whereYear('created_at', $year)
             ->whereMonth('created_at', $month)
             ->where('no_surat_pengajuan', 'like', "%/{$prefix}/%")
-            ->orderBy('created_at', 'desc')
+            ->orderByRaw("CAST(SUBSTRING_INDEX(no_surat_pengajuan, '/', 1) AS UNSIGNED) DESC")
             ->first();
 
         if ($lastWorkOrder) {
             $lastNumber = explode('/', $lastWorkOrder->no_surat_pengajuan)[0];
-            $sequence = str_pad((int)$lastNumber + 1, 3, '0', STR_PAD_LEFT);
+            $sequence = str_pad((int)$lastNumber + 1, 2, '0', STR_PAD_LEFT);
         } else {
-            $sequence = '001';
+            $sequence = '01';
         }
 
         return "{$sequence}/{$prefix}/KCE/{$year}";

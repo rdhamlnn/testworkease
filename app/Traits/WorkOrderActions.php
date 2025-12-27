@@ -478,15 +478,19 @@ trait WorkOrderActions
 
     /**
      * Generate common work order number.
+     * Format: [SEQUENCE]/[DIVISI_PREFIX]/KCE/[YEAR]
+     * Sequence is per divisi (prefix), reset per month.
      */
     protected function generateWorkOrderNumber($prefix = 'KCE')
     {
         $year = Carbon::now('Asia/Makassar')->year;
         $month = Carbon::now('Asia/Makassar')->month;
         
+        // Filter by prefix so sequence is per divisi, not global
         $lastWorkOrder = SuratPengajuan::whereYear('created_at', $year)
             ->whereMonth('created_at', $month)
-            ->orderBy('created_at', 'desc')
+            ->where('no_surat_pengajuan', 'like', "%/{$prefix}/%")
+            ->orderByRaw("CAST(SUBSTRING_INDEX(no_surat_pengajuan, '/', 1) AS UNSIGNED) DESC")
             ->first();
         
         $sequence = '01';
