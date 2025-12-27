@@ -679,10 +679,6 @@
                                                 title="Lihat Detail & Kirim Ulang ke Atasan">
                                                 <i class="fas fa-paper-plane"></i>
                                             </a>
-                                            <button type="button" class="btn btn-warning btn-sm btn-edit" 
-                                                data-id="{{ $wo->id_surat_pengajuan }}" title="Edit">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
                                             @elseif($status == 'Menunggu')
                                             <button type="button" class="btn btn-warning btn-sm btn-edit" 
                                                 data-id="{{ $wo->id_surat_pengajuan }}" title="Edit"
