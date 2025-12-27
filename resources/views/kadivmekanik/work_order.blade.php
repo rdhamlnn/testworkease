@@ -1483,10 +1483,14 @@
                     unitContainer.html(getUnitSelectTemplate(0, true));
                     const firstSelect = unitContainer.find('.select2-unit-dynamic[data-index="0"]');
                     initSelect2Dynamic(firstSelect);
+                    // Tampilkan button Tambah pada select pertama
+                    updateHapusButtonVisibility(true);
                 } else {
                     unitContainer.find('.select2-unit-dynamic').each(function() {
                         initSelect2Dynamic($(this));
                     });
+                    // Update visibility button setelah re-initialize
+                    updateHapusButtonVisibility(true);
                 }
             } else {
                 unitInput.show().attr('required', 'required').attr('name', 'unit');
@@ -1854,6 +1858,8 @@
                 }
             });
         }
+        // Expose ke window scope agar bisa diakses dari window.toggleUnitFieldEdit
+        window.updateHapusButtonVisibility = updateHapusButtonVisibility;
         
         // clearUnitSelects sudah didefinisikan di global scope di atas
         
@@ -2068,7 +2074,8 @@
                 ditujukanSelect.find('option:first').text('-- Pilih Jenis Work Order terlebih dahulu --');
             }
             
-            // Hapus filterDivisiDitujukanEdit karena bisa error jika dipanggil dari luar scope
+            // Panggil filter untuk menampilkan opsi Ditujukan yang sesuai
+            filterDivisiDitujukanEdit();
             toggleUnitFieldEdit();
             // Toggle perbaikan unit untuk edit modal
             if (typeof togglePerbaikanUnit === 'function') {
