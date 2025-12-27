@@ -2673,12 +2673,12 @@
                 let unitDisplay = '-';
                 let barangTable = '';
                 
-                // Helper function untuk mengambil satuan dari template barang
+                // Helper function untuk mengambil satuan dari data satuan_lookup
                 function getSatuanByBarangName(barangName) {
-                    const $option = $('#template_barang_options option').filter(function() {
-                        return $(this).val() === barangName;
-                    });
-                    return $option.length > 0 ? ($option.data('satuan') || '-') : '-';
+                    if (data.satuan_lookup && data.satuan_lookup[barangName]) {
+                        return data.satuan_lookup[barangName];
+                    }
+                    return '-';
                 }
                 
                 if (isPembelian) {
