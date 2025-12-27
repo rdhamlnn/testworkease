@@ -581,7 +581,7 @@
             "paging": true,
             "pageLength": 10,
             "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
-            "order": [[1, 'asc']], // Default sort by Hari/Tanggal ascending (oldest to newest)
+            "order": [[1, 'desc']], // Default sort by Hari/Tanggal descending (newest first)
             "columnDefs": [
                 {
                     "targets": 0,
