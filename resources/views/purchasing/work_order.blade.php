@@ -2158,6 +2158,52 @@
             }, 300);
         });
         
+        // Event handler untuk button Reset di form Tambah WO
+        $('#tambahWorkOrderForm').on('reset', function(e) {
+            // Simpan nilai jenis WO sebelum reset
+            const savedJenisWo = $('#id_jenis_wo').val();
+            
+            // Tunggu sebentar agar form reset standar selesai dulu
+            setTimeout(function() {
+                // Kembalikan nilai jenis WO
+                if (savedJenisWo) {
+                    $('#id_jenis_wo').val(savedJenisWo);
+                }
+                
+                // Reset container daftar barang (Pembelian)
+                clearUnitSelects(false);
+                $('#unit_pembelian_container').hide().html('');
+                
+                // Destroy dan reset Select2 untuk unit_select (Perbaikan)
+                if ($('#unit_select').hasClass('select2-hidden-accessible')) {
+                    $('#unit_select').select2('destroy');
+                }
+                $('#unit_select').val('').hide().removeAttr('name').removeAttr('required');
+                
+                // Reset visibility dan state field unit
+                $('#unit').val('').show().attr('required', 'required').attr('name', 'unit');
+                $('#label_unit').html('Nama Unit / Code <span class="text-danger">*</span>');
+                
+                // Reset toggle perbaikan unit ke state default (Tidak)
+                $('#is_perbaikan_unit_no').prop('checked', true).parent().addClass('active');
+                $('#is_perbaikan_unit_yes').prop('checked', false).parent().removeClass('active');
+                
+                // Panggil fungsi filter dan toggle untuk update state berdasarkan jenis WO yang dipilih
+                if (typeof window.filterDivisiDitujukan === 'function') {
+                    window.filterDivisiDitujukan();
+                }
+                if (typeof window.toggleUnitField === 'function') {
+                    window.toggleUnitField();
+                }
+                // Panggil togglePerbaikanUnit untuk update toggle visibility berdasarkan jenis WO
+                if (typeof togglePerbaikanUnit === 'function') {
+                    togglePerbaikanUnit(false);
+                }
+                
+                console.log('Form Tambah WO berhasil di-reset');
+            }, 10);
+        });
+        
         // Reset field ditujukan dan unit saat modal edit dibuka
         $('#editWorkOrderModal').on('show.bs.modal', function(e) {
             // Cek apakah sedang dalam proses edit (editWorkOrder sedang populate)
