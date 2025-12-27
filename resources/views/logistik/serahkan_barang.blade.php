@@ -370,9 +370,10 @@
         </div>
     </div>
 </div>
-@endsection
 
 @include('components.confirm-modal')
+@endsection
+
 @section('scripts')
 <script>
     // Handler form submit dengan vanilla JS - langsung proses via AJAX
