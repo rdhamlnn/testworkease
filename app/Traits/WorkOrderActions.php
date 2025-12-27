@@ -464,6 +464,6 @@ trait WorkOrderActions
     /**
      * Helper to get redirect routes. To be customized in controller if needed.
      */
-    protected function getWorkOrderRedirectRoute() { return route(str_replace('Controller', '', class_basename($this)) . '.work-order'); }
-    protected function getDaftarPengajuanRedirectRoute() { return route(str_replace('Controller', '', class_basename($this)) . '.daftar-pengajuan-work-order', ['from' => 'crud']); }
+    protected function getWorkOrderRedirectRoute() { return route(strtolower(str_replace('Controller', '', class_basename($this))) . '.work-order'); }
+    protected function getDaftarPengajuanRedirectRoute() { return route(strtolower(str_replace('Controller', '', class_basename($this))) . '.daftar-pengajuan-work-order', ['from' => 'crud']); }
 }
