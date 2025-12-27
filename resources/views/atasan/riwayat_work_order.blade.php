@@ -265,8 +265,8 @@
                                         <th>Barang</th>
                                         <th>Qty</th>
                                         <th>Satuan</th>
-                                        <th>Uraian</th>
                                         <th>Total Harga</th>
+                                        <th>Uraian</th>
                                         <th>Status</th>
                                         <th>Aksi</th>
                                     </tr>
@@ -361,8 +361,10 @@
                                                 @endif
                                             </td>
                                             
-                                            <td>{{ Str::limit($wo->uraian, 30) }}</td>
+                                            {{-- Kolom Total Harga --}}
                                             <td>Rp {{ number_format($wo->calculated_total_harga ?? 0, 0, ',', '.') }}</td>
+                                            
+                                            <td>{{ Str::limit($wo->uraian, 30) }}</td>
                                             <td>
                                                 @if($status == 'Disetujui' || $status == 'Selesai')
                                                     <span class="badge badge-success">{{ $status }}</span>

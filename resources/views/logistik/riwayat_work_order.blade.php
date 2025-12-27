@@ -339,6 +339,7 @@
                                         <th>Barang</th>
                                         <th>Qty</th>
                                         <th>Satuan</th>
+                                        <th>Total Harga</th>
                                         <th>Uraian</th>
                                         <th>Status</th>
                                         <th>Aksi</th>
@@ -375,6 +376,25 @@
                                                     }
                                                 }
                                             }
+                                            
+                                            // Hitung Total Harga
+                                            $calculatedTotalHarga = 0;
+                                            if ($isPembelian) {
+                                                // Prioritas 1: dari permintaanBarang->total_estimasi_harga
+                                                if ($wo->permintaanBarang && $wo->permintaanBarang->total_estimasi_harga > 0) {
+                                                    $calculatedTotalHarga = $wo->permintaanBarang->total_estimasi_harga;
+                                                } else {
+                                                    // Prioritas 2: hitung dari barang dan qty
+                                                    foreach ($barangItems as $idx => $nama) {
+                                                        $barangData = $barangLookup->get($nama);
+                                                        if ($barangData && $barangData->harga_barang > 0) {
+                                                            $qty = $qtyItems[$idx] ?? 1;
+                                                            $calculatedTotalHarga += $barangData->harga_barang * $qty;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            $totalHarga = $wo->calculated_total_harga ?? $calculatedTotalHarga;
                                         @endphp
                                         <tr>
                                             <td>{{ $i + 1 }}</td>
@@ -425,6 +445,9 @@
                                                 @endif
                                             </td>
                                             
+                                            {{-- Kolom Total Harga --}}
+                                            <td>Rp {{ number_format($totalHarga, 0, ',', '.') }}</td>
+                                            
                                             <td>{{ Str::limit($wo->uraian, 30) }}</td>
                                             <td>
                                                 @if($status == 'Disetujui' || $status == 'Selesai')
@@ -458,7 +481,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="12" class="text-center text-muted">Belum ada data work order</td>
+                                            <td colspan="13" class="text-center text-muted">Belum ada data work order</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
