@@ -77,7 +77,7 @@ trait WorkOrderActions
             'ditujukan' => $workOrder->ditujukan,
             'id_jenis_wo' => $workOrder->id_jenis_wo,
             'jenis_wo' => $workOrder->jenisWorkOrder ? $workOrder->jenisWorkOrder->nama_jenis_wo : null,
-            'tanggal' => $workOrder->tanggal,
+            'tanggal' => $workOrder->tanggal ? \Carbon\Carbon::parse($workOrder->tanggal)->format('Y-m-d') : null,
             'unit' => $rawUnit,
             'id_unit' => $workOrder->id_unit,
             'uraian' => $workOrder->uraian,
