@@ -1090,39 +1090,39 @@ class LogistikController extends Controller
     
     /**
      * Proses serahkan barang.
+     * - Mengurangi stok barang dari daftar_barang sesuai jumlah yang diminta
+     * - Update status permintaan menjadi 'Diserahkan ke Divisi'
+     * - Update status work order menjadi 'Disetujui' (id_verifikator=2)
+     *   agar tampil di Riwayat Work Order keempat departemen terkait
      */
     public function prosesSerahkanBarang($id)
     {
         try {
             $permintaan = PermintaanBarang::with(['daftarBarang', 'suratPengajuan'])->findOrFail($id);
             
+            DB::beginTransaction();
+            
             // Kurangi stock barang dari daftar_barang berdasarkan detail_barang_permintaan
             if ($permintaan->daftarBarang && $permintaan->daftarBarang->count() > 0) {
                 foreach ($permintaan->daftarBarang as $detail) {
+                    $masterBarang = null;
+                    
                     if ($detail->id_daftar_barang_master) {
                         $masterBarang = DaftarBarang::find($detail->id_daftar_barang_master);
-                        if ($masterBarang) {
-                            // Kurangi stock
-                            $jumlahDiserahkan = $detail->jumlah ?? 0;
-                            $stokSekarang = $masterBarang->stok ?? 0;
-                            $stokBaru = max(0, $stokSekarang - $jumlahDiserahkan); // Pastikan tidak negatif
-                            
-                            $masterBarang->update([
-                                'stok' => $stokBaru
-                            ]);
-                        }
                     } else {
                         // Jika tidak ada id_daftar_barang_master, cari berdasarkan nama_barang
                         $masterBarang = DaftarBarang::where('nama_barang', $detail->nama_barang)->first();
-                        if ($masterBarang) {
-                            $jumlahDiserahkan = $detail->jumlah ?? 0;
-                            $stokSekarang = $masterBarang->stok ?? 0;
-                            $stokBaru = max(0, $stokSekarang - $jumlahDiserahkan);
-                            
-                            $masterBarang->update([
-                                'stok' => $stokBaru
-                            ]);
-                        }
+                    }
+                    
+                    if ($masterBarang) {
+                        // Kurangi stock
+                        $jumlahDiserahkan = $detail->jumlah ?? 0;
+                        $stokSekarang = $masterBarang->stok ?? 0;
+                        $stokBaru = max(0, $stokSekarang - $jumlahDiserahkan); // Pastikan tidak negatif
+                        
+                        $masterBarang->update([
+                            'stok' => $stokBaru
+                        ]);
                     }
                 }
             }
@@ -1135,13 +1135,19 @@ class LogistikController extends Controller
                 'updated_at' => now(),
             ]);
             
-            // Update status SuratPengajuan (Work Order) ke 'Selesai' agar masuk ke riwayat
+            // Update status SuratPengajuan (Work Order) ke 'Disetujui' 
+            // agar tampil di Riwayat Work Order keempat departemen:
+            // (Divisi Pengaju, Logistik, Purchasing, Atasan)
+            // Query riwayat work order mencari id_verifikator = 2 (Disetujui)
             if ($permintaan->suratPengajuan) {
                 $permintaan->suratPengajuan->update([
-                    'status' => 'Selesai',
+                    'status' => 'Disetujui',
+                    'id_verifikator' => 2, // 2 = Disetujui, agar masuk ke riwayat
                     'updated_at' => now(),
                 ]);
             }
+            
+            DB::commit();
             
             // Simpan success message di session untuk toast notification
             Session::flash('success', 'Barang berhasil diserahkan ke divisi dan stok telah dikurangi!');
@@ -1153,6 +1159,8 @@ class LogistikController extends Controller
                 'redirect' => route('logistik.serahkan-barang', ['from' => 'crud'])
             ]);
         } catch (\Exception $e) {
+            DB::rollBack();
+            
             Session::flash('error', 'Gagal menyerahkan barang: ' . $e->getMessage());
             Session::flash('from_crud', true);
             

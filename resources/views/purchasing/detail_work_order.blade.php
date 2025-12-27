@@ -341,40 +341,90 @@
                         @endif
 
                         <!-- Form Input Harga Pembelian (Log) -->
-                        @if($isPembelian && count($barangItems) > 0)
-                        <div class="section-title mt-4">Input Harga Pembelian (Log)</div>
+                        {{-- Sembunyikan form input pembelian jika status sudah 'Disetujui' atau 'Selesai' --}}
+                        @if($isPembelian && count($barangItems) > 0 && !in_array($status, ['Disetujui', 'Selesai']))
+                        <div class="section-title mt-4">Input Barang yang Akan Dibeli</div>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle mr-1"></i> 
+                            Pilih barang yang akan dibeli dari daftar work order. Barang yang tidak dipilih tidak akan masuk ke daftar pembelian.
+                        </div>
                         <div class="card bg-light border-0 shadow-sm mb-4">
                             <div class="card-body">
-                                <form action="{{ route('purchasing.store-harga-barang') }}" method="POST">
+                                <form action="{{ route('purchasing.store-harga-barang') }}" method="POST" id="formPembelianBarang">
                                     @csrf
                                     <input type="hidden" name="id_surat_pengajuan" value="{{ $workOrder->id_surat_pengajuan }}">
                                     
-                                    <div class="row align-items-end">
-                                        <div class="col-md-5">
-                                            <div class="form-group mb-0">
-                                                <label for="id_barang">Pilih Barang yang Dibeli</label>
-                                                <select class="form-control select2" id="id_barang" name="id_barang" required style="width: 100%;">
-                                                    <option value="">-- Pilih Barang --</option>
-                                                    @foreach($barangItems as $item)
-                                                        @if(isset($item['id_barang']) && $item['id_barang'])
-                                                            <option value="{{ $item['id_barang'] }}" data-harga="{{ $item['harga_satuan'] }}">
-                                                                {{ $item['nama_barang'] }} (Qty: {{ $item['jumlah'] }} {{ $item['satuan'] }})
-                                                            </option>
-                                                        @endif
-                                                    @endforeach
-                                                </select>
-                                                <small class="form-text text-muted">Hanya barang yang terdaftar di master data yang bisa dipilih.</small>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group mb-0">
-                                                <label for="harga_barang">Harga Beli Satuan (Rp)</label>
-                                                <input type="number" class="form-control" id="harga_barang" name="harga_barang" min="0" required placeholder="0">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <button type="submit" class="btn btn-primary btn-block">
-                                                <i class="fas fa-save mr-1"></i> Update Harga
+                                    <!-- Table untuk input barang yang akan dibeli -->
+                                    <div class="table-responsive mb-3">
+                                        <table class="table table-bordered" id="tablePembelian">
+                                            <thead class="thead-dark">
+                                                <tr>
+                                                    <th width="5%"><input type="checkbox" id="checkAll" title="Pilih Semua"></th>
+                                                    <th>Nama Barang</th>
+                                                    <th width="10%">Qty</th>
+                                                    <th width="10%">Satuan</th>
+                                                    <th width="20%">Harga Beli Satuan (Rp)</th>
+                                                    <th width="20%">Total Harga</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($barangItems as $index => $item)
+                                                    @if(isset($item['id_barang']) && $item['id_barang'])
+                                                    <tr>
+                                                        <td class="text-center">
+                                                            <input type="checkbox" 
+                                                                   name="barang_dipilih[]" 
+                                                                   value="{{ $item['id_barang'] }}" 
+                                                                   class="barang-checkbox"
+                                                                   data-index="{{ $index }}">
+                                                        </td>
+                                                        <td>
+                                                            {{ $item['nama_barang'] }}
+                                                            <input type="hidden" name="barang[{{ $item['id_barang'] }}][nama]" value="{{ $item['nama_barang'] }}">
+                                                        </td>
+                                                        <td>
+                                                            <input type="number" 
+                                                                   class="form-control form-control-sm qty-input" 
+                                                                   name="barang[{{ $item['id_barang'] }}][jumlah]" 
+                                                                   value="{{ $item['jumlah'] }}" 
+                                                                   min="1"
+                                                                   data-original-qty="{{ $item['jumlah'] }}"
+                                                                   disabled>
+                                                        </td>
+                                                        <td>
+                                                            {{ $item['satuan'] }}
+                                                            <input type="hidden" name="barang[{{ $item['id_barang'] }}][satuan]" value="{{ $item['satuan'] }}">
+                                                        </td>
+                                                        <td>
+                                                            <input type="number" 
+                                                                   class="form-control form-control-sm harga-input" 
+                                                                   name="barang[{{ $item['id_barang'] }}][harga_satuan]" 
+                                                                   value="{{ $item['harga_satuan'] ?? 0 }}" 
+                                                                   min="0"
+                                                                   placeholder="0"
+                                                                   disabled>
+                                                        </td>
+                                                        <td class="total-harga-cell">
+                                                            <span class="total-item">Rp 0</span>
+                                                        </td>
+                                                    </tr>
+                                                    @endif
+                                                @endforeach
+                                            </tbody>
+                                            <tfoot>
+                                                <tr class="table-secondary">
+                                                    <td colspan="5" class="text-right"><strong>Grand Total:</strong></td>
+                                                    <td><strong id="grandTotal">Rp 0</strong></td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-12 text-right">
+                                            <span class="mr-3 text-muted" id="selectedCount">0 barang dipilih</span>
+                                            <button type="submit" class="btn btn-primary" id="btnSubmitPembelian" disabled>
+                                                <i class="fas fa-save mr-1"></i> Simpan Daftar Pembelian
                                             </button>
                                         </div>
                                     </div>
@@ -417,22 +467,114 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     $(document).ready(function() {
-        // Init Select2
+        // Init Select2 (jika masih ada select2 lain di halaman)
         $('.select2').select2({
             theme: 'bootstrap4',
             width: '100%'
         });
 
-        // Auto-fill harga saat barang dipilih
-        $('#id_barang').on('change', function() {
-            var selectedOption = $(this).find('option:selected');
-            var harga = selectedOption.data('harga');
-            // Jika harga ada dan > 0, isi field harga
-            if (harga && harga > 0) {
-                $('#harga_barang').val(harga);
+        // Format number as currency
+        function formatRupiah(angka) {
+            return 'Rp ' + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        // Calculate individual item total and grand total
+        function calculateTotals() {
+            let grandTotal = 0;
+            let selectedCount = 0;
+
+            $('#tablePembelian tbody tr').each(function() {
+                const checkbox = $(this).find('.barang-checkbox');
+                const qtyInput = $(this).find('.qty-input');
+                const hargaInput = $(this).find('.harga-input');
+                const totalCell = $(this).find('.total-item');
+
+                if (checkbox.is(':checked')) {
+                    selectedCount++;
+                    const qty = parseInt(qtyInput.val()) || 0;
+                    const harga = parseFloat(hargaInput.val()) || 0;
+                    const total = qty * harga;
+                    grandTotal += total;
+                    totalCell.text(formatRupiah(total));
+                } else {
+                    totalCell.text('Rp 0');
+                }
+            });
+
+            $('#grandTotal').text(formatRupiah(grandTotal));
+            $('#selectedCount').text(selectedCount + ' barang dipilih');
+            
+            // Enable/disable submit button
+            if (selectedCount > 0) {
+                $('#btnSubmitPembelian').prop('disabled', false);
             } else {
-                $('#harga_barang').val('');
+                $('#btnSubmitPembelian').prop('disabled', true);
             }
+        }
+
+        // Handle checkbox change
+        $(document).on('change', '.barang-checkbox', function() {
+            const row = $(this).closest('tr');
+            const qtyInput = row.find('.qty-input');
+            const hargaInput = row.find('.harga-input');
+
+            if ($(this).is(':checked')) {
+                qtyInput.prop('disabled', false);
+                hargaInput.prop('disabled', false);
+            } else {
+                qtyInput.prop('disabled', true);
+                hargaInput.prop('disabled', true);
+            }
+
+            calculateTotals();
+        });
+
+        // Handle "Check All" checkbox
+        $('#checkAll').on('change', function() {
+            const isChecked = $(this).is(':checked');
+            $('.barang-checkbox').each(function() {
+                $(this).prop('checked', isChecked);
+                const row = $(this).closest('tr');
+                row.find('.qty-input').prop('disabled', !isChecked);
+                row.find('.harga-input').prop('disabled', !isChecked);
+            });
+            calculateTotals();
+        });
+
+        // Handle qty/harga input change
+        $(document).on('input', '.qty-input, .harga-input', function() {
+            calculateTotals();
+        });
+
+        // Handle form submission
+        $('#formPembelianBarang').on('submit', function(e) {
+            // Validation: check if at least one item is selected
+            const selectedItems = $('.barang-checkbox:checked');
+            if (selectedItems.length === 0) {
+                e.preventDefault();
+                alert('Pilih minimal satu barang untuk dibeli.');
+                return false;
+            }
+
+            // Validation: check if all selected items have price > 0
+            let hasZeroPrice = false;
+            selectedItems.each(function() {
+                const row = $(this).closest('tr');
+                const harga = parseFloat(row.find('.harga-input').val()) || 0;
+                if (harga <= 0) {
+                    hasZeroPrice = true;
+                    return false; // break loop
+                }
+            });
+
+            if (hasZeroPrice) {
+                e.preventDefault();
+                alert('Semua barang yang dipilih harus memiliki harga > 0.');
+                return false;
+            }
+
+            // Continue with form submission
+            return true;
         });
 
         // Handle approve form
@@ -443,6 +585,9 @@
             const message = form.data('message') || 'Yakin ingin menyetujui work order ini?';
             showApproveRejectConfirm(url, 'approve', message);
         });
+
+        // Initial calculation on page load
+        calculateTotals();
     });
 </script>
 @endsection

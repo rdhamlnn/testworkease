@@ -230,13 +230,31 @@ class PurchasingController extends Controller
     {
         $userDivisiNama = DB::table('divisi')->where('id_divisi', Session::get('user_divisi'))->value('nama_divisi') ?? 'Purchasing';
         
-        $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent'])
-            ->dibuatAtauDiterima($userDivisiNama)
-            ->byVerifikator([2, 3])
+        $workOrders = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'parent', 'daftarPembelianBarang'])
+            ->where(function($query) use ($userDivisiNama) {
+                // Kondisi 1: WO yang dibuat/ditujukan ke Purchasing dengan verifikator 2/3
+                $query->where(function($q) use ($userDivisiNama) {
+                    $q->where(function($sub) use ($userDivisiNama) {
+                        $sub->where('divisi_pengaju', $userDivisiNama)
+                            ->orWhere('ditujukan', $userDivisiNama);
+                    })
+                    ->whereIn('id_verifikator', [2, 3]);
+                })
+                // Kondisi 2: WO yang pernah diproses Purchasing (ada log pembelian)
+                ->orWhereHas('daftarPembelianBarang')
+                // Kondisi 3: WO dengan status Disetujui (sudah selesai di-serahkan)
+                ->orWhere(function($q) {
+                    $q->where('status', 'Disetujui')
+                      ->orWhere('id_verifikator', 2);
+                });
+            })
             ->orderBy('created_at', 'desc')
             ->get();
         
-        return view('purchasing.riwayat_work_order', compact('workOrders'));
+        // Ambil daftar barang untuk lookup satuan
+        $daftarBarang = DaftarBarang::all();
+        
+        return view('purchasing.riwayat_work_order', compact('workOrders', 'daftarBarang'));
     }
 
     /**
@@ -1247,17 +1265,18 @@ class PurchasingController extends Controller
 
     /**
      * Halaman Daftar Barang Work Order (Log Pembelian).
+     * Menampilkan data barang yang sudah di-order setelah WO status 'Disetujui'
+     * (trigger: button Serahkan Barang di Logistik)
      */
     public function daftarBarangWorkOrder()
     {
-        // Hanya tampilkan daftar barang dari Work Order yang statusnya sudah Selesai
+        // Tampilkan daftar barang dari Work Order yang statusnya 'Disetujui'
+        // Ini adalah status setelah Logistik menekan button "Serahkan Barang"
         $pembelian = DaftarPembelianBarang::with(['barang', 'workOrder'])
             ->whereHas('workOrder', function($query) {
-                $query->where('status', 'LIKE', '%Selesai%')
-                      ->orWhere('status', 'LIKE', '%Disetujui Purchasing%') // Asumsi purchasing approval is final/part of completed flow
-                      ->orWhereHas('verifikator', function($q) {
-                          $q->where('nama_status', 'Selesai');
-                      });
+                $query->where('status', 'Disetujui')
+                      ->orWhere('id_verifikator', 2) // 2 = Disetujui
+                      ->orWhere('status', 'LIKE', '%Selesai%'); // Backward compatibility
             })
             ->orderBy('created_at', 'desc')
             ->get();
@@ -1266,102 +1285,102 @@ class PurchasingController extends Controller
     }
 
     /**
-     * Simpan harga barang dari halaman Detail Work Order.
+     * Simpan daftar barang yang dibeli dari halaman Detail Work Order.
+     * - Mengupdate field 'unit' di surat_pengajuan dengan barang yang dipilih saja
+     * - Menyimpan log ke daftar_pembelian_barang
      */
     public function storeHargaBarang(Request $request)
     {
         $request->validate([
             'id_surat_pengajuan' => 'required|exists:surat_pengajuan,id_surat_pengajuan',
-            'id_barang' => 'required|exists:daftar_barang,id_daftar_barang',
-            'harga_barang' => 'required|numeric|min:0',
+            'barang_dipilih' => 'required|array|min:1',
+            'barang_dipilih.*' => 'exists:daftar_barang,id_daftar_barang',
+            'barang' => 'required|array',
         ]);
 
         try {
+            DB::beginTransaction();
+
             $woId = $request->id_surat_pengajuan;
-            $barangId = $request->id_barang;
-            $hargaBaru = $request->harga_barang;
+            $barangDipilih = $request->barang_dipilih;
+            $barangData = $request->barang;
 
-            // Cari item di detail_barang_permintaan (jika ada) untuk dapat qty
-            // Atau jika tidak ada, default qty 1 (karena user bilang "berelasi dengan qty")
-            // Item harus ada dalam WO tersebut.
-            
-            // Kita cari detail permintaannya lewat relasi WO -> permintaan -> detail
+            $workOrder = SuratPengajuan::findOrFail($woId);
             $permintaan = PermintaanBarang::where('id_surat_pengajuan', $woId)->first();
-            $jumlah = 0; 
+
+            // Array untuk menyimpan format string 'unit' baru
+            $unitParts = [];
+            $totalHargaBaru = 0;
+
+            // Hapus log pembelian lama (jika ada) untuk WO ini
+            DaftarPembelianBarang::where('id_surat_pengajuan', $woId)->delete();
             
+            // Jika ada permintaan, hapus detail barang lama dan siapkan untuk update
             if ($permintaan) {
-                // Coba cari di detail_barang_permintaan
-                $detail = DetailBarangPermintaan::where('id_permintaan_barang', $permintaan->id_permintaan_barang)
-                    ->where('id_daftar_barang_master', $barangId)
-                    ->first();
-                
-                if ($detail) {
-                    $jumlah = $detail->jumlah;
-                    
-                    // Update estimasi harga di detail permintaan (opsional, tapi bagus agar sinkron)
-                    $detail->update([
-                        'estimasi_harga' => $hargaBaru * $jumlah
-                    ]);
-                    
-                    // Update total estimasi harga di permintaan_barang
-                    $permintaan->total_estimasi_harga = $permintaan->daftarBarang()->sum('estimasi_harga');
-                    $permintaan->save();
-                }
-            }
-            
-            // Jika jumlah masih 0 (tidak ketemu di detail permintaan), coba parse dari unit string
-            if ($jumlah == 0) {
-                $workOrder = SuratPengajuan::find($woId);
-                if ($workOrder && $workOrder->unit && $workOrder->unit !== '-') {
-                    $masterBarang = DaftarBarang::find($barangId);
-                    $targetNama = $masterBarang ? strtolower($masterBarang->nama_barang) : '';
-                    
-                    $parts = explode(', ', $workOrder->unit);
-                    foreach ($parts as $part) {
-                        // Cek format "Nama Barang (qty: X)"
-                        if (preg_match('/^(.+?)\s*\(qty:\s*(\d+)\)$/i', trim($part), $matches)) {
-                            $namaBarang = trim($matches[1]);
-                            if (strtolower($namaBarang) == $targetNama) {
-                                $jumlah = (int)$matches[2];
-                                break;
-                            }
-                        } elseif (trim($part) !== '') {
-                             // Cek format "Nama Barang" (qty default 1)
-                             $namaBarang = trim($part);
-                             if (strtolower($namaBarang) == $targetNama) {
-                                $jumlah = 1;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            
-            // Fallback default 1 jika masih 0
-            if ($jumlah == 0) {
-                $jumlah = 1;
+                DetailBarangPermintaan::where('id_permintaan_barang', $permintaan->id_permintaan_barang)->delete();
             }
 
-            // Simpan ke log pembelian (daftar_pembelian_barang)
-            // Gunakan updateOrCreate agar jika harga diedit, record lama diupdate
-            DaftarPembelianBarang::updateOrCreate(
-                [
+            foreach ($barangDipilih as $barangId) {
+                if (!isset($barangData[$barangId])) {
+                    continue;
+                }
+
+                $data = $barangData[$barangId];
+                $namaBarang = $data['nama'] ?? '';
+                $jumlah = (int)($data['jumlah'] ?? 1);
+                $satuan = $data['satuan'] ?? '';
+                $hargaSatuan = (float)($data['harga_satuan'] ?? 0);
+                $totalHarga = $hargaSatuan * $jumlah;
+
+                // Format untuk field 'unit': "Nama Barang (qty: X)"
+                $unitParts[] = $namaBarang . ' (qty: ' . $jumlah . ')';
+
+                // Simpan ke log daftar_pembelian_barang
+                DaftarPembelianBarang::create([
                     'id_barang' => $barangId,
                     'id_surat_pengajuan' => $woId,
-                ],
-                [
                     'jumlah' => $jumlah,
-                    'harga_satuan' => $hargaBaru,
-                    'total_harga' => $hargaBaru * $jumlah,
-                ]
-            );
+                    'harga_satuan' => $hargaSatuan,
+                    'total_harga' => $totalHarga,
+                ]);
 
-            // Note: Tidak mengupdate harga di master DaftarBarang sesuai arahan user
-            // "table daftar barang hanya berelasi dengan id barang, nama barang, qty, satuan saja"
+                $totalHargaBaru += $totalHarga;
 
-            return redirect()->back()->with('success', 'Harga barang berhasil diperbarui dan dicatat.');
+                // Update/create detail_barang_permintaan jika ada permintaan
+                if ($permintaan) {
+                    DetailBarangPermintaan::create([
+                        'id_permintaan_barang' => $permintaan->id_permintaan_barang,
+                        'id_daftar_barang_master' => $barangId,
+                        'nama_barang' => $namaBarang,
+                        'jumlah' => $jumlah,
+                        'satuan' => $satuan,
+                        'estimasi_harga' => $totalHarga,
+                    ]);
+                }
+            }
+
+            // Update field 'unit' di surat_pengajuan dengan barang yang dipilih saja
+            $newUnitString = implode(', ', $unitParts);
+            $workOrder->update([
+                'unit' => $newUnitString,
+                'updated_at' => now(),
+            ]);
+
+            // Update total_estimasi_harga di permintaan_barang jika ada
+            if ($permintaan) {
+                $permintaan->update([
+                    'total_estimasi_harga' => $totalHargaBaru,
+                    'id_purchasing' => Session::get('user_id'),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'Daftar barang pembelian berhasil disimpan. Total: ' . count($barangDipilih) . ' barang.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal menyimpan harga: ' . $e->getMessage());
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal menyimpan daftar barang: ' . $e->getMessage());
         }
     }
 }

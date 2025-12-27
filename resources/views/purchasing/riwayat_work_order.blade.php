@@ -9,94 +9,6 @@
 
 @section('styles')
 <style>
-    .modal-header {
-        background-color: #1B3C88 !important;
-        color: #fff !important;
-    }
-
-    .modal-header .close {
-        color: #fff !important;
-        opacity: 1 !important;
-    }
-
-    .modal-header .close:hover {
-        opacity: 0.8 !important;
-    }
-
-    .modal-body {
-        padding: 20px 30px;
-    }
-
-    .modal-footer {
-        padding: 15px 30px;
-    }
-    
-    /* FIX empty table message to appear in first column (No) and left-aligned */
-    .dataTables_empty,
-    table.dataTable tbody tr td.dataTables_empty,
-    table.dataTable tbody tr td:first-child.dataTables_empty,
-    .dataTables_empty td,
-    table.dataTable tbody tr td[colspan].dataTables_empty {
-        text-align: left !important;
-        padding-left: 15px !important;
-        padding-right: 0 !important;
-        margin: 0 !important;
-        float: none !important;
-        position: static !important;
-        direction: ltr !important;
-        unicode-bidi: normal !important;
-        transform: none !important;
-        justify-content: flex-start !important;
-        align-items: flex-start !important;
-        display: block !important;
-        width: auto !important;
-        max-width: none !important;
-        box-sizing: border-box !important;
-        colspan: 1 !important;
-    }
-    
-    /* Force empty message to first column only */
-    table.dataTable tbody tr td[colspan] {
-        text-align: left !important;
-        padding-left: 15px !important;
-        direction: ltr !important;
-        colspan: 1 !important;
-    }
-    
-    /* Override any alignment styles */
-    table.dataTable tbody tr td.dataTables_empty {
-        text-align: left !important;
-        padding-left: 15px !important;
-        margin: 0 !important;
-        display: block !important;
-        width: auto !important;
-        box-sizing: border-box !important;
-    }
-    
-    /* Fix DataTable dropdown border bug */
-    .dataTables_length select {
-        border: 1px solid #ced4da !important;
-        border-radius: 0.375rem !important;
-        padding: 0.375rem 2.25rem 0.375rem 0.75rem !important;
-        font-size: 1rem !important;
-        line-height: 1.5 !important;
-        color: #495057 !important;
-        background-color: #fff !important;
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e") !important;
-        background-repeat: no-repeat !important;
-        background-position: right 0.75rem center !important;
-        background-size: 16px 12px !important;
-        appearance: none !important;
-        width: auto !important;
-        min-width: 80px !important;
-    }
-    
-    .dataTables_length select:focus {
-        border-color: #86b7fe !important;
-        outline: 0 !important;
-        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
-    }
-
     .table-responsive {
         display: block !important;
         width: 100%;
@@ -157,20 +69,149 @@
     .dataTables_wrapper .dataTables_paginate {
         white-space: nowrap !important;
     }
-
-    /* Button Action - Simple & Clean dengan Font Awesome */
-    .btn-view {
-        min-width: 32px;
-        padding: 4px 8px;
+    
+    /* View Work Order Modal - Barang Table Styles */
+    #viewWorkOrderModal .modal-header {
+        background-color: #1B3C88 !important;
+        color: #fff !important;
     }
 
-    .btn-view i {
+    #viewWorkOrderModal .modal-header .close {
+        color: #fff !important;
+        opacity: 1 !important;
+    }
+
+    #viewWorkOrderModal .modal-header .close:hover {
+        opacity: 0.8 !important;
+    }
+
+    #viewWorkOrderModal .modal-body {
+        max-height: 80vh;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        padding: 20px 30px;
+        scrollbar-width: thin;
+        scrollbar-color: #1B3C88 #f1f1f1;
+    }
+    
+    #viewWorkOrderModal .modal-body::-webkit-scrollbar {
+        width: 10px;
+        -webkit-appearance: none;
+    }
+    
+    #viewWorkOrderModal .modal-body::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 5px;
+        -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.1);
+    }
+    
+    #viewWorkOrderModal .modal-body::-webkit-scrollbar-thumb {
+        background: #1B3C88;
+        border-radius: 5px;
+        -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+    }
+    
+    #viewWorkOrderModal .modal-body::-webkit-scrollbar-thumb:hover {
+        background: #0f2a5a;
+    }
+
+    #viewWorkOrderModal .modal-footer {
+        padding: 15px 30px;
+    }
+    
+    #view_barang_container {
+        width: 100%;
+        overflow: hidden;
+    }
+    
+    #view_barang_table {
+        max-height: 400px;
+        overflow-y: auto;
+        overflow-x: auto;
+        width: 100%;
+        position: relative;
+        display: block;
+    }
+    
+    #view_barang_table table {
+        width: 100% !important;
+        margin-bottom: 0;
+        min-width: 100% !important;
+        table-layout: fixed;
+        border-collapse: collapse;
+    }
+    
+    #view_barang_table table thead {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+    }
+    
+    #view_barang_table table tbody {
+        display: block;
+        max-height: 350px;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+    
+    #view_barang_table table tbody tr {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+    }
+    
+    #view_barang_table table th:nth-child(3),
+    #view_barang_table table td:nth-child(3) {
+        text-align: center !important;
+        padding: 8px 12px;
         font-size: 14px;
+        word-wrap: break-word;
     }
-
-    .btn-view:hover {
-        background-color: #138496 !important;
-        border-color: #117a8b !important;
+    
+    #view_barang_table table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    #view_barang_table table tbody::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    #view_barang_table table tbody::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    #view_barang_table table tbody::-webkit-scrollbar-thumb {
+        background: #1B3C88;
+        border-radius: 4px;
+    }
+    
+    #view_barang_table table tbody::-webkit-scrollbar-thumb:hover {
+        background: #0f2a5a;
+    }
+    
+    #view_barang_table::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    #view_barang_table::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    #view_barang_table::-webkit-scrollbar-thumb {
+        background: #1B3C88;
+        border-radius: 4px;
+    }
+    
+    #view_barang_table::-webkit-scrollbar-thumb:hover {
+        background: #0f2a5a;
     }
 </style>
 @endsection
@@ -227,13 +268,16 @@
                                             $isPermintaan = $jenisWo === 'permintaan';
                                             $isPerbaikan = $jenisWo === 'perbaikan';
                                             
+                                            // Parse unit field untuk mendapatkan barang dan qty jika dari Pembelian
                                             $barangItems = [];
                                             $qtyItems = [];
                                             $satuanItems = [];
                                             
+                                            // Buat array lookup untuk satuan dari master barang (jika tersedia)
                                             $barangLookup = isset($daftarBarang) ? collect($daftarBarang)->keyBy('nama_barang') : collect();
                                             
                                             if ($isPembelian && $wo->unit && $wo->unit !== '-') {
+                                                // Parse format: "NamaBarang (qty: X), NamaBarang2 (qty: Y)"
                                                 $parts = explode(', ', $wo->unit);
                                                 foreach ($parts as $part) {
                                                     if (preg_match('/^(.+?)\s*\(qty:\s*(\d+)\)$/i', trim($part), $matches)) {
@@ -251,7 +295,7 @@
                                             }
                                         @endphp
                                         <tr>
-                                            <td>{{ $i + 1 }}</td>
+                                            <td></td>
                                             <td>{{ $wo->no_surat_pengajuan }}</td>
                                             <td>
                                                 @if($wo->jenisWorkOrder)
@@ -263,6 +307,7 @@
                                             <td>{{ $wo->divisi_pengaju }}</td>
                                             <td data-order="{{ \Carbon\Carbon::parse($wo->tanggal)->format('Y-m-d') }}">{{ \Carbon\Carbon::parse($wo->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
                                             
+                                            {{-- Kolom Unit/Code --}}
                                             <td>
                                                 @if($isPembelian)
                                                     <span class="text-muted">-</span>
@@ -275,6 +320,7 @@
                                                 @endif
                                             </td>
                                             
+                                            {{-- Kolom Barang --}}
                                             <td>
                                                 @if($isPembelian && count($barangItems) > 0)
                                                     {{ implode(', ', $barangItems) }}
@@ -283,6 +329,7 @@
                                                 @endif
                                             </td>
                                             
+                                            {{-- Kolom Qty --}}
                                             <td>
                                                 @if($isPembelian && count($qtyItems) > 0)
                                                     {{ implode(', ', $qtyItems) }}
@@ -291,6 +338,7 @@
                                                 @endif
                                             </td>
                                             
+                                            {{-- Kolom Satuan --}}
                                             <td>
                                                 @if($isPembelian && count($satuanItems) > 0)
                                                     {{ implode(', ', $satuanItems) }}
@@ -383,16 +431,14 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label><strong>Unit:</strong></label>
+                            <label id="view_label_unit"><strong>Unit:</strong></label>
                             <p id="view_unit" class="form-control-plaintext border p-2 rounded"></p>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label><strong>Status:</strong></label>
-                            <p id="view_status" class="form-control-plaintext border p-2 rounded"></p>
-                        </div>
-                    </div>
+                </div>
+                <div class="form-group" id="view_barang_container" style="display: none;">
+                    <label><strong>Barang:</strong></label>
+                    <div id="view_barang_table" class="border rounded" style="padding: 0; overflow: hidden;"></div>
                 </div>
                 <div class="form-group">
                     <label><strong>Uraian:</strong></label>
@@ -421,6 +467,12 @@
             "pageLength": 10,
             "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
             "order": [[4, "desc"]],
+            "columnDefs": [
+                {
+                    "orderable": false,
+                    "targets": 0
+                }
+            ],
             "language": {
                 "search": "Cari:",
                 "lengthMenu": "Tampilkan _MENU_ data per halaman",
@@ -432,19 +484,30 @@
                     "previous": "Sebelumnya"
                 },
                 "emptyTable": "Tidak ada data work order"
+            },
+            "drawCallback": function(settings) {
+                var api = this.api();
+                var start = api.page.info().start;
+                
+                // Update nomor urut berdasarkan urutan sorting dan pagination
+                api.column(0, {page: 'current'}).nodes().each(function(cell, i) {
+                    cell.innerHTML = start + i + 1;
+                });
             }
         });
 
         // Filter berdasarkan status
         $('#filterStatus').on('change', function() {
             var status = $(this).val();
-            // Kolom Status adalah index 9 (setelah penambahan 2 kolom baru)
+            // Kolom Status adalah index 10 (0-based: No=0, No WO=1, Jenis WO=2, Divisi=3, Tanggal=4, Unit=5, Barang=6, Qty=7, Satuan=8, Uraian=9, Status=10, Aksi=11)
             if (status === '') {
-                table.column(9).search('').draw();
+                table.column(10).search('').draw();
             } else if (status === 'Disetujui') {
-                table.column(9).search('(Disetujui|Selesai)', true, false).draw();
+                // Filter untuk Disetujui atau Selesai - cari di seluruh text kolom
+                table.column(10).search('(Disetujui|Selesai)', true, false).draw();
             } else {
-                table.column(9).search(status, true, false).draw();
+                // Exact match atau contains untuk status lain
+                table.column(10).search(status, true, false).draw();
             }
         });
 
@@ -458,19 +521,104 @@
         fetch(`/purchasing/api/work-order/${id}`)
             .then(response => response.json())
             .then(data => {
-                $('#view_no_wo').text(data.no_work_order || data.no_surat_pengajuan);
+                $('#view_no_wo').text(data.no_work_order);
                 $('#view_tanggal').text(new Date(data.tanggal).toLocaleDateString('id-ID'));
                 $('#view_divisi_pengaju').text(data.divisi_pengaju);
                 $('#view_ditujukan').text(data.ditujukan);
-                let unitDisplay = '-';
-                if (data.unit && typeof data.unit === 'string') {
-                    unitDisplay = data.unit;
-                } else if (data.unit && data.unit.nama_unit) {
-                    unitDisplay = data.unit.nama_unit;
-                } else if (data.unit_code) {
-                    unitDisplay = data.unit_code;
+                
+                // Cek jenis work order
+                const jenisWo = data.jenis_wo ? data.jenis_wo.toLowerCase() : '';
+                const isPembelian = jenisWo === 'pembelian';
+                
+                // Helper function untuk mengambil satuan dari data barang (jika tersedia)
+                function getSatuanByBarangName(barangName) {
+                    if (data.satuan_lookup && data.satuan_lookup[barangName]) {
+                        return data.satuan_lookup[barangName];
+                    }
+                    return '-';
                 }
-                $('#view_unit').text(unitDisplay);
+                
+                // Parse format dengan qty dan tampilkan dalam table
+                let unitDisplay = '-';
+                let barangTable = '';
+                
+                if (isPembelian) {
+                    if (Array.isArray(data.unit)) {
+                        if (data.unit.length > 0) {
+                            barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
+                            barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 37%;">Nama Barang</th><th style="width: 15%; text-align: center !important;">Qty</th><th style="width: 20%; text-align: center !important;">Satuan</th></tr></thead><tbody>';
+                            data.unit.forEach(function(item, index) {
+                                const qtyMatch = item.match(/\(qty:\s*(\d+)\)/);
+                                if (qtyMatch) {
+                                    const qty = qtyMatch[1];
+                                    const barangName = item.replace(/\s*\(qty:\s*\d+\)/, '').trim();
+                                    const satuan = getSatuanByBarangName(barangName);
+                                    barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 37%;">${barangName}</td><td style="width: 15%; text-align: center !important;"><strong>${qty}</strong></td><td style="width: 20%; text-align: center !important;">${satuan}</td></tr>`;
+                                } else {
+                                    const satuan = getSatuanByBarangName(item);
+                                    barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 37%;">${item}</td><td style="width: 15%; text-align: center !important;"><strong>-</strong></td><td style="width: 20%; text-align: center !important;">${satuan}</td></tr>`;
+                                }
+                            });
+                            barangTable += '</tbody></table>';
+                        }
+                    } else if (data.unit && typeof data.unit === 'string') {
+                        if (data.unit.includes(',')) {
+                            const parts = data.unit.split(',').map(v => v.trim()).filter(v => v);
+                            if (parts.length > 0) {
+                                barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
+                                barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 37%;">Nama Barang</th><th style="width: 15%; text-align: center !important;">Qty</th><th style="width: 20%; text-align: center !important;">Satuan</th></tr></thead><tbody>';
+                                parts.forEach(function(part, index) {
+                                    const qtyMatch = part.match(/\(qty:\s*(\d+)\)/);
+                                    if (qtyMatch) {
+                                        const qty = qtyMatch[1];
+                                        const barangName = part.replace(/\s*\(qty:\s*\d+\)/, '').trim();
+                                        const satuan = getSatuanByBarangName(barangName);
+                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 37%;">${barangName}</td><td style="width: 15%; text-align: center !important;"><strong>${qty}</strong></td><td style="width: 20%; text-align: center !important;">${satuan}</td></tr>`;
+                                    } else {
+                                        const satuan = getSatuanByBarangName(part);
+                                        barangTable += `<tr><td style="width: 8%;">${index + 1}</td><td style="width: 37%;">${part}</td><td style="width: 15%; text-align: center !important;"><strong>-</strong></td><td style="width: 20%; text-align: center !important;">${satuan}</td></tr>`;
+                                    }
+                                });
+                                barangTable += '</tbody></table>';
+                            }
+                        } else {
+                            const qtyMatch = data.unit.match(/\(qty:\s*(\d+)\)/);
+                            if (qtyMatch) {
+                                const qty = qtyMatch[1];
+                                const barangName = data.unit.replace(/\s*\(qty:\s*\d+\)/, '').trim();
+                                const satuan = getSatuanByBarangName(barangName);
+                                barangTable = '<table class="table table-bordered table-sm mb-0" style="width: 100%;">';
+                                barangTable += '<thead><tr><th style="width: 8%;">No</th><th style="width: 37%;">Nama Barang</th><th style="width: 15%; text-align: center !important;">Qty</th><th style="width: 20%; text-align: center !important;">Satuan</th></tr></thead><tbody>';
+                                barangTable += `<tr><td style="width: 8%;">1</td><td style="width: 37%;">${barangName}</td><td style="width: 15%; text-align: center !important;"><strong>${qty}</strong></td><td style="width: 20%; text-align: center !important;">${satuan}</td></tr>`;
+                                barangTable += '</tbody></table>';
+                            }
+                        }
+                    }
+                    
+                    if (barangTable) {
+                        $('#view_barang_table').html(barangTable);
+                        $('#view_barang_container').show();
+                    } else {
+                        $('#view_barang_container').hide();
+                    }
+                    $('#view_label_unit').closest('.form-group').hide();
+                } else {
+                    if (Array.isArray(data.unit)) {
+                        if (data.unit.length > 0) {
+                            unitDisplay = data.unit.join(', ');
+                        }
+                    } else if (data.unit && typeof data.unit === 'string') {
+                        unitDisplay = data.unit.replace(/\s*\(qty:\s*\d+\)/g, '');
+                    } else if (data.unit && data.unit.nama_unit) {
+                        unitDisplay = data.unit.nama_unit;
+                    } else if (data.unit_code) {
+                        unitDisplay = data.unit_code;
+                    }
+                    $('#view_unit').html(unitDisplay);
+                    $('#view_label_unit').html('<strong>Unit:</strong>');
+                    $('#view_label_unit').closest('.form-group').show();
+                    $('#view_barang_container').hide();
+                }
                 
                 // Set status dengan badge berwarna sesuai status
                 var statusText = data.status || 'Menunggu';
@@ -485,6 +633,7 @@
                     badgeClass = 'badge-info'; // Biru untuk status lainnya
                 }
                 $('#view_status').html('<span class="badge ' + badgeClass + '">' + statusText + '</span>');
+                
                 $('#view_jenis_wo').text(data.jenis_wo || '-');
                 $('#view_uraian').text(data.uraian);
                 if (data.dokumentasi && data.dokumentasi !== '-') {
@@ -566,4 +715,3 @@
     </div>
 </div>
 @endsection
-
