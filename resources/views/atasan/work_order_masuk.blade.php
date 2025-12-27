@@ -508,6 +508,10 @@
                     <label><strong>Detail Harga Barang:</strong></label>
                     <div id="view_harga_barang" class="form-control-plaintext border p-2 rounded"></div>
                 </div>
+                <div class="form-group" id="view_total_harga_container">
+                    <label><strong>Total Harga:</strong></label>
+                    <p id="view_total_harga" class="form-control-plaintext border p-2 rounded font-weight-bold" style="color: #1B3C88;"></p>
+                </div>
                 <div class="form-group">
                     <label><strong>Dokumentasi:</strong></label>
                     <div id="view_dokumentasi" class="form-control-plaintext border p-2 rounded"></div>
@@ -733,6 +737,10 @@
                 }
                 
                 $('#view_uraian').text(data.uraian || '-');
+                
+                // Tampilkan Total Harga
+                const totalHarga = data.calculated_total_harga || data.total_harga || 0;
+                $('#view_total_harga').text('Rp ' + new Intl.NumberFormat('id-ID').format(totalHarga));
                 
                 // Tampilkan detail harga barang jika ada
                 if (data.harga_barang && Array.isArray(data.harga_barang) && data.harga_barang.length > 0) {

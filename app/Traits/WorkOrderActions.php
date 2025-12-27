@@ -21,7 +21,7 @@ trait WorkOrderActions
      */
     public function showWorkOrder($id)
     {
-        $workOrder = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder'])->findOrFail($id);
+        $workOrder = SuratPengajuan::with(['divisi', 'unit', 'akun', 'verifikator', 'jenisWorkOrder', 'daftarPembelianBarang.barang', 'permintaanBarang.daftarBarang.masterBarang'])->findOrFail($id);
         
         // Prioritas: Jika status mengandung "Ditolak Atasan", gunakan kolom status langsung
         // karena saat ditolak oleh Atasan, id_verifikator direset ke 1 (Menunggu)
@@ -69,6 +69,65 @@ trait WorkOrderActions
             }
         }
         
+        // Hitung calculated_total_harga
+        $calculatedTotalHarga = 0;
+        
+        // Prioritas 0: Cek Log Realisasi Pembelian (DaftarPembelianBarang)
+        if ($workOrder->daftarPembelianBarang && $workOrder->daftarPembelianBarang->count() > 0) {
+            foreach ($workOrder->daftarPembelianBarang as $log) {
+                $calculatedTotalHarga += $log->total_harga;
+            }
+        } else {
+            // Prioritas 1: Hitung dari detail_barang_permintaan
+            if ($workOrder->permintaanBarang && $workOrder->permintaanBarang->daftarBarang && $workOrder->permintaanBarang->daftarBarang->count() > 0) {
+                foreach ($workOrder->permintaanBarang->daftarBarang as $detail) {
+                    $jumlah = $detail->jumlah ?? 1;
+                    if ($detail->estimasi_harga && $detail->estimasi_harga > 0) {
+                        $calculatedTotalHarga += $detail->estimasi_harga;
+                    } elseif ($detail->masterBarang && $detail->masterBarang->harga_barang && $detail->masterBarang->harga_barang > 0) {
+                        $calculatedTotalHarga += $detail->masterBarang->harga_barang * $jumlah;
+                    }
+                }
+            }
+            
+            // Prioritas 2: Fallback ke total_estimasi_harga dari permintaan_barang
+            if ($calculatedTotalHarga == 0 && $workOrder->permintaanBarang && $workOrder->permintaanBarang->total_estimasi_harga > 0) {
+                $calculatedTotalHarga = $workOrder->permintaanBarang->total_estimasi_harga;
+            }
+            
+            // Prioritas 3: Parse dari field unit dan cari harga di master barang
+            if ($calculatedTotalHarga == 0 && $rawUnit && $rawUnit !== '-') {
+                // Ambil harga dari master barang
+                $masterBarangPrices = DaftarBarang::whereNotNull('harga_barang')
+                    ->where('harga_barang', '>', 0)
+                    ->pluck('harga_barang', 'nama_barang')
+                    ->toArray();
+                
+                // Parse items dari string unit
+                preg_match_all('/([^,]+?)(?:\s*\(qty:\s*(\d+)\))?(?:,|$)/i', $rawUnit, $matches, PREG_SET_ORDER);
+                
+                foreach ($matches as $match) {
+                    $namaBarang = trim($match[1]);
+                    $qty = isset($match[2]) ? (int)$match[2] : 1;
+                    
+                    if (empty($namaBarang)) continue;
+                    
+                    // Cari harga dari master barang
+                    $harga = 0;
+                    foreach ($masterBarangPrices as $nama => $price) {
+                        if (stripos($namaBarang, $nama) !== false || stripos($nama, $namaBarang) !== false) {
+                            $harga = $price;
+                            break;
+                        }
+                    }
+                    
+                    if ($harga > 0) {
+                        $calculatedTotalHarga += $harga * $qty;
+                    }
+                }
+            }
+        }
+        
         $data = [
             'id_surat_pengajuan' => $workOrder->id_surat_pengajuan,
             'no_surat_pengajuan' => $workOrder->no_surat_pengajuan,
@@ -89,6 +148,7 @@ trait WorkOrderActions
             'satuan_lookup' => $satuanLookup,
             'harga_barang' => $workOrder->harga_barang,
             'total_harga' => $workOrder->total_harga,
+            'calculated_total_harga' => $calculatedTotalHarga,
         ];
 
         return response()->json($data);

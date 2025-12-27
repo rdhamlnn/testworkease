@@ -148,7 +148,12 @@
                                 <a href="{{ route('purchasing.daftar-work-order') }}" class="btn btn-success">
                                     <i class="fas fa-arrow-left mr-1"></i> Kembali
                                 </a>
-                                @if($status == 'Menunggu')
+                                @if(strpos($status, 'Ditolak Atasan') !== false)
+                                    <button type="button" class="btn btn-primary btn-resend-atasan" 
+                                        data-url="{{ route('purchasing.work-order.resend-to-atasan', $workOrder->id_surat_pengajuan) }}">
+                                        <i class="fas fa-paper-plane mr-1"></i> Kirim Ulang ke Atasan
+                                    </button>
+                                @elseif($status == 'Menunggu')
                                     <form action="{{ route('purchasing.approve-work-order', $workOrder->id_surat_pengajuan) }}" method="POST" class="approve-form d-inline" 
                                         data-message="Yakin ingin menyetujui work order ini?"
                                         data-wo-id="{{ $workOrder->id_surat_pengajuan }}">
@@ -237,6 +242,19 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        @if(strpos($status, 'Ditolak Atasan') !== false && $workOrder->catatan_penolakan)
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="alert alert-danger" style="border-left: 4px solid #dc3545; border-radius: 8px;">
+                                    <h6 class="font-weight-bold mb-2">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>Catatan Penolakan dari Atasan:
+                                    </h6>
+                                    <p class="mb-0" style="white-space: pre-wrap;">{{ $workOrder->catatan_penolakan }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
                         
                         @if($workOrder->dokumentasi && $workOrder->dokumentasi !== '-')
                         <div class="row">
@@ -586,8 +604,148 @@
             showApproveRejectConfirm(url, 'approve', message);
         });
 
+        // Handle resend to atasan button
+        $(document).on('click', '.btn-resend-atasan', function(e) {
+            e.preventDefault();
+            const url = $(this).data('url');
+            $('#resendConfirmModal').data('resendUrl', url);
+            $('#resendConfirmModal').modal('show');
+        });
+
+        // Handle resend confirmation
+        $('#resendConfirmBtn').on('click', function() {
+            const modal = $('#resendConfirmModal');
+            const url = modal.data('resendUrl');
+            const submitBtn = $(this);
+            const originalHtml = submitBtn.html();
+            
+            if (!url) {
+                alert('URL tidak ditemukan. Silakan coba lagi.');
+                return false;
+            }
+            
+            // Disable button dan tampilkan loading
+            submitBtn.prop('disabled', true);
+            submitBtn.html('<i class="fas fa-spinner fa-spin mr-2"></i>Memproses...');
+            
+            // Submit via AJAX
+            $.ajax({
+                url: url,
+                type: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                data: {
+                    _token: '{{ csrf_token() }}'
+                },
+                dataType: 'json',
+                success: function(response) {
+                    modal.modal('hide');
+                    
+                    if (response && response.success) {
+                        if (response.redirect) {
+                            window.location.href = response.redirect;
+                        } else {
+                            window.location.href = '{{ route("purchasing.work-order") }}?from=crud';
+                        }
+                    } else {
+                        submitBtn.prop('disabled', false);
+                        submitBtn.html(originalHtml);
+                        alert(response.message || 'Gagal mengirim work order.');
+                    }
+                },
+                error: function(xhr) {
+                    modal.modal('hide');
+                    submitBtn.prop('disabled', false);
+                    submitBtn.html(originalHtml);
+                    
+                    let errorMessage = 'Terjadi kesalahan saat mengirim work order.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+                    alert(errorMessage);
+                }
+            });
+            
+            return false;
+        });
+
         // Initial calculation on page load
         calculateTotals();
     });
 </script>
+
+<!-- Modal Konfirmasi Kirim Ulang ke Atasan -->
+<div class="modal fade" id="resendConfirmModal" tabindex="-1" role="dialog" aria-labelledby="resendConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #1B3C88; color: #fff;">
+                <h5 class="modal-title" id="resendConfirmModalLabel">
+                    <i class="fas fa-paper-plane mr-2"></i>Konfirmasi Kirim Ulang
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-paper-plane text-primary" style="font-size: 3.5rem;"></i>
+                </div>
+                <h5 class="text-center mb-3">
+                    Apakah Anda yakin ingin mengirim ulang Work Order ini ke Atasan?
+                </h5>
+                <p class="text-center text-muted mb-0">
+                    Work Order akan dikirim ulang ke Atasan untuk approval.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-2"></i>Batal
+                </button>
+                <button type="button" class="btn btn-primary" id="resendConfirmBtn">
+                    <i class="fas fa-paper-plane mr-2"></i>Ya, Kirim Ulang
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Modal Konfirmasi Kirim Ulang */
+#resendConfirmModal .modal-dialog {
+    max-width: 420px;
+}
+
+#resendConfirmModal .modal-content {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+}
+
+#resendConfirmModal .modal-header {
+    padding: 20px 25px;
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+}
+
+#resendConfirmModal .modal-body {
+    padding: 35px 25px;
+    text-align: center;
+}
+
+#resendConfirmModal .modal-footer {
+    padding: 18px 25px;
+    border-top: 1px solid #e9ecef;
+    background-color: #f8f9fa;
+    border-radius: 0 0 10px 10px;
+}
+
+#resendConfirmModal .modal-footer .btn {
+    padding: 8px 20px;
+    font-weight: 500;
+    border-radius: 6px;
+}
+</style>
 @endsection

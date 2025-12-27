@@ -673,13 +673,12 @@
                                                 <i class="fas fa-comment-alt"></i>
                                             </button>
                                             @endif
-                                            {{-- Button kirim ulang ke Atasan untuk WO yang ditolak --}}
-                                            <button type="button" class="btn btn-primary btn-sm btn-resend-atasan" 
-                                                data-id="{{ $wo->id_surat_pengajuan }}"
-                                                data-url="{{ route('purchasing.work-order.resend-to-atasan', $wo->id_surat_pengajuan) }}"
-                                                title="Kirim Ulang ke Atasan">
+                                            {{-- Button navigasi ke halaman detail untuk kirim ulang ke Atasan --}}
+                                            <a href="{{ route('purchasing.work-order.detail', $wo->id_surat_pengajuan) }}" 
+                                                class="btn btn-primary btn-sm"
+                                                title="Lihat Detail & Kirim Ulang ke Atasan">
                                                 <i class="fas fa-paper-plane"></i>
-                                            </button>
+                                            </a>
                                             <button type="button" class="btn btn-warning btn-sm btn-edit" 
                                                 data-id="{{ $wo->id_surat_pengajuan }}" title="Edit">
                                                 <i class="fas fa-edit"></i>
