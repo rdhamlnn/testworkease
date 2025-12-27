@@ -416,6 +416,7 @@
                                             $barangItems = [];
                                             $qtyItems = [];
                                             $satuanItems = [];
+                                            $calculatedTotalHarga = 0;
                                             
                                             $barangLookup = isset($daftarBarang) ? collect($daftarBarang)->keyBy('nama_barang') : collect();
                                             
@@ -424,17 +425,33 @@
                                                 foreach ($parts as $part) {
                                                     if (preg_match('/^(.+?)\s*\(qty:\s*(\d+)\)$/i', trim($part), $matches)) {
                                                         $namaBarang = trim($matches[1]);
+                                                        $qty = (int)$matches[2];
                                                         $barangItems[] = $namaBarang;
-                                                        $qtyItems[] = (int)$matches[2];
-                                                        $satuanItems[] = $barangLookup->get($namaBarang)->satuan ?? '-';
+                                                        $qtyItems[] = $qty;
+                                                        $masterBarang = $barangLookup->get($namaBarang);
+                                                        $satuanItems[] = $masterBarang->satuan ?? '-';
+                                                        // Hitung harga dari master barang jika tersedia
+                                                        if ($masterBarang && $masterBarang->harga_barang > 0) {
+                                                            $calculatedTotalHarga += $masterBarang->harga_barang * $qty;
+                                                        }
                                                     } elseif (!empty(trim($part))) {
                                                         $namaBarang = trim($part);
                                                         $barangItems[] = $namaBarang;
                                                         $qtyItems[] = 1;
-                                                        $satuanItems[] = $barangLookup->get($namaBarang)->satuan ?? '-';
+                                                        $masterBarang = $barangLookup->get($namaBarang);
+                                                        $satuanItems[] = $masterBarang->satuan ?? '-';
+                                                        // Hitung harga dari master barang jika tersedia
+                                                        if ($masterBarang && $masterBarang->harga_barang > 0) {
+                                                            $calculatedTotalHarga += $masterBarang->harga_barang;
+                                                        }
                                                     }
                                                 }
                                             }
+                                            
+                                            // Gunakan permintaanBarang jika ada, fallback ke calculatedTotalHarga
+                                            $totalHarga = ($wo->permintaanBarang && $wo->permintaanBarang->total_estimasi_harga > 0) 
+                                                ? $wo->permintaanBarang->total_estimasi_harga 
+                                                : $calculatedTotalHarga;
                                         @endphp
                                         <tr>
                                             <td>{{ $i + 1 }}</td>
@@ -486,8 +503,8 @@
                                             </td>
                                             
                                             <td>
-                                                @if($wo->permintaanBarang && $wo->permintaanBarang->total_estimasi_harga > 0)
-                                                    Rp {{ number_format($wo->permintaanBarang->total_estimasi_harga, 0, ',', '.') }}
+                                                @if($isPembelian && $totalHarga > 0)
+                                                    Rp {{ number_format($totalHarga, 0, ',', '.') }}
                                                 @else
                                                     <span class="text-muted">-</span>
                                                 @endif

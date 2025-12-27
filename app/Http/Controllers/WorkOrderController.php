@@ -12,6 +12,7 @@ use App\Models\Unit;
 use App\Models\StatusVerifikator;
 use App\Models\Akun;
 use App\Models\JenisWorkOrder;
+use App\Models\DaftarBarang;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 
@@ -63,10 +64,12 @@ class WorkOrderController extends Controller
                 'divisi_pengaju' => $item->divisi_pengaju,
                 'ditujukan' => $item->ditujukan,
                 'tanggal' => $item->tanggal,
-                'unit_code' => $item->unit->nama_unit ?? $item->unit,
+                'unit' => $item->getAttributes()['unit'] ?? null,
+                'unit_code' => $item->unit->nama_unit ?? $item->getAttributes()['unit'],
                 'uraian' => $item->uraian,
                 'dokumentasi' => $item->dokumentasi,
                 'status' => $item->verifikator->nama_status ?? 'Menunggu',
+                'verifikator' => $item->verifikator,
                 'jenisWorkOrder' => $item->jenisWorkOrder,
                 'divisi_nama' => $item->divisi->nama_divisi ?? '',
                 'unit_nama' => $item->unit->nama_unit ?? '',
@@ -81,8 +84,9 @@ class WorkOrderController extends Controller
         $unitOptions = Unit::all();
         $jenisWorkOrder = JenisWorkOrder::all();
         $nextWorkOrderNumber = $this->generateWorkOrderNumber('ADM');
+        $daftarBarang = DaftarBarang::all();
 
-        return view('admin.work_order', compact('workOrders', 'divisi', 'unit', 'statusVerifikator', 'nextWorkOrderNumber', 'karyawan', 'unitOptions', 'jenisWorkOrder'));
+        return view('admin.work_order', compact('workOrders', 'divisi', 'unit', 'statusVerifikator', 'nextWorkOrderNumber', 'karyawan', 'unitOptions', 'jenisWorkOrder', 'daftarBarang'));
     }
 
     /**
@@ -250,7 +254,8 @@ class WorkOrderController extends Controller
             'akun.karyawan',
             'akun.divisi',
             'divisiPengaju',
-            'unit'
+            'unit',
+            'permintaanBarang.daftarBarang'
         ])->findOrFail($id);
 
         // Akun pembuat WO

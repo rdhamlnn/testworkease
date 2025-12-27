@@ -367,7 +367,8 @@ class AtasanController extends Controller
             'akun.divisi',
             'divisiPengaju',
             'unit',
-            'parent'
+            'parent',
+            'permintaanBarang.daftarBarang'
         ])->findOrFail($id);
 
         // Akun pembuat WO

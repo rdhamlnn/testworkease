@@ -613,6 +613,10 @@
                                 <th>Divisi Pengaju</th>
                                 <th>Hari/Tanggal</th>
                                 <th>Unit/Code</th>
+                                <th>Barang</th>
+                                <th>Qty</th>
+                                <th>Satuan</th>
+                                <th>Total Harga</th>
                                 <th>Uraian</th>
                                 <th>Status</th>
                                 <th>Aksi</th>
@@ -632,6 +636,48 @@
                                     $statusLabel = $status ?? 'Menunggu';
                                     $statusLower = strtolower($statusLabel);
                                     $isLocked = in_array($wo->id_verifikator, [2, 3]);
+                                    
+                                    $jenisWo = $wo->jenisWorkOrder ? strtolower($wo->jenisWorkOrder->nama_jenis_wo) : '';
+                                    $isPembelian = $jenisWo === 'pembelian';
+                                    $isPermintaan = $jenisWo === 'permintaan';
+                                    $isPerbaikan = $jenisWo === 'perbaikan';
+                                    
+                                    $barangItems = [];
+                                    $qtyItems = [];
+                                    $satuanItems = [];
+                                    $calculatedTotalHarga = 0;
+                                    
+                                    $barangLookup = isset($daftarBarang) ? collect($daftarBarang)->keyBy('nama_barang') : collect();
+                                    
+                                    if ($isPembelian && $wo->unit && $wo->unit !== '-') {
+                                        $parts = explode(', ', $wo->unit);
+                                        foreach ($parts as $part) {
+                                            if (preg_match('/^(.+?)\s*\(qty:\s*(\d+)\)$/i', trim($part), $matches)) {
+                                                $namaBarang = trim($matches[1]);
+                                                $qty = (int)$matches[2];
+                                                $barangItems[] = $namaBarang;
+                                                $qtyItems[] = $qty;
+                                                $masterBarang = $barangLookup->get($namaBarang);
+                                                $satuanItems[] = $masterBarang->satuan ?? '-';
+                                                if ($masterBarang && $masterBarang->harga_barang > 0) {
+                                                    $calculatedTotalHarga += $masterBarang->harga_barang * $qty;
+                                                }
+                                            } elseif (!empty(trim($part))) {
+                                                $namaBarang = trim($part);
+                                                $barangItems[] = $namaBarang;
+                                                $qtyItems[] = 1;
+                                                $masterBarang = $barangLookup->get($namaBarang);
+                                                $satuanItems[] = $masterBarang->satuan ?? '-';
+                                                if ($masterBarang && $masterBarang->harga_barang > 0) {
+                                                    $calculatedTotalHarga += $masterBarang->harga_barang;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    
+                                    $totalHarga = ($wo->permintaanBarang && $wo->permintaanBarang->total_estimasi_harga > 0) 
+                                        ? $wo->permintaanBarang->total_estimasi_harga 
+                                        : $calculatedTotalHarga;
                                 @endphp
                                 <tr>
                                     <td>{{ $i + 1 }}</td>
@@ -645,7 +691,50 @@
                                     </td>
                                     <td>{{ $wo->divisi_pengaju }}</td>
                                     <td>{{ \Carbon\Carbon::parse($wo->tanggal)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}</td>
-                                    <td>{{ $wo->unit }}</td>
+                                    {{-- Kolom Unit/Code --}}
+                                    <td>
+                                        @if($isPembelian)
+                                            <span class="text-muted">-</span>
+                                        @elseif($isPermintaan)
+                                            <span class="text-muted">-</span>
+                                        @elseif($isPerbaikan)
+                                            {{ $wo->unit && $wo->unit !== '-' ? $wo->unit : '-' }}
+                                        @else
+                                            {{ $wo->unit ?? '-' }}
+                                        @endif
+                                    </td>
+                                    {{-- Kolom Barang --}}
+                                    <td>
+                                        @if($isPembelian && count($barangItems) > 0)
+                                            {{ implode(', ', $barangItems) }}
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    {{-- Kolom Qty --}}
+                                    <td>
+                                        @if($isPembelian && count($qtyItems) > 0)
+                                            {{ implode(', ', $qtyItems) }}
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    {{-- Kolom Satuan --}}
+                                    <td>
+                                        @if($isPembelian && count($satuanItems) > 0)
+                                            {{ implode(', ', $satuanItems) }}
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    {{-- Kolom Total Harga --}}
+                                    <td>
+                                        @if($isPembelian && $totalHarga > 0)
+                                            Rp {{ number_format($totalHarga, 0, ',', '.') }}
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
                                     <td>{{ Str::limit($wo->uraian, 30) }}</td>
                                     <td>
                                         @if($status == 'Disetujui' || $status == 'Selesai')
@@ -699,7 +788,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="11" class="text-center text-muted">Belum ada data work order</td>
+                                    <td colspan="13" class="text-center text-muted">Belum ada data work order</td>
                                 </tr>
                             @endforelse
                         </tbody>

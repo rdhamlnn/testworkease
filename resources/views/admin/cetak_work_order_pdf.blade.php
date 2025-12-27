@@ -184,11 +184,16 @@
             <td>:</td>
             <td>{{ $wo->divisi_pengaju ?? '-' }}</td>
         </tr>
+        @php
+            $jenisWo = strtolower($wo->jenisWorkOrder->nama_jenis_wo ?? '');
+        @endphp
+        @if($jenisWo === 'perbaikan')
         <tr>
             <td class="label">NAMA UNIT/CODE</td>
             <td>:</td>
             <td>{{ $wo->unit ?? '-' }}</td>
         </tr>
+        @endif
         <tr>
             <td class="label">URAIAN</td>
             <td>:</td>
@@ -208,9 +213,101 @@
                                             <span class="badge badge-warning">{{ $wo->status_text }}</span>
                                         @endif
                                     </td>
-            
         </tr>
     </table>
+
+    {{-- TABEL DAFTAR BARANG - Hanya untuk WO Pembelian --}}
+    @php
+        $barangItems = collect();
+        $hasBarangData = false;
+        
+        // Prioritas 1: Ambil dari permintaanBarang.daftarBarang
+        if ($wo->permintaanBarang && $wo->permintaanBarang->daftarBarang && $wo->permintaanBarang->daftarBarang->count() > 0) {
+            $hasBarangData = true;
+            foreach ($wo->permintaanBarang->daftarBarang as $item) {
+                $barangItems->push([
+                    'nama_barang' => $item->nama_barang ?? '-',
+                    'jumlah' => $item->jumlah ?? 1,
+                    'satuan' => $item->satuan ?? '-',
+                    'estimasi_harga' => $item->estimasi_harga ?? 0,
+                ]);
+            }
+        }
+        // Prioritas 2: Parse dari field unit (format: "Filter Oli (qty: 1), Belt (qty: 2)")
+        elseif ($jenisWo === 'pembelian' && $wo->unit && is_string($wo->unit)) {
+            $unitString = $wo->unit;
+            preg_match_all('/([^,]+?)(?:\s*\(qty:\s*(\d+)\))?(?:,|$)/i', $unitString, $matches, PREG_SET_ORDER);
+            
+            // Ambil nama barang untuk lookup satuan dari database
+            $namaBarangList = [];
+            foreach ($matches as $match) {
+                $namaBarang = trim($match[1]);
+                if (!empty($namaBarang)) {
+                    $namaBarangList[] = $namaBarang;
+                }
+            }
+            
+            // Lookup satuan dari tabel DaftarBarang
+            $satuanLookup = [];
+            if (!empty($namaBarangList)) {
+                $masterBarangList = \App\Models\DaftarBarang::whereIn('nama_barang', $namaBarangList)->get();
+                foreach ($masterBarangList as $master) {
+                    $satuanLookup[$master->nama_barang] = $master->satuan ?? '-';
+                }
+            }
+            
+            foreach ($matches as $match) {
+                $namaBarang = trim($match[1]);
+                $qty = isset($match[2]) ? (int)$match[2] : 1;
+                
+                if (!empty($namaBarang)) {
+                    $hasBarangData = true;
+                    $barangItems->push([
+                        'nama_barang' => $namaBarang,
+                        'jumlah' => $qty,
+                        'satuan' => $satuanLookup[$namaBarang] ?? '-',
+                        'estimasi_harga' => 0,
+                    ]);
+                }
+            }
+        }
+        // Prioritas 3: Ambil dari harga_barang JSON column
+        elseif ($jenisWo === 'pembelian' && $wo->harga_barang && is_array($wo->harga_barang) && count($wo->harga_barang) > 0) {
+            $hasBarangData = true;
+            foreach ($wo->harga_barang as $item) {
+                $barangItems->push([
+                    'nama_barang' => $item['nama_barang'] ?? '-',
+                    'jumlah' => $item['qty'] ?? $item['jumlah'] ?? 1,
+                    'satuan' => $item['satuan'] ?? '-',
+                    'estimasi_harga' => ($item['harga'] ?? 0) * ($item['qty'] ?? $item['jumlah'] ?? 1),
+                ]);
+            }
+        }
+    @endphp
+    
+    @if($jenisWo === 'pembelian' && $hasBarangData && $barangItems->count() > 0)
+    <div class="section-title" style="margin-top: 20px;">DAFTAR BARANG :</div>
+    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+        <thead>
+            <tr style="background-color: #f0f0f0;">
+                <th style="border: 1px solid black; padding: 8px; text-align: center; width: 40px;">No</th>
+                <th style="border: 1px solid black; padding: 8px; text-align: left;">Nama Barang</th>
+                <th style="border: 1px solid black; padding: 8px; text-align: center; width: 60px;">Qty</th>
+                <th style="border: 1px solid black; padding: 8px; text-align: center; width: 70px;">Satuan</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($barangItems as $index => $item)
+            <tr>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">{{ $index + 1 }}</td>
+                <td style="border: 1px solid black; padding: 8px;">{{ $item['nama_barang'] }}</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">{{ $item['jumlah'] }}</td>
+                <td style="border: 1px solid black; padding: 8px; text-align: center;">{{ $item['satuan'] }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+    @endif
 
     <!-- DOKUMENTASI -->
     <div class="section-title">DOKUMENTASI :</div>

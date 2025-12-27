@@ -608,6 +608,7 @@
                                 <th>Barang</th>
                                 <th>Qty</th>
                                 <th>Satuan</th>
+                                <th>Total Harga</th>
                                 <th>Uraian</th>
                                 <th>Status</th>
                                 <th>Aksi</th>
@@ -626,6 +627,7 @@
                                     $barangItems = [];
                                     $qtyItems = [];
                                     $satuanItems = [];
+                                    $calculatedTotalHarga = 0;
                                     
                                     // Buat array lookup untuk satuan dari master barang (jika tersedia)
                                     $barangLookup = isset($daftarBarang) ? collect($daftarBarang)->keyBy('nama_barang') : collect();
@@ -635,14 +637,23 @@
                                         foreach ($parts as $part) {
                                             if (preg_match('/^(.+?)\s*\(qty:\s*(\d+)\)$/i', trim($part), $matches)) {
                                                 $namaBarang = trim($matches[1]);
+                                                $qty = (int)$matches[2];
                                                 $barangItems[] = $namaBarang;
-                                                $qtyItems[] = (int)$matches[2];
-                                                $satuanItems[] = $barangLookup->get($namaBarang)->satuan ?? '-';
+                                                $qtyItems[] = $qty;
+                                                $masterBarang = $barangLookup->get($namaBarang);
+                                                $satuanItems[] = $masterBarang->satuan ?? '-';
+                                                if ($masterBarang && $masterBarang->harga_barang > 0) {
+                                                    $calculatedTotalHarga += $masterBarang->harga_barang * $qty;
+                                                }
                                             } elseif (!empty(trim($part))) {
                                                 $namaBarang = trim($part);
                                                 $barangItems[] = $namaBarang;
                                                 $qtyItems[] = 1;
-                                                $satuanItems[] = $barangLookup->get($namaBarang)->satuan ?? '-';
+                                                $masterBarang = $barangLookup->get($namaBarang);
+                                                $satuanItems[] = $masterBarang->satuan ?? '-';
+                                                if ($masterBarang && $masterBarang->harga_barang > 0) {
+                                                    $calculatedTotalHarga += $masterBarang->harga_barang;
+                                                }
                                             }
                                         }
                                     }
@@ -689,6 +700,14 @@
                                             <span class="text-muted">-</span>
                                         @endif
                                     </td>
+                                    {{-- Kolom Total Harga --}}
+                                    <td>
+                                        @if($isPembelian && $calculatedTotalHarga > 0)
+                                            Rp {{ number_format($calculatedTotalHarga, 0, ',', '.') }}
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
                                     <td>{{ Str::limit($wo->uraian, 30) }}</td>
                                     <td>
                                         @if($status == 'Disetujui' || $status == 'Selesai')
@@ -718,7 +737,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="12" class="text-center text-muted">Belum ada data work order</td>
+                                    <td colspan="13" class="text-center text-muted">Belum ada data work order</td>
                                 </tr>
                             @endforelse
                         </tbody>

@@ -124,7 +124,7 @@ class PurchasingController extends Controller
         // Tampilkan WO yang:
         // 1. Dibuat oleh Purchasing
         // 2. Ditolak Atasan dan dikembalikan ke Purchasing (status mengandung 'Ditolak Atasan')
-        $workOrders = SuratPengajuan::with(['unit', 'jenisWorkOrder', 'verifikator'])
+        $workOrders = SuratPengajuan::with(['unit', 'jenisWorkOrder', 'verifikator', 'permintaanBarang'])
             ->where(function($query) use ($userDivisiNama) {
                 // WO yang dibuat oleh Purchasing
                 $query->where('divisi_pengaju', $userDivisiNama);

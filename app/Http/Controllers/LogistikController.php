@@ -103,7 +103,7 @@ class LogistikController extends Controller
         // Tampilkan WO yang:
         // 1. Dibuat oleh divisi ini (divisi_pengaju = Logistik), ATAU
         // 2. Dikembalikan ke divisi ini untuk dikirim ulang (ditujukan = Logistik dan status berisi 'Ditolak')
-        $workOrders = SuratPengajuan::with(['unit', 'jenisWorkOrder', 'verifikator'])
+        $workOrders = SuratPengajuan::with(['unit', 'jenisWorkOrder', 'verifikator', 'permintaanBarang'])
             ->where(function($query) use ($userDivisiNama) {
                 // WO yang dibuat oleh Logistik
                 $query->where('divisi_pengaju', $userDivisiNama);
@@ -1299,7 +1299,8 @@ class LogistikController extends Controller
             'akun.karyawan',
             'akun.divisi',
             'divisiPengaju',
-            'unit'
+            'unit',
+            'permintaanBarang.daftarBarang'
         ])->findOrFail($id);
 
         // Akun pembuat WO
