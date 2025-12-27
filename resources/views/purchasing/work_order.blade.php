@@ -812,7 +812,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="row">
+                            <div class="row" id="unit_row">
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label for="unit" id="label_unit">Nama Unit / Code <span class="text-danger">*</span></label>
@@ -970,7 +970,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="row">
+                            <div class="row" id="edit_unit_row">
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label for="edit_unit" id="edit_label_unit">Nama Unit / Code <span class="text-danger">*</span></label>
@@ -1176,10 +1176,38 @@
         const jenisWoSelect = $(`#${prefix}id_jenis_wo`);
         const selectedJenisWo = jenisWoSelect.find('option:selected').data('nama-jenis') || jenisWoSelect.find('option:selected').text();
         const isPerbaikan = selectedJenisWo && selectedJenisWo.toLowerCase() === 'perbaikan';
+        const isPermintaan = selectedJenisWo && selectedJenisWo.toLowerCase() === 'permintaan';
+        const isPembelian = selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian';
         
         const toggle = $(`#${prefix}perbaikan_unit_toggle`);
         const unitSelect = $(`#${prefix}unit_select`);
         const unitInput = $(`#${prefix}unit`);
+        const unitRow = $(`#${prefix}unit_row`);
+        
+        // Sembunyikan seluruh row unit jika jenis WO = Permintaan
+        if (isPermintaan) {
+            unitRow.hide();
+            unitInput.val('').removeAttr('name').removeAttr('required');
+            unitSelect.val('').removeAttr('name').removeAttr('required');
+            $(`#${prefix}unit_pembelian_container`).hide().html('');
+            toggle.hide();
+            if (unitSelect.hasClass('select2-hidden-accessible')) {
+                unitSelect.select2('destroy');
+            }
+            
+            // Tambahkan hidden input untuk mengirim nilai default "-" ke server
+            const hiddenInputId = `${prefix}unit_hidden`;
+            if ($(`#${hiddenInputId}`).length === 0) {
+                unitRow.after(`<input type="hidden" id="${hiddenInputId}" name="unit" value="-">`);
+            }
+            return;
+        }
+        
+        // Hapus hidden input jika ada (untuk jenis WO selain Permintaan)
+        $(`#${prefix}unit_hidden`).remove();
+        
+        // Tampilkan row unit untuk jenis WO lainnya
+        unitRow.show();
         
         if (isPerbaikan) {
             // Hide pembelian container
@@ -1193,7 +1221,6 @@
             $(`#${prefix}is_perbaikan_unit_yes`).prop('checked', false).parent().removeClass('active');
             
             // Hanya tampilkan unit input jika bukan Pembelian
-            const isPembelian = selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian';
             if (!isPembelian) {
                 unitInput.show().attr('name', 'unit').attr('required', 'required');
             }
@@ -1822,6 +1849,29 @@
             const unitInput = $('#unit');
             const unitContainer = $('#unit_pembelian_container');
             const unitLabel = $('#label_unit');
+            const unitRow = $('#unit_row');
+            const isPermintaan = selectedJenisWo && selectedJenisWo.toLowerCase() === 'permintaan';
+            
+            // Sembunyikan seluruh row unit jika jenis WO = Permintaan
+            if (isPermintaan) {
+                unitRow.hide();
+                unitInput.val('').removeAttr('name').removeAttr('required');
+                $('#unit_select').hide().removeAttr('name').removeAttr('required');
+                unitContainer.hide().html('');
+                $('#perbaikan_unit_toggle').hide();
+                
+                // Tambahkan hidden input untuk mengirim nilai default "-" ke server
+                if ($('#unit_hidden').length === 0) {
+                    unitRow.after('<input type="hidden" id="unit_hidden" name="unit" value="-">');
+                }
+                return;
+            }
+            
+            // Hapus hidden input jika ada (untuk jenis WO selain Permintaan)
+            $('#unit_hidden').remove();
+            
+            // Tampilkan row unit untuk jenis WO lainnya
+            unitRow.show();
             
             // Jika jenis work order adalah "Pembelian", tampilkan container dinamis dan sembunyikan input
             if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {

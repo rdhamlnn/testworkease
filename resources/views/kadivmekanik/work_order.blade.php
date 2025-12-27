@@ -1473,6 +1473,29 @@
             const unitInput = $('#edit_unit');
             const unitContainer = $('#edit_unit_pembelian_container');
             const unitLabel = $('#label_edit_unit');
+            const unitRow = $('#edit_unit_row');
+            const isPermintaan = selectedJenisWo && selectedJenisWo.toLowerCase() === 'permintaan';
+            
+            // Sembunyikan seluruh row unit jika jenis WO = Permintaan
+            if (isPermintaan) {
+                unitRow.hide();
+                unitInput.val('').removeAttr('name').removeAttr('required');
+                $('#edit_unit_select').hide().removeAttr('name').removeAttr('required');
+                unitContainer.hide().html('');
+                $('#edit_perbaikan_unit_toggle').hide();
+                
+                // Tambahkan hidden input untuk mengirim nilai default "-" ke server
+                if ($('#edit_unit_hidden').length === 0) {
+                    unitRow.after('<input type="hidden" id="edit_unit_hidden" name="unit" value="-">');
+                }
+                return;
+            }
+            
+            // Hapus hidden input jika ada (untuk jenis WO selain Permintaan)
+            $('#edit_unit_hidden').remove();
+            
+            // Tampilkan row unit untuk jenis WO lainnya
+            unitRow.show();
             
             if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
                 unitInput.hide().removeAttr('required').removeAttr('name');
@@ -1871,6 +1894,29 @@
             const unitInput = $('#unit');
             const unitContainer = $('#unit_pembelian_container');
             const unitLabel = $('#label_unit');
+            const unitRow = $('#unit_row');
+            const isPermintaan = selectedJenisWo && selectedJenisWo.toLowerCase() === 'permintaan';
+            
+            // Sembunyikan seluruh row unit jika jenis WO = Permintaan
+            if (isPermintaan) {
+                unitRow.hide();
+                unitInput.val('').removeAttr('name').removeAttr('required');
+                $('#unit_select').hide().removeAttr('name').removeAttr('required');
+                unitContainer.hide().html('');
+                $('#perbaikan_unit_toggle').hide();
+                
+                // Tambahkan hidden input untuk mengirim nilai default "-" ke server
+                if ($('#unit_hidden').length === 0) {
+                    unitRow.after('<input type="hidden" id="unit_hidden" name="unit" value="-">');
+                }
+                return;
+            }
+            
+            // Hapus hidden input jika ada (untuk jenis WO selain Permintaan)
+            $('#unit_hidden').remove();
+            
+            // Tampilkan row unit untuk jenis WO lainnya
+            unitRow.show();
             
             // Jika jenis work order adalah "Pembelian", tampilkan container dinamis dan sembunyikan input
             if (selectedJenisWo && selectedJenisWo.toLowerCase() === 'pembelian') {
