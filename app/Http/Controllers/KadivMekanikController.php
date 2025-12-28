@@ -634,15 +634,15 @@ class KadivMekanikController extends Controller
         $formattedData = $data->map(function($item) {
             return [
                 'id_laporan_harian_mekanik' => $item->id_laporan_harian_mekanik,
-                'tanggal' => $item->tanggal,
+                'tanggal' => $item->tanggal ? Carbon::parse($item->tanggal)->format('Y-m-d') : null,
                 'nama_unit' => $item->nama_unit,
                 'keluhan_kerusakan' => $item->keluhan_kerusakan,
                 'penyebab_kerusakan' => $item->penyebab_kerusakan,
-                'tanggal_mulai' => $item->tanggal_mulai,
-                'tanggal_selesai' => $item->tanggal_selesai,
+                'tanggal_mulai' => $item->tanggal_mulai ? Carbon::parse($item->tanggal_mulai)->format('Y-m-d') : null,
+                'tanggal_selesai' => $item->tanggal_selesai ? Carbon::parse($item->tanggal_selesai)->format('Y-m-d') : null,
                 'tindakan_perbaikan' => $item->tindakan_perbaikan,
             ];
-        });
+        })->values()->all();  // Convert Collection to array
 
         return response()->json([
             'success' => true,
@@ -697,7 +697,7 @@ class KadivMekanikController extends Controller
         $formattedData = $data->map(function($item) {
             return [
                 'id_laporan_pemakaian_barang' => $item->id_laporan_pemakaian_barang,
-                'tanggal' => $item->tanggal,
+                'tanggal' => $item->tanggal ? Carbon::parse($item->tanggal)->format('Y-m-d') : null,
                 'nama_barang' => $item->nama_barang,
                 'kode_unit' => $item->kode_unit,
                 'jumlah' => $item->jumlah,
@@ -706,7 +706,7 @@ class KadivMekanikController extends Controller
                 'total_harga' => $item->total_harga,
                 'keterangan' => $item->keterangan,
             ];
-        });
+        })->values()->all();  // Convert Collection to array
 
         return response()->json([
             'success' => true,

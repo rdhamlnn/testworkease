@@ -529,7 +529,10 @@
             <!-- Page Transition Component -->
             @include('components.page-transition')
 
-            <!-- Modal Components -->
+            <!-- Load jQuery BEFORE Modal Components that depend on it -->
+            <script src="{{ asset('assets/modules/jquery.min.js') }}"></script>
+
+            <!-- Modal Components (require jQuery) -->
             @include('components.delete-confirm-modal')
             @include('components.approve-reject-confirm-modal')
             @include('components.confirm-modal')
@@ -547,7 +550,8 @@
     </div>
 
     <!-- General JS Scripts -->
-    <script src="{{ asset('assets/modules/jquery.min.js') }}"></script>
+    <!-- jQuery already loaded above before Modal Components -->
+    <!-- <script src="{{ asset('assets/modules/jquery.min.js') }}"></script> -->
     <script src="{{ asset('assets/modules/popper.js') }}"></script>
     <script src="{{ asset('assets/modules/tooltip.js') }}"></script>
     <script src="{{ asset('assets/modules/bootstrap/js/bootstrap.min.js') }}"></script>

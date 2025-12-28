@@ -442,40 +442,63 @@
 
     // Update table with filtered data
     function updateTable(data) {
-        // Clear existing data from DataTable
+        console.log('=== updateTable called ===');
+        console.log('Data received:', data);
+        
+        // Destroy existing DataTable instance
         if (table) {
-            table.clear();
-            
-            // Add new data to DataTable
-            if (data.length > 0) {
-                data.forEach(function(item, index) {
-                    var row = [
-                        (index + 1),
-                        formatDate(item.tanggal),
-                        (item.unit ? item.unit.nama_unit : '-'),
-                        (item.keluhan_kerusakan || '-'),
-                        (item.penyebab_kerusakan || '-'),
-                        formatDate(item.tanggal_mulai),
-                        formatDate(item.tanggal_selesai),
-                        (item.tindakan_perbaikan || '-'),
-                        '<button type="button" class="btn btn-info btn-sm btn-view" ' +
-                        'data-id="' + item.id_laporan_harian_mekanik + '" ' +
-                        'data-toggle="modal" data-target="#viewLaporanModal">' +
-                        '<i class="fas fa-eye"></i>' +
-                        '</button>'
-                    ];
-                    table.row.add(row);
-                });
-            } else {
-                var emptyRow = [
-                    'Tidak ada data laporan harian mekanik', '', '', '', '', '', '', '', ''
-                ];
-                table.row.add(emptyRow);
-            }
-            
-            // Draw the table with new data
-            table.draw();
+            table.destroy();
         }
+        
+        // Build HTML rows
+        var html = '';
+        if (data && data.length > 0) {
+            for (var i = 0; i < data.length; i++) {
+                var item = data[i];
+                var tanggalStr = (item.tanggal && typeof item.tanggal === 'string') ? formatDate(item.tanggal) : '-';
+                var mulaiStr = (item.tanggal_mulai && typeof item.tanggal_mulai === 'string') ? formatDate(item.tanggal_mulai) : '-';
+                var selesaiStr = (item.tanggal_selesai && typeof item.tanggal_selesai === 'string') ? formatDate(item.tanggal_selesai) : '-';
+                
+                var tanggalOrder = item.tanggal ? item.tanggal.replace(/-/g, '') : '0';
+                var mulaiOrder = item.tanggal_mulai ? item.tanggal_mulai.replace(/-/g, '') : '0';
+                var selesaiOrder = item.tanggal_selesai ? item.tanggal_selesai.replace(/-/g, '') : '0';
+                
+                html += '<tr>';
+                html += '<td data-order="' + (i + 1) + '">' + (i + 1) + '</td>';
+                html += '<td data-order="' + tanggalOrder + '">' + tanggalStr + '</td>';
+                html += '<td>' + (item.unit ? item.unit.nama_unit : (item.nama_unit || '-')) + '</td>';
+                html += '<td>' + (item.keluhan_kerusakan || '-') + '</td>';
+                html += '<td>' + (item.penyebab_kerusakan || '-') + '</td>';
+                html += '<td data-order="' + mulaiOrder + '">' + mulaiStr + '</td>';
+                html += '<td data-order="' + selesaiOrder + '">' + selesaiStr + '</td>';
+                html += '<td>' + (item.tindakan_perbaikan || '-') + '</td>';
+                html += '<td>';
+                html += '<button type="button" class="btn btn-info btn-sm btn-view" data-id="' + item.id_laporan_harian_mekanik + '" data-toggle="modal" data-target="#viewLaporanModal"><i class="fas fa-eye"></i></button>';
+                html += '</td>';
+                html += '</tr>';
+            }
+        } else {
+            html = '<tr><td class="text-left">Tidak ada data laporan harian mekanik</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
+        }
+        
+        $('#laporanTable tbody').html(html);
+        
+        table = $('#laporanTable').DataTable({
+            "responsive": false, "scrollX": false, "autoWidth": false,
+            "searching": true, "ordering": true, "info": true, "paging": true,
+            "pageLength": 10, "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+            "order": [[1, 'desc']],
+            "columnDefs": [{"targets": 0, "orderable": false, "searchable": false}],
+            "language": {
+                "search": "Cari:", "lengthMenu": "Tampilkan _MENU_ data per halaman",
+                "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                "infoEmpty": "Menampilkan 0 sampai 0 dari 0 data",
+                "infoFiltered": "(disaring dari _MAX_ total data)",
+                "paginate": {"next": "Selanjutnya", "previous": "Sebelumnya"},
+                "emptyTable": "Tidak ada data laporan harian mekanik"
+            }
+        });
+        console.log('=== updateTable complete ===');
     }
 
     // Format date function
@@ -566,15 +589,11 @@
                         'direction': 'ltr !important',
                         'width': 'auto !important'
                     });
+                    // Row numbers are set manually in updateTable function
                 }
             });
 
-        // Auto-generate row numbers on every draw (always sequential 1, 2, 3...)
-        table.on('order.dt search.dt draw.dt', function () {
-            table.column(0, {search:'applied', order:'applied'}).nodes().each(function (cell, i) {
-                cell.innerHTML = table.page.info().start + i + 1;
-            });
-        }).draw();
+        // Row numbers are set manually in updateTable function
 
         // Show all data by default - no auto-filtering on page load
         // Only filter when user manually changes dropdown values

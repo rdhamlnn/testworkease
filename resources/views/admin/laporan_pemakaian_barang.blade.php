@@ -486,41 +486,55 @@
 
     // Update table with filtered data
     function updateTable(data) {
-        // Clear existing data from DataTable
+        // Destroy existing DataTable instance
         if (table) {
-            table.clear();
-            
-            // Add new data to DataTable
-            if (data.length > 0) {
-                data.forEach(function(item, index) {
-                    var row = [
-                        (index + 1),
-                        formatDate(item.tanggal),
-                        (item.nama_barang || '-'),
-                        (item.unit ? item.unit.kode_unit : '-'),
-                        (item.jumlah || '-'),
-                        (item.bentuk_satuan || '-'),
-                        'Rp ' + formatNumber(item.harga_satuan),
-                        'Rp ' + formatNumber(item.total_harga),
-                        (item.keterangan || '-'),
-                        '<button type="button" class="btn btn-info btn-sm btn-view" ' +
-                        'data-id="' + item.id_laporan_pemakaian_barang + '" ' +
-                        'data-toggle="modal" data-target="#viewBarangModal">' +
-                        '<i class="fas fa-eye"></i>' +
-                        '</button>'
-                    ];
-                    table.row.add(row);
-                });
-            } else {
-                var emptyRow = [
-                    'Tidak ada data laporan pemakaian barang', '', '', '', '', '', '', '', '', ''
-                ];
-                table.row.add(emptyRow);
-            }
-            
-            // Draw the table with new data
-            table.draw();
+            table.destroy();
         }
+        
+        // Build HTML rows
+        var html = '';
+        if (data && data.length > 0) {
+            for (var i = 0; i < data.length; i++) {
+                var item = data[i];
+                var tanggalStr = (item.tanggal && typeof item.tanggal === 'string') ? formatDate(item.tanggal) : '-';
+                var tanggalOrder = item.tanggal ? item.tanggal.replace(/-/g, '') : '0';
+                
+                html += '<tr>';
+                html += '<td data-order="' + (i + 1) + '">' + (i + 1) + '</td>';
+                html += '<td data-order="' + tanggalOrder + '">' + tanggalStr + '</td>';
+                html += '<td>' + (item.nama_barang || '-') + '</td>';
+                html += '<td>' + (item.unit ? item.unit.kode_unit : (item.kode_unit || '-')) + '</td>';
+                html += '<td>' + (item.jumlah || '-') + '</td>';
+                html += '<td>' + (item.bentuk_satuan || '-') + '</td>';
+                html += '<td>Rp ' + formatNumber(item.harga_satuan) + '</td>';
+                html += '<td>Rp ' + formatNumber(item.total_harga) + '</td>';
+                html += '<td>' + (item.keterangan || '-') + '</td>';
+                html += '<td>';
+                html += '<button type="button" class="btn btn-info btn-sm btn-view" data-id="' + item.id_laporan_pemakaian_barang + '" data-toggle="modal" data-target="#viewBarangModal"><i class="fas fa-eye"></i></button>';
+                html += '</td>';
+                html += '</tr>';
+            }
+        } else {
+            html = '<tr><td class="text-left">Tidak ada data laporan pemakaian barang</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
+        }
+        
+        $('#laporanTable tbody').html(html);
+        
+        table = $('#laporanTable').DataTable({
+            "responsive": false, "scrollX": false, "autoWidth": false,
+            "searching": true, "ordering": true, "info": true, "paging": true,
+            "pageLength": 10, "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+            "order": [[1, 'desc']],
+            "columnDefs": [{"targets": 0, "orderable": false, "searchable": false}],
+            "language": {
+                "search": "Cari:", "lengthMenu": "Tampilkan _MENU_ data per halaman",
+                "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                "infoEmpty": "Menampilkan 0 sampai 0 dari 0 data",
+                "infoFiltered": "(disaring dari _MAX_ total data)",
+                "paginate": {"next": "Selanjutnya", "previous": "Sebelumnya"},
+                "emptyTable": "Tidak ada data laporan pemakaian barang"
+            }
+        });
     }
 
 
@@ -601,15 +615,11 @@
                     'direction': 'ltr !important',
                     'width': 'auto !important'
                 });
+                // Row numbers are set manually in updateTable function
             }
         });
 
-        // Auto-generate row numbers on every draw (always sequential 1, 2, 3...)
-        table.on('order.dt search.dt draw.dt', function () {
-            table.column(0, {search:'applied', order:'applied'}).nodes().each(function (cell, i) {
-                cell.innerHTML = table.page.info().start + i + 1;
-            });
-        }).draw();
+        // Row numbers are set manually in updateTable function
 
         // Show all data by default - no auto-filtering on page load
         // Only filter when user manually changes dropdown values
