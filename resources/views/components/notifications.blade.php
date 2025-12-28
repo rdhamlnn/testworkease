@@ -36,7 +36,7 @@
         $notifications->push([
             'variant' => 'success',
             'message' => $message,
-            'timeout' => 4500,
+            'timeout' => 3500,
         ]);
     }
     // CRUD success notification
@@ -65,7 +65,7 @@
         $notifications->push([
             'variant' => 'success',
             'message' => $message,
-            'timeout' => 4000,
+            'timeout' => 3000,
         ]);
     }
     
@@ -81,7 +81,7 @@
         $notifications->push([
             'variant' => 'danger',
             'message' => $message,
-            'timeout' => 4500,
+            'timeout' => 3500,
         ]);
     } elseif ($isLogout) {
         // Fallback jika terdeteksi dari pesan error (tanpa parameter from)
@@ -92,7 +92,7 @@
         $notifications->push([
             'variant' => 'danger',
             'message' => $message,
-            'timeout' => 4500,
+            'timeout' => 3500,
         ]);
     }
     // CRUD error notification - hanya jika bukan logout
@@ -101,7 +101,7 @@
         $notifications->push([
             'variant' => 'danger',
             'message' => $message,
-            'timeout' => 5000,
+            'timeout' => 3500,
         ]);
     }
     
@@ -110,7 +110,7 @@
         $notifications->push([
             'variant' => 'danger',
             'message' => $normalize($errorMessageParam),
-            'timeout' => 5000,
+            'timeout' => 3500,
         ]);
     }
     
@@ -119,7 +119,7 @@
         $notifications->push([
             'variant' => 'warning',
             'message' => $normalize($sessionWarning) ?: 'Ada data yang perlu ditinjau ulang.',
-            'timeout' => 5000,
+            'timeout' => 3500,
         ]);
     }
     
@@ -128,7 +128,7 @@
         $notifications->push([
             'variant' => 'info',
             'message' => $normalize($sessionInfo) ?: 'Informasi terbaru dari sistem.',
-            'timeout' => 4500,
+            'timeout' => 3000,
         ]);
     }
     

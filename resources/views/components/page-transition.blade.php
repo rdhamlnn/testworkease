@@ -152,7 +152,7 @@ function showPageTransition(message = 'Memuat halaman...') {
         if (progressFill) {
             let progress = 0;
             const startTime = performance.now();
-            const duration = 1200; // 1.2 detik
+            const duration = 1500; // 1.5 detik (sync dengan login transition)
             
             function animateProgress(currentTime) {
                 const elapsed = currentTime - startTime;
@@ -295,12 +295,12 @@ function showRoleBasedTransition() {
         console.log('Showing page transition with message:', message);
         showPageTransition(message);
         
-        // Hide transition setelah ~1.2s agar terasa lebih cepat
+        // Hide transition setelah ~1.5s agar user bisa membaca pesan
         setTimeout(() => {
             console.log('Hiding page transition');
             queueNotificationAfterTransition('login');
             hidePageTransition();
-        }, 1200);
+        }, 1500);
         
         // Clean URL after transition
         setTimeout(() => {
@@ -314,12 +314,12 @@ function showRoleBasedTransition() {
         console.log('Logout detected, showing transition...');
         showPageTransition('Keluar dari sistem...');
         
-        // Hide transition setelah 1.5s
+        // Hide transition setelah 1.2s (lebih cepat untuk logout)
         setTimeout(() => {
             console.log('Hiding page transition for logout');
             queueNotificationAfterTransition('logout');
             hidePageTransition();
-        }, 1500);
+        }, 1200);
         
         // Clean URL after transition
         setTimeout(() => {
@@ -333,12 +333,12 @@ function showRoleBasedTransition() {
         console.log('CRUD detected, showing transition...');
         showPageTransition('Memproses data...');
         
-        // Hide transition setelah 1.5s
+        // Hide transition setelah 1.2s (lebih cepat untuk CRUD)
         setTimeout(() => {
             console.log('Hiding page transition for CRUD');
             queueNotificationAfterTransition('crud');
             hidePageTransition();
-        }, 1500);
+        }, 1200);
         
         // Clean URL after transition
         setTimeout(() => {
