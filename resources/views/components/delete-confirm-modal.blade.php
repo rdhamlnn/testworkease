@@ -82,7 +82,8 @@
     // Tunggu sampai DOM ready
     $(document).ready(function() {
         // Event handler untuk tombol delete dengan class .btn-delete
-        $(document).on('click', '.btn-delete', function(e) {
+        // Gunakan .off() untuk mencegah duplicate handlers
+        $(document).off('click', '.btn-delete').on('click', '.btn-delete', function(e) {
             e.preventDefault();
             e.stopPropagation();
 
@@ -104,7 +105,7 @@
         });
         
         // Event handler untuk form dengan class .delete-form
-        $(document).on('submit', '.delete-form', function(e) {
+        $(document).off('submit', '.delete-form').on('submit', '.delete-form', function(e) {
             const form = $(this);
             if (isLocked(form)) {
                 e.preventDefault();
@@ -122,7 +123,8 @@
         });
         
         // Handler untuk submit form delete di modal
-        $('#deleteConfirmForm').on('submit', function(e) {
+        // Gunakan .off() untuk mencegah duplicate handlers
+        $('#deleteConfirmForm').off('submit').on('submit', function(e) {
             e.preventDefault();
             const form = $(this);
             const url = form.attr('action');
@@ -166,12 +168,24 @@
                         window.location.href = targetUrl.toString();
                     }, 250);
                 },
-                error: function(xhr) {
+                error: function(xhr, textStatus, errorThrown) {
                     // Reset button dan tutup modal
                     $('#deleteConfirmModal').modal('hide');
                     submitBtn.prop('disabled', false);
                     submitBtn.html('<i class="fas fa-trash mr-2"></i>Ya, Hapus');
                     
+                    // Jika status 200 atau redirect terjadi, anggap sukses
+                    // Ini bisa terjadi jika response bukan JSON valid
+                    if (xhr.status === 200 || xhr.status === 302 || xhr.status === 0) {
+                        // Kemungkinan besar sukses tapi response bukan JSON
+                        // Lakukan reload untuk melihat perubahan
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 250);
+                        return;
+                    }
+                    
+                    // Parse error message jika ada
                     let errorMessage = 'Gagal menghapus data. Silakan coba lagi.';
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMessage = xhr.responseJSON.message;
@@ -184,7 +198,13 @@
                         errorUrl.searchParams.set('errorMessage', errorMessage);
                         window.location.href = errorUrl.toString();
                     } else {
-                        alert(errorMessage);
+                        // Hanya tampilkan alert jika benar-benar error (4xx atau 5xx)
+                        if (xhr.status >= 400) {
+                            alert(errorMessage);
+                        } else {
+                            // Fallback: reload halaman
+                            window.location.reload();
+                        }
                     }
                 }
             });
