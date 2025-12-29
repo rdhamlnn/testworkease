@@ -591,7 +591,11 @@
             <div class="card-header">
                 <h4>Semua Work Order</h4>
                 <div class="card-header-action">
-                    {{-- Tombol Buat Work Order dihapus - Admin hanya dapat memantau dan mengelola --}}
+                    <select id="filterStatus" class="form-control" style="width: auto; display: inline-block;">
+                        <option value="">Semua Status</option>
+                        <option value="Disetujui">Disetujui/Selesai</option>
+                        <option value="Ditolak">Ditolak</option>
+                    </select>
                 </div>
             </div>
             <div class="card-body">
@@ -869,6 +873,20 @@
                 cell.innerHTML = table.page.info().start + i + 1;
             });
         }).draw();
+
+        // Filter berdasarkan status
+        $('#filterStatus').on('change', function() {
+            var status = $(this).val();
+            // Kolom Status adalah index 11 (No=0, No WO=1, Divisi=2, Jenis=3, Tanggal=4, Unit=5, Barang=6, Qty=7, Satuan=8, Total Harga=9, Uraian=10, Status=11, Aksi=12)
+            if (status === '') {
+                table.column(11).search('').draw();
+            } else if (status === 'Disetujui') {
+                // Filter untuk Disetujui atau Selesai
+                table.column(11).search('(Disetujui|Selesai)', true, false).draw();
+            } else {
+                table.column(11).search(status, true, false).draw();
+            }
+        });
     });
 
     // Tutup otomatis alert setelah 3 detik

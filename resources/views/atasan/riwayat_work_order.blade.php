@@ -250,6 +250,13 @@
                 <div class="card">
                     <div class="card-header">
                         <h4>Riwayat Work Order</h4>
+                        <div class="card-header-action">
+                            <select id="filterStatus" class="form-control" style="width: auto; display: inline-block;">
+                                <option value="">Semua Status</option>
+                                <option value="Disetujui">Disetujui/Selesai</option>
+                                <option value="Ditolak">Ditolak</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -490,7 +497,7 @@
 @section('scripts')
 <script>
     $(document).ready(function() {
-        $('#riwayatWorkOrderTable').DataTable({
+        var table = $('#riwayatWorkOrderTable').DataTable({
             "responsive": false,
             "scrollX": false,
             "autoWidth": false,
@@ -500,6 +507,10 @@
             "ordering": true,
             "info": true,
             "paging": true,
+            "order": [[4, "desc"]],
+            "columnDefs": [
+                { "orderable": false, "targets": [0, 12] }
+            ],
             "language": {
                 "search": "Cari:",
                 "lengthMenu": "Tampilkan _MENU_ data per halaman",
@@ -511,6 +522,29 @@
                     "previous": "Sebelumnya"
                 },
                 "emptyTable": "Tidak ada data riwayat work order"
+            },
+            "drawCallback": function(settings) {
+                var api = this.api();
+                var start = api.page.info().start;
+                
+                // Update nomor urut berdasarkan urutan sorting dan pagination
+                api.column(0, {page: 'current'}).nodes().each(function(cell, i) {
+                    cell.innerHTML = start + i + 1;
+                });
+            }
+        });
+
+        // Filter berdasarkan status
+        $('#filterStatus').on('change', function() {
+            var status = $(this).val();
+            // Kolom Status adalah index 11 (No=0, No WO=1, Jenis=2, Divisi=3, Tanggal=4, Unit=5, Barang=6, Qty=7, Satuan=8, Total Harga=9, Uraian=10, Status=11, Aksi=12)
+            if (status === '') {
+                table.column(11).search('').draw();
+            } else if (status === 'Disetujui') {
+                // Filter untuk Disetujui atau Selesai
+                table.column(11).search('(Disetujui|Selesai)', true, false).draw();
+            } else {
+                table.column(11).search(status, true, false).draw();
             }
         });
 
