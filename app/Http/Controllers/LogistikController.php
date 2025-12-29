@@ -834,13 +834,53 @@ class LogistikController extends Controller
                 ]);
             }
             
-            Session::flash('success', 'Work Order berhasil disetujui dan barang siap diserahkan!');
+            // 5. Kurangi stok barang langsung dari daftar_barang
+            // Karena stok sudah dicek dan mencukupi, langsung kurangi stok
+            $permintaanBarang->load('daftarBarang');
+            if ($permintaanBarang->daftarBarang && $permintaanBarang->daftarBarang->count() > 0) {
+                foreach ($permintaanBarang->daftarBarang as $detail) {
+                    $masterBarang = null;
+                    
+                    if ($detail->id_daftar_barang_master) {
+                        $masterBarang = DaftarBarang::find($detail->id_daftar_barang_master);
+                    } else {
+                        $masterBarang = DaftarBarang::where('nama_barang', $detail->nama_barang)->first();
+                    }
+                    
+                    if ($masterBarang) {
+                        $jumlahDiserahkan = $detail->jumlah ?? 0;
+                        $stokSekarang = $masterBarang->stok ?? 0;
+                        $stokBaru = max(0, $stokSekarang - $jumlahDiserahkan);
+                        
+                        $masterBarang->update([
+                            'stok' => $stokBaru
+                        ]);
+                    }
+                }
+            }
+            
+            // 6. Update status ke "Diserahkan ke Divisi" (bukan "Diterima Logistik")
+            $statusDiserahkanId = StatusWo::where('nama_status', 'Diserahkan ke Divisi')->value('id_status_wo');
+            $permintaanBarang->update([
+                'status' => 'Diserahkan ke Divisi',
+                'id_status_wo' => $statusDiserahkanId,
+                'updated_at' => now(),
+            ]);
+            
+            // 7. Update status SuratPengajuan (Work Order) ke 'Disetujui'
+            $workOrder->update([
+                'status' => 'Disetujui',
+                'id_verifikator' => 2,
+                'updated_at' => now(),
+            ]);
+            
+            Session::flash('success', 'Work Order berhasil disetujui dan barang telah diserahkan! Stok telah dikurangi.');
             Session::flash('from_crud', true);
             
             return response()->json([
                 'success' => true,
-                'message' => 'Work Order berhasil diproses!',
-                'redirect' => route('logistik.serahkan-barang', ['from' => 'crud'])
+                'message' => 'Work Order berhasil diproses dan stok telah dikurangi!',
+                'redirect' => route('logistik.riwayat-work-order', ['from' => 'crud'])
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -1248,6 +1288,105 @@ class LogistikController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+            
+            // ===== BUAT PERMINTAAN BARANG UNTUK WO BARU =====
+            // Parse daftar barang dari parent WO (format: "Barang1 (qty: 5), Barang2 (qty: 3)")
+            $daftarBarangArray = [];
+            $unitData = $parentWorkOrder->unit;
+            
+            if ($unitData && is_string($unitData)) {
+                if (strpos($unitData, ',') !== false) {
+                    $parts = explode(',', $unitData);
+                    foreach ($parts as $part) {
+                        $part = trim($part);
+                        $qtyMatch = [];
+                        preg_match('/\(qty:\s*(\d+)\)/', $part, $qtyMatch);
+                        if (!empty($qtyMatch)) {
+                            $qty = (int)$qtyMatch[1];
+                            $namaBarang = trim(preg_replace('/\s*\(qty:\s*\d+\)/', '', $part));
+                        } else {
+                            $qty = 1;
+                            $namaBarang = $part;
+                        }
+                        if (!empty($namaBarang)) {
+                            $daftarBarangArray[] = [
+                                'nama_barang' => $namaBarang,
+                                'jumlah' => $qty
+                            ];
+                        }
+                    }
+                } else {
+                    $qtyMatch = [];
+                    preg_match('/\(qty:\s*(\d+)\)/', $unitData, $qtyMatch);
+                    if (!empty($qtyMatch)) {
+                        $qty = (int)$qtyMatch[1];
+                        $namaBarang = trim(preg_replace('/\s*\(qty:\s*\d+\)/', '', $unitData));
+                    } else {
+                        $qty = 1;
+                        $namaBarang = trim($unitData);
+                    }
+                    if (!empty($namaBarang)) {
+                        $daftarBarangArray[] = [
+                            'nama_barang' => $namaBarang,
+                            'jumlah' => $qty
+                        ];
+                    }
+                }
+            }
+            
+            // Buat PermintaanBarang untuk WO baru ke Purchasing
+            $statusMenungguPurchasingId = StatusWo::where('nama_status', 'Menunggu Purchasing')->value('id_status_wo');
+            $noPermintaan = $this->generateNoPermintaan();
+            
+            $permintaanBarang = PermintaanBarang::create([
+                'no_permintaan_barang' => $noPermintaan,
+                'id_surat_pengajuan' => $newWorkOrder->id_surat_pengajuan,
+                'tanggal_permintaan' => date('Y-m-d'),
+                'status' => 'Menunggu Purchasing',
+                'id_status_wo' => $statusMenungguPurchasingId,
+                'total_estimasi_harga' => 0,
+                'catatan_logistik' => 'Permintaan dibuat otomatis dari forward WO karena stok tidak mencukupi',
+                'id_logistik' => Session::get('user_id'),
+                'id_akun' => Session::get('user_id'),
+            ]);
+            
+            // Buat DetailBarangPermintaan
+            $totalEstimasiHarga = 0;
+            foreach ($daftarBarangArray as $item) {
+                // Cari master barang
+                $master = DaftarBarang::where('nama_barang', $item['nama_barang'])->first();
+                
+                $satuanToUse = $master ? $master->satuan : null;
+                $hargaPerUnit = $master ? ($master->harga_barang ?? 0) : 0;
+                $jumlahItem = $item['jumlah'] ?? 1;
+                $estimasiHargaItem = $hargaPerUnit * $jumlahItem;
+                $totalEstimasiHarga += $estimasiHargaItem;
+                
+                // Jika master belum ada, buat baru
+                if (!$master) {
+                    $master = DaftarBarang::create([
+                        'nama_barang' => $item['nama_barang'],
+                        'satuan' => null,
+                        'stok' => 0,
+                    ]);
+                }
+                
+                DetailBarangPermintaan::create([
+                    'id_permintaan_barang' => $permintaanBarang->id_permintaan_barang,
+                    'id_daftar_barang_master' => $master->id_daftar_barang,
+                    'nama_barang' => $item['nama_barang'],
+                    'jumlah' => $jumlahItem,
+                    'satuan' => $satuanToUse,
+                    'estimasi_harga' => $estimasiHargaItem > 0 ? $estimasiHargaItem : null,
+                ]);
+            }
+            
+            // Update total_estimasi_harga
+            if ($totalEstimasiHarga > 0) {
+                $permintaanBarang->update([
+                    'total_estimasi_harga' => $totalEstimasiHarga
+                ]);
+            }
             
             Session::flash('success', 'Work Order berhasil diforward ke Purchasing!');
             
