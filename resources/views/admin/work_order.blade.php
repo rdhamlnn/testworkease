@@ -569,6 +569,46 @@
     #view_barang_table table tbody::-webkit-scrollbar-thumb:hover {
         background: #0f2a5a;
     }
+
+    /* Filter section styling */
+    .filter-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .filter-row {
+        display: flex;
+        align-items: end;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        min-width: 150px;
+    }
+
+    .filter-group label {
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #2d3748;
+    }
+
+    .filter-group select {
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    .filter-group select:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+        outline: none;
+    }
 </style>
 @endsection
 
@@ -599,6 +639,47 @@
                 </div>
             </div>
             <div class="card-body">
+                <!-- Filter Section -->
+                <div class="filter-section">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label>Tahun:</label>
+                            <select class="form-control" id="filter-tahun">
+                                <option value="">-- Semua --</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Bulan:</label>
+                            <select class="form-control" id="filter-bulan">
+                                <option value="">-- Semua --</option>
+                                <option value="01">Januari</option>
+                                <option value="02">Februari</option>
+                                <option value="03">Maret</option>
+                                <option value="04">April</option>
+                                <option value="05">Mei</option>
+                                <option value="06">Juni</option>
+                                <option value="07">Juli</option>
+                                <option value="08">Agustus</option>
+                                <option value="09">September</option>
+                                <option value="10">Oktober</option>
+                                <option value="11">November</option>
+                                <option value="12">Desember</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Minggu:</label>
+                            <select class="form-control" id="filter-minggu">
+                                <option value="">-- Semua --</option>
+                                <option value="1">Minggu 1</option>
+                                <option value="2">Minggu 2</option>
+                                <option value="3">Minggu 3</option>
+                                <option value="4">Minggu 4</option>
+                                <option value="5">Minggu 5</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="table-responsive">
                     <table class="table table-bordered table-striped" id="workOrderTable">
                         <thead class="thead-dark">
@@ -886,6 +967,89 @@
             } else {
                 table.column(11).search(status, true, false).draw();
             }
+        });
+
+        // Populate Tahun dropdown from table data
+        var years = [];
+        table.column(4).data().each(function(value) {
+            // value is the data-order attribute (Ymd format from Admin)
+            if (value && value.length >= 4) {
+                var year = value.substring(0, 4);
+                if (year && !isNaN(year) && years.indexOf(year) === -1) {
+                    years.push(year);
+                }
+            }
+        });
+        years.sort(function(a, b) { return b - a; }); // Sort descending
+        years.forEach(function(year) {
+            $('#filter-tahun').append('<option value="' + year + '">' + year + '</option>');
+        });
+
+        // Helper: Get week number of month (1-4)
+        function getWeekOfMonth(dateStr) {
+            // dateStr format: Ymd (YYYYMMDD) or Y-m-d
+            var day;
+            if (dateStr.length === 8) {
+                // Format YYYYMMDD
+                day = parseInt(dateStr.substring(6, 8));
+            } else {
+                // Format YYYY-MM-DD
+                day = parseInt(dateStr.substring(8, 10));
+            }
+            return Math.ceil(day / 7);
+        }
+
+        // Custom DataTables filter for Tahun, Bulan, Minggu
+        $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+            // Only apply to this table
+            if (settings.nTable.id !== 'workOrderTable') {
+                return true;
+            }
+            
+            var tahun = $('#filter-tahun').val();
+            var bulan = $('#filter-bulan').val();
+            var minggu = $('#filter-minggu').val();
+            
+            // If no date filters, show all
+            if (!tahun && !bulan && !minggu) {
+                return true;
+            }
+            
+            // Get date from column 4 (Hari/Tanggal) - data-order attribute (format: Ymd)
+            var dateValue = $(table.row(dataIndex).node()).find('td:eq(4)').attr('data-order');
+            if (!dateValue) {
+                return false;
+            }
+            
+            // Parse date - Admin uses Ymd format (YYYYMMDD)
+            var rowYear, rowMonth;
+            if (dateValue.length === 8) {
+                rowYear = dateValue.substring(0, 4);
+                rowMonth = dateValue.substring(4, 6);
+            } else {
+                // Y-m-d format
+                rowYear = dateValue.substring(0, 4);
+                rowMonth = dateValue.substring(5, 7);
+            }
+            var rowWeek = getWeekOfMonth(dateValue);
+            
+            // Apply filters
+            if (tahun && rowYear !== tahun) {
+                return false;
+            }
+            if (bulan && rowMonth !== bulan) {
+                return false;
+            }
+            if (minggu && rowWeek !== parseInt(minggu)) {
+                return false;
+            }
+            
+            return true;
+        });
+
+        // Event handlers for date filters
+        $('#filter-tahun, #filter-bulan, #filter-minggu').on('change', function() {
+            table.draw();
         });
     });
 
