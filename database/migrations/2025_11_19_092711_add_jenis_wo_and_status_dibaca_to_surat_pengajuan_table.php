@@ -16,9 +16,7 @@ return new class extends Migration
             if (!Schema::hasColumn('surat_pengajuan', 'id_jenis_wo')) {
                 $table->unsignedBigInteger('id_jenis_wo')->nullable()->after('ditujukan');
             }
-            if (!Schema::hasColumn('surat_pengajuan', 'status_dibaca')) {
-                $table->boolean('status_dibaca')->default(false)->after('status');
-            }
+            // Kolom status_dibaca dihapus karena tidak digunakan
         });
         
         // Add foreign key only if it doesn't exist
@@ -26,6 +24,13 @@ return new class extends Migration
         if (empty($foreignKeys)) {
             Schema::table('surat_pengajuan', function (Blueprint $table) {
                 $table->foreign('id_jenis_wo')->references('id_jenis_wo')->on('jenis_work_order')->onDelete('set null')->onUpdate('cascade');
+            });
+        }
+        
+        // Drop status_dibaca column if exists (cleanup unused column)
+        if (Schema::hasColumn('surat_pengajuan', 'status_dibaca')) {
+            Schema::table('surat_pengajuan', function (Blueprint $table) {
+                $table->dropColumn('status_dibaca');
             });
         }
     }
@@ -39,9 +44,6 @@ return new class extends Migration
             if (Schema::hasColumn('surat_pengajuan', 'id_jenis_wo')) {
                 $table->dropForeign(['id_jenis_wo']);
                 $table->dropColumn('id_jenis_wo');
-            }
-            if (Schema::hasColumn('surat_pengajuan', 'status_dibaca')) {
-                $table->dropColumn('status_dibaca');
             }
         });
     }

@@ -20,7 +20,6 @@ class SuratPengajuan extends Model
         'uraian',
         'dokumentasi',
         'status',
-        'status_dibaca',
         'id_divisi',
         'id_peran',
         'id_verifikator',
@@ -33,7 +32,6 @@ class SuratPengajuan extends Model
 
     protected $casts = [
         'tanggal' => 'date',
-        'status_dibaca' => 'boolean',
         'harga_barang' => 'array',
         'total_harga' => 'decimal:2',
     ];
