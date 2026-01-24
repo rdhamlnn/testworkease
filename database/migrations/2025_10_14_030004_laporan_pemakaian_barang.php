@@ -14,13 +14,13 @@ return new class extends Migration
         Schema::create('laporan_pemakaian_barang', function (Blueprint $table) {
             $table->id('id_laporan_pemakaian_barang');
             $table->date('tanggal');
-            $table->string('nama_barang');
-            $table->string('kode_unit');
+            $table->string('nama_barang', 100);
+            $table->string('kode_unit', 20);
             $table->integer('jumlah');
             $table->string('bentuk_satuan', 30);
             $table->decimal('harga_satuan', 15, 2);
             $table->decimal('total_harga', 15, 2);
-            $table->string('keterangan')->nullable();
+            $table->text('keterangan')->nullable();
             $table->unsignedBigInteger('id_akun');
             $table->unsignedBigInteger('id_divisi');
             $table->unsignedBigInteger('id_unit');

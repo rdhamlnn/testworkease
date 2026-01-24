@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::create('surat_pengajuan', function (Blueprint $table) {
             $table->id('id_surat_pengajuan');
             $table->string('no_surat_pengajuan', 50);
-            $table->string('ditujukan');
+            $table->string('ditujukan', 50);
             $table->date('tanggal');
-            $table->string('divisi_pengaju');
-            $table->string('unit');
-            $table->string('uraian');
+            $table->string('divisi_pengaju', 50);
+            $table->string('unit', 100);
+            $table->text('uraian');
             $table->string('dokumentasi')->nullable();
             $table->string('status', 50)->default('Menunggu');
             $table->unsignedBigInteger('id_divisi');

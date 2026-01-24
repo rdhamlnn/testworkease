@@ -12,10 +12,10 @@ return new class extends Migration {
     {
         Schema::create('karyawan', function (Blueprint $table) {
             $table->id('id_karyawan');
-            $table->string('nama_lengkap');
-            $table->string('alamat');
+            $table->string('nama_lengkap', 100);
+            $table->text('alamat');
             $table->string('no_hp', 20);
-            $table->string('jabatan')->nullable();
+            $table->string('jabatan', 50)->nullable();
             $table->timestamps();
 
             $table->unsignedBigInteger('id_divisi');

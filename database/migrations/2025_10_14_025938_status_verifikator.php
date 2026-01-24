@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('status_verifikator', function (Blueprint $table) {
             $table->id('id_verifikator');
-            $table->string('nama_status');
+            $table->string('nama_status', 30);
             $table->timestamps();
         });
     }

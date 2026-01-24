@@ -21,8 +21,8 @@ return new class extends Migration
         if (!Schema::hasTable('daftar_barang')) {
             Schema::create('daftar_barang', function (Blueprint $table) {
                 $table->id('id_daftar_barang');
-                $table->string('nama_barang');
-                $table->string('satuan')->nullable();
+                $table->string('nama_barang', 100);
+                $table->string('satuan', 30)->nullable();
                 $table->integer('stok')->default(0);
                 $table->decimal('harga_barang', 15, 2)->nullable();
                 $table->string('path_foto')->nullable();

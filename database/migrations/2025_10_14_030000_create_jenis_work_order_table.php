@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('jenis_work_order', function (Blueprint $table) {
             $table->id('id_jenis_wo');
-            $table->string('nama_jenis_wo');
+            $table->string('nama_jenis_wo', 30);
             $table->text('deskripsi')->nullable();
             $table->timestamps();
         });

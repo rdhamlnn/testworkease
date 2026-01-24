@@ -15,9 +15,9 @@ return new class extends Migration
         Schema::create('daftar_barang', function (Blueprint $table) {
             $table->id('id_daftar_barang');
             $table->unsignedBigInteger('id_permintaan_barang');
-            $table->string('nama_barang');
+            $table->string('nama_barang', 100);
             $table->integer('jumlah')->default(1);
-            $table->string('satuan')->nullable();
+            $table->string('satuan', 30)->nullable();
             $table->decimal('estimasi_harga', 15, 2)->nullable();
             $table->timestamps();
 

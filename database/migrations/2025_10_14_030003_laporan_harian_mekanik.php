@@ -14,12 +14,12 @@ return new class extends Migration
         Schema::create('laporan_harian_mekanik', function (Blueprint $table) {
             $table->id('id_laporan_harian_mekanik');
             $table->date('tanggal');
-            $table->string('nama_unit');
-            $table->string('keluhan_kerusakan');
-            $table->string('penyebab_kerusakan');
+            $table->string('nama_unit', 50);
+            $table->text('keluhan_kerusakan');
+            $table->text('penyebab_kerusakan');
             $table->date('tanggal_mulai');
             $table->date('tanggal_selesai');
-            $table->string('tindakan_perbaikan');
+            $table->text('tindakan_perbaikan');
             $table->unsignedBigInteger('id_akun');
             $table->unsignedBigInteger('id_divisi');
             $table->unsignedBigInteger('id_unit');
