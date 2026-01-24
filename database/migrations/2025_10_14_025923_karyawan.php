@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->id('id_karyawan');
             $table->string('nama_lengkap');
             $table->string('alamat');
-            $table->string('no_hp');
+            $table->string('no_hp', 20);
             $table->string('jabatan')->nullable();
             $table->timestamps();
 

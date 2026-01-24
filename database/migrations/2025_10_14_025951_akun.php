@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('akun', function (Blueprint $table) {
             $table->id('id_akun');
-            $table->string('email');
+            $table->string('email', 50)->unique();
             $table->string('password');
             $table->unsignedBigInteger('id_karyawan');
             $table->unsignedBigInteger('id_divisi');

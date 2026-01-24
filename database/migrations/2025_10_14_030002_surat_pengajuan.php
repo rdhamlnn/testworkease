@@ -13,14 +13,14 @@ return new class extends Migration
     {
         Schema::create('surat_pengajuan', function (Blueprint $table) {
             $table->id('id_surat_pengajuan');
-            $table->string('no_surat_pengajuan');
+            $table->string('no_surat_pengajuan', 50);
             $table->string('ditujukan');
             $table->date('tanggal');
             $table->string('divisi_pengaju');
             $table->string('unit');
             $table->string('uraian');
             $table->string('dokumentasi')->nullable();
-            $table->string('status')->default('Menunggu');
+            $table->string('status', 50)->default('Menunggu');
             $table->unsignedBigInteger('id_divisi');
             $table->unsignedBigInteger('id_peran');
             $table->unsignedBigInteger('id_verifikator');

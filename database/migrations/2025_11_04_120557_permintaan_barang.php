@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('permintaan_barang', function (Blueprint $table) {
             $table->id('id_permintaan_barang');
-            $table->string('no_permintaan_barang')->unique();
+            $table->string('no_permintaan_barang', 50)->unique();
             $table->unsignedBigInteger('id_surat_pengajuan');
             $table->date('tanggal_permintaan');
-            $table->string('status')->default('Menunggu Logistik');
+            $table->string('status', 50)->default('Menunggu Logistik');
             $table->text('daftar_barang'); 
             $table->decimal('total_estimasi_harga', 15, 2)->nullable();
             $table->text('catatan_logistik')->nullable();

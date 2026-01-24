@@ -17,9 +17,9 @@ return new class extends Migration
             $table->string('nama_barang');
             $table->string('kode_unit');
             $table->integer('jumlah');
-            $table->string('bentuk_satuan');
-            $table->decimal('harga_satuan', 10, 2);
-            $table->decimal('total_harga', 10, 2);
+            $table->string('bentuk_satuan', 30);
+            $table->decimal('harga_satuan', 15, 2);
+            $table->decimal('total_harga', 15, 2);
             $table->string('keterangan')->nullable();
             $table->unsignedBigInteger('id_akun');
             $table->unsignedBigInteger('id_divisi');

@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::create('unit', function (Blueprint $table) {
             $table->id('id_unit');
             $table->string('nama_unit');    
-            $table->string('kode_unit');                
-            $table->string('no_polisi')->nullable();
+            $table->string('kode_unit', 20);                
+            $table->string('no_polisi', 15)->nullable();
             $table->string('jenis_unit');
             $table->string('merk_unit')->nullable();
-            $table->string('tahun_pembuatan')->nullable();
+            $table->year('tahun_pembuatan')->nullable();
             $table->timestamps();  
         });
     }
