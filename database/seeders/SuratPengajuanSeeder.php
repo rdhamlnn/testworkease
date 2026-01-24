@@ -73,7 +73,6 @@ class SuratPengajuanSeeder extends Seeder
                 'tanggal' => now()->subDays(5),
                 'peran' => 'Kadiv',
                 'jenis_wo' => 'Perbaikan',
-                'status_dibaca' => false,
             ],
             [
                 'divisi_pengaju' => 'Logistik',
@@ -84,7 +83,6 @@ class SuratPengajuanSeeder extends Seeder
                 'tanggal' => now()->subDays(4),
                 'peran' => 'Kadiv',
                 'jenis_wo' => 'Pembelian',
-                'status_dibaca' => false,
             ],
             
             // ============ PRODUKSI WO ============
@@ -97,7 +95,6 @@ class SuratPengajuanSeeder extends Seeder
                 'tanggal' => now()->subDays(15),
                 'peran' => 'Kadiv',
                 'jenis_wo' => 'Permintaan',
-                'status_dibaca' => false,
             ],
             [
                 'divisi_pengaju' => 'Produksi',
@@ -108,7 +105,6 @@ class SuratPengajuanSeeder extends Seeder
                 'tanggal' => now()->subDays(5),
                 'peran' => 'Kadiv',
                 'jenis_wo' => 'Permintaan',
-                'status_dibaca' => true,
             ],
             [
                 'divisi_pengaju' => 'Produksi',
@@ -119,7 +115,6 @@ class SuratPengajuanSeeder extends Seeder
                 'tanggal' => now()->subDays(4),
                 'peran' => 'Kadiv',
                 'jenis_wo' => 'Permintaan',
-                'status_dibaca' => false,
             ],
             [
                 'divisi_pengaju' => 'Produksi',
@@ -130,7 +125,6 @@ class SuratPengajuanSeeder extends Seeder
                 'tanggal' => now()->subDays(2),
                 'peran' => 'Kadiv',
                 'jenis_wo' => 'Perbaikan',
-                'status_dibaca' => true,
             ],
             [
                 'divisi_pengaju' => 'Produksi',
@@ -141,7 +135,6 @@ class SuratPengajuanSeeder extends Seeder
                 'tanggal' => now()->subDay(),
                 'peran' => 'Kadiv',
                 'jenis_wo' => 'Pembelian',
-                'status_dibaca' => false,
             ],
             [
                 'divisi_pengaju' => 'Produksi',
@@ -152,7 +145,6 @@ class SuratPengajuanSeeder extends Seeder
                 'tanggal' => now()->subDay(),
                 'peran' => 'Kadiv',
                 'jenis_wo' => 'Permintaan',
-                'status_dibaca' => false,
             ],
             
             // ============ PURCHASING WO ============
@@ -165,7 +157,6 @@ class SuratPengajuanSeeder extends Seeder
                 'tanggal' => now()->subDays(11),
                 'peran' => 'Kadiv',
                 'jenis_wo' => 'Permintaan',
-                'status_dibaca' => true,
             ],
             [
                 'divisi_pengaju' => 'Purchasing',
@@ -176,7 +167,6 @@ class SuratPengajuanSeeder extends Seeder
                 'tanggal' => now()->subDays(3),
                 'peran' => 'Kadiv',
                 'jenis_wo' => 'Permintaan',
-                'status_dibaca' => false,
             ],
             
             // ============ MEKANIK WO ============
@@ -189,7 +179,6 @@ class SuratPengajuanSeeder extends Seeder
                 'tanggal' => now()->subDays(12),
                 'peran' => 'Kadiv',
                 'jenis_wo' => 'Pembelian',
-                'status_dibaca' => true,
             ],
             [
                 'divisi_pengaju' => 'Mekanik',
@@ -200,7 +189,6 @@ class SuratPengajuanSeeder extends Seeder
                 'tanggal' => now()->subDays(2),
                 'peran' => 'Kadiv',
                 'jenis_wo' => 'Pembelian',
-                'status_dibaca' => true,
             ],
             [
                 'divisi_pengaju' => 'Mekanik',
@@ -211,7 +199,6 @@ class SuratPengajuanSeeder extends Seeder
                 'tanggal' => now()->subDay(),
                 'peran' => 'Kadiv',
                 'jenis_wo' => 'Permintaan',
-                'status_dibaca' => false,
             ],
             
             // ============ PLASMA WO ============
@@ -224,7 +211,6 @@ class SuratPengajuanSeeder extends Seeder
                 'tanggal' => now()->subDays(9),
                 'peran' => 'Kadiv',
                 'jenis_wo' => 'Permintaan',
-                'status_dibaca' => false,
             ],
             [
                 'divisi_pengaju' => 'Plasma',
@@ -235,7 +221,6 @@ class SuratPengajuanSeeder extends Seeder
                 'tanggal' => now()->subDays(6),
                 'peran' => 'Kadiv',
                 'jenis_wo' => 'Perbaikan',
-                'status_dibaca' => false,
             ],
             
             // ============ QUALITY CONTROL WO ============
@@ -248,7 +233,6 @@ class SuratPengajuanSeeder extends Seeder
                 'tanggal' => now()->subDays(8),
                 'peran' => 'Kadiv',
                 'jenis_wo' => 'Permintaan',
-                'status_dibaca' => false,
             ],
             [
                 'divisi_pengaju' => 'Quality Control',
@@ -259,7 +243,6 @@ class SuratPengajuanSeeder extends Seeder
                 'tanggal' => now()->subDays(7),
                 'peran' => 'Kadiv',
                 'jenis_wo' => 'Permintaan',
-                'status_dibaca' => true,
             ],
         ];
         
@@ -316,7 +299,6 @@ class SuratPengajuanSeeder extends Seeder
                     'id_akun' => $idAkun,
                     'id_unit' => $unitId,
                     'id_jenis_wo' => $idJenisWO,
-                    'status_dibaca' => $entry['status_dibaca'] ?? false,
                     'created_at' => $entry['tanggal'],
                     'updated_at' => $entry['tanggal'],
                 ]
